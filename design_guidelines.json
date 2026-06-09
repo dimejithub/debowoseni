@@ -1,0 +1,180 @@
+{
+  "theme": "dark",
+  "archetype": "5",
+  "archetype_description": "Luxury & Authority. Moody dark theme with a premium Webflow studio feel, grounded by Swiss/Brutalist typography confidence and selective high-contrast lime accents.",
+  "colors": {
+    "css_variables": {
+      "--bg": "#080d0d",
+      "--surface": "#0f1414",
+      "--surface-2": "#141a19",
+      "--line": "#1f2624",
+      "--ink": "#f3f5f2",
+      "--muted": "#9aa39e",
+      "--lime": "#bcea3e",
+      "--violet": "#7970ff"
+    },
+    "tailwind_theme": {
+      "bg": "var(--bg)",
+      "surface": "var(--surface)",
+      "surface-2": "var(--surface-2)",
+      "line": "var(--line)",
+      "ink": "var(--ink)",
+      "muted": "var(--muted)",
+      "lime": "var(--lime)",
+      "violet": "var(--violet)"
+    },
+    "rules": [
+      "Use --bg for main page backgrounds.",
+      "Use --surface for cards, inputs, and modals.",
+      "Use --surface-2 for hover states or nested containers.",
+      "Use --line for all dividers and borders (hairline 1px).",
+      "Use --ink for primary text and icons.",
+      "Use --muted for secondary text, timestamps, and placeholders.",
+      "Use --lime EXTREMELY sparingly: CTA pills, 'one million lives' highlight, active states. NEVER use for body text.",
+      "Use --violet as an optional secondary accent only if absolutely necessary."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "display": "InterDisplay, Inter, system-ui, sans-serif",
+      "body": "Inter, system-ui, sans-serif",
+      "script": "Italianno, cursive"
+    },
+    "fluid_scale": {
+      "h1": "clamp(2.5rem, 5vw + 1rem, 4.5rem)",
+      "h2": "clamp(2rem, 4vw + 1rem, 3.5rem)",
+      "h3": "clamp(1.5rem, 3vw + 0.5rem, 2.5rem)",
+      "h4": "clamp(1.25rem, 2vw + 0.5rem, 1.75rem)",
+      "body": "clamp(1rem, 1vw + 0.5rem, 1.125rem)",
+      "small": "0.875rem"
+    },
+    "rules": [
+      "Headings (h1-h3) must use display font with tight tracking (-0.5px to -1.4px) and tight leading (leading-none or leading-tight).",
+      "Body text should have generous line height (leading-relaxed, ~1.7).",
+      "Use Italianno ONLY for pull-quotes or a single hero flourish (never body).",
+      "NEVER use the word 'clarity' in any copy."
+    ]
+  },
+  "spacing_and_layout": {
+    "vertical_rhythm": {
+      "desktop_section": "py-24 or py-32 (80-100px+)",
+      "mobile_section": "py-14 (56px)"
+    },
+    "border_radius": {
+      "cards": "rounded-[20px]",
+      "buttons": "rounded-full",
+      "images": "rounded-[16px] or rounded-[20px]"
+    },
+    "breakpoints": {
+      "desktop_base": "lg (992px) and xl (1280px)",
+      "tablet": "md (768px)",
+      "mobile": "sm (478px)"
+    },
+    "visual_enhancers": [
+      "Subtle 1px borders using --line.",
+      "Faint radial lime glows behind heroes: radial-gradient(ellipse at center, rgba(188,234,62,0.1), transparent 60%).",
+      "Optional subtle film-grain/noise overlay on the body background for a premium tactile feel.",
+      "NO heavy drop shadows. Rely on borders and background shifts for depth."
+    ]
+  },
+  "motion_and_interaction": {
+    "rules": [
+      "Scroll-driven storytelling: fade/translate/clip reveals for text and images.",
+      "Staggered children animations for lists and grids.",
+      "Magnetic/hover-lift cards and buttons (e.g., hover:-translate-y-1 transition-transform duration-300).",
+      "Animated count-ups for Impact Stats.",
+      "Smooth page/section transitions.",
+      "Respect 'prefers-reduced-motion'.",
+      "Optional tasteful custom cursor on interactive media."
+    ]
+  },
+  "components": {
+    "nav": {
+      "description": "Sticky blurred dark navbar with logo and links.",
+      "classes": "fixed top-0 w-full z-50 bg-bg/70 backdrop-blur-xl border-b border-line",
+      "logo": "Text mark 'do' using display font, or a custom SVG.",
+      "links": "About, Books, Publications, Journal, Contact",
+      "cta": "Lime 'Book Appointment' pill.",
+      "mobile": "Hamburger menu opening a full-screen overlay menu with staggered link reveals."
+    },
+    "button": {
+      "primary": "bg-lime text-bg font-semibold rounded-full px-6 py-3 hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(188,234,62,0.3)] transition-all",
+      "ghost": "text-ink border border-line rounded-full px-6 py-3 hover:bg-surface-2 transition-all",
+      "link": "text-ink underline decoration-line hover:decoration-lime underline-offset-4 transition-all"
+    },
+    "cards": {
+      "book": "bg-surface border border-line rounded-[20px] overflow-hidden group hover:border-muted transition-colors. Cover image inside with subtle scale on hover.",
+      "stat": "bg-surface-2 border border-line rounded-[20px] p-6 flex flex-col items-center justify-center",
+      "post": "flex flex-col gap-4 group. Cover image rounded-[16px] overflow-hidden. Lime category pill absolute top-4 right-4."
+    },
+    "marquee_cta": {
+      "description": "Lime CTA band with marquee 'Let's Get Started'.",
+      "classes": "bg-lime text-bg py-4 overflow-hidden flex whitespace-nowrap text-2xl font-display font-medium uppercase tracking-tight"
+    }
+  },
+  "pages": {
+    "home": {
+      "sections": [
+        "Hero: Eyebrow + Italic display mission line ('one million lives' in lime) + sub-line + CTAs (Explore Programmes, Watch Debo') + Portrait + Floating stat card. Faint lime radial glow + grain.",
+        "Trusted By: Logo marquee (subtle grayscale).",
+        "About Teaser: Portrait + 'A Bold & Brilliant Transformation Architect' + Read My Story link.",
+        "Books Showcase (Replacing Pricing): Featured book at top + grid below (large covers, title, one-liner, Get the book). Art-directed bookshelf feel.",
+        "Impact Stats: Animated count-ups + tag chips (Faith-Rooted, Practically Delivered, etc.).",
+        "Publications Strip: 5 academic works + 'Access all' link.",
+        "Testimonials: Slider/Grid with REAL quotes. Placeholders must be attributed 'to be supplied', no fake names.",
+        "From the Journal: Latest 3 posts.",
+        "Newsletter Capture: Minimalist form inside a surface card.",
+        "Lime CTA Band: Marquee 'Let's Get Started'."
+      ]
+    },
+    "about": {
+      "notes": "Generous imagery, timeline or story-driven text, cinematic speaking-on-stage hero."
+    },
+    "books": {
+      "notes": "Storefront feel. Featured book hero + bookshelf grid. Each gets cover, description, buy-link."
+    },
+    "publications": {
+      "notes": "Academic list style. Clean, structural, high contrast."
+    },
+    "journal": {
+      "list_notes": "Grid of posts with lime category pills.",
+      "post_notes": "Clean reading layout, generous measure (~720px max-w), Italianno blockquote accent."
+    },
+    "admin": {
+      "notes": "Auth-gated (Supabase). Clean dashboard, list view, rich-text editor (bold/italic/headings/quote/lists/link/image/cover/category/status). Auto-slug."
+    },
+    "contact": {
+      "notes": "Form + Book Appointment CTA + Email + Socials."
+    }
+  },
+  "media": {
+    "portrait_placeholder": "https://images.unsplash.com/photo-1518882570151-157128e78fa1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBibGFjayUyMG1hbiUyMHBvcnRyYWl0JTIwY2luZW1hdGljfGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85",
+    "about_hero": "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxzcGVha2luZyUyMG9uJTIwc3RhZ2V8ZW58MHx8fHwxNzgxMDQyMzIyfDA&ixlib=rb-4.1.0&q=85",
+    "book_covers": [
+      "https://images.pexels.com/photos/2425232/pexels-photo-2425232.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.unsplash.com/photo-1638376776402-9a4b75fe21bb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwZGFyayUyMGFic3RyYWN0fGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1567095751004-aa51a2690368?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwZGFyayUyMGFic3RyYWN0fGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1710438399422-2fca27686bcd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwZGFyayUyMGFic3RyYWN0fGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85"
+    ],
+    "journal_covers": [
+      "https://images.pexels.com/photos/7505924/pexels-photo-7505924.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.unsplash.com/photo-1557264322-b44d383a2906?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZGFyayUyMGFic3RyYWN0fGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1567095751004-aa51a2690368?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwZGFyayUyMGFic3RyYWN0fGVufDB8fHx8MTc4MTA0MjMyMnww&ixlib=rb-4.1.0&q=85"
+    ],
+    "trusted_by_logos": [
+      "https://images.unsplash.com/photo-1612810806563-4cb8265db55f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwzfHxicmFuZCUyMGxvZ298ZW58MHx8fHwxNzgxMDQyMzIyfDA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1620288627223-53302f4e8c74?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwxfHxicmFuZCUyMGxvZ298ZW58MHx8fHwxNzgxMDQyMzIyfDA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1545231027-637d2f6210f8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwyfHxicmFuZCUyMGxvZ298ZW58MHx8fHwxNzgxMDQyMzIyfDA&ixlib=rb-4.1.0&q=85"
+    ]
+  },
+  "technical_instructions": {
+    "packages": [
+      "framer-motion",
+      "lucide-react",
+      "@radix-ui/react-icons"
+    ],
+    "testing": "All interactive elements MUST include a data-testid attribute in kebab-case based on role (e.g., data-testid='book-appointment-button').",
+    "css_setup": "Define the CSS variables in the :root and dark mode scope in index.css. Setup Tailwind config to use these CSS variables.",
+    "shadcn_customization": "Avoid standard shadcn 'card' component for marketing sections if it feels too rigid. Use raw HTML/Tailwind for custom layouts. If using shadcn components, heavily customize them to match the dark luxury aesthetic."
+  }
+}
