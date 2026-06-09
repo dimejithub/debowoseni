@@ -135,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* TRUSTED BY MARQUEE */}
-      <section className="border-y border-line bg-surface/40 py-10" data-testid="trusted-by">
+      <section className="overflow-hidden border-y border-line bg-surface/40 py-10" data-testid="trusted-by">
         <div className="container-page mb-5 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.22em] text-muted">
             Trusted by leading institutions & partners
@@ -415,7 +415,7 @@ export default function Home() {
         href={SYSTEME_BOOKING_URL}
         target="_blank"
         rel="noreferrer noopener"
-        className="block bg-lime"
+        className="block overflow-hidden bg-lime"
         data-testid="cta-marquee-band"
       >
         <Marquee
