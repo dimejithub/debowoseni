@@ -1,0 +1,50 @@
+{
+  "summary": "Full E2E test of debowoseni.com (FastAPI + Supabase + React). 21/21 backend pytest cases pass, including health (schema_ready & bucket_ready true), public posts (seed 'are-you-in-there' published and visible, drafts excluded, 404 for unknown slug), contact (200 + 422 validation), newsletter (idempotent), admin auth guard (401 without/bad token), admin /me, admin posts list, full CRUD (create draft -> draft hidden publicly -> publish -> visible publicly -> delete -> 404), and admin upload (multipart -> public URL loads PNG). Frontend: every required data-testid renders on Home, About, Books, Publications, Journal (list + post), Contact, Admin login, Admin dashboard, Admin editor (all toolbar buttons tb-bold..tb-redo present). Mission headline present. 'FEATURED' badge renders (CSS-uppercased) on featured BookCard. All 4 Amazon buy links open in _blank with amazon.* hrefs. All 5 publications link to scholar.google.com. Journal seed card routes to /journal/are-you-in-there and post body renders with Italianno blockquote. Contact form submits + clears + shows toast. Newsletter footer submits + shows toast. Admin login: bad creds shows error toast and stays on /admin/login; good creds redirects to /admin. Editor: save-draft -> redirect to /admin/edit/<id>, publish updates status (verified post visible as PUBLISHED). Mobile menu opens with all links. No console errors on home load.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Home (tab breakpoint 768px)",
+        "issues": [
+          "Horizontal overflow of ~15px at width=768 (scrollWidth=783, clientWidth=768). The offending nodes are the inner marquee tracks (.flex.w-max.animate-marquee-x in trusted-by and cta-marquee-band). At 478, 992, 1280 there is no overflow. Likely the marquee section wrapper is missing overflow-x:hidden at the md breakpoint specifically. Cosmetic but produces a tiny horizontal scroll bar on iPads."
+        ]
+      },
+      {
+        "screen": "Journal post copy",
+        "issues": [
+          "Back link reads 'Back to the journal' while the spec says 'Back to journal'. Functionality works (anchor href to /journal). Minor copy mismatch only."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: fix the 15px horizontal overflow at viewport=768px by ensuring marquee section wrappers (trusted-by and cta-marquee-band) have overflow-x:hidden at md breakpoint.",
+    "Optional: align Journal post 'Back to the journal' copy with spec wording 'Back to journal'."
+  ],
+  "critical_code_review_comments": [
+    "server.py:269 — When updating status to 'published' but the post already had a published_at, the published_at is preserved which is correct. However, transitioning published -> draft does NOT clear published_at; the seed timestamp remains. Consider nulling published_at when status flips back to 'draft' to keep ordering accurate.",
+    "server.py:264-268 — Slug auto-rewrite logic when title changes is commented as a TODO ('pass'); editing a title in the Tiptap editor will silently keep the old slug. Acceptable for now but worth documenting in UI.",
+    "server.py:43 — Service-role client is created at module import; if SUPABASE_* env vars are missing the app crashes with KeyError (good fail-fast behaviour, matches our guidance).",
+    "server.py uses sb_admin (service role) for ALL public reads of /api/posts. RLS is therefore bypassed by design — fine because the route filter restricts to status='published' and drafts are correctly hidden (verified). Worth a code comment.",
+    "Frontend admin auth flow obtains Supabase access_token from session and sends to backend require_user() which round-trips to Supabase auth.get_user(); works correctly but adds one network hop per admin call. Acceptable."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_api.py (new)",
+    "/app/test_reports/pytest/pytest_results.xml (generated)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100% functional (2 minor cosmetic items)"},
+  "test_credentials": "admin@debowoseni.com / KUz6h4PpCt46QK0Tqhis (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "During CRUD test created one draft+publish post and deleted it. During admin UI playwright created one post and cleaned it via API. Storage bucket: a 1x1 PNG was uploaded to blog-images/tests/<uuid>-TEST_pixel.png (not deleted — only one small object).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest at /app/backend/tests/test_api.py — run with: pytest /app/backend/tests/test_api.py -v. Uses REACT_APP_BACKEND_URL from /app/frontend/.env. Test data prefixed 'TEST_'. Supabase admin signin path: POST {SB}/auth/v1/token?grant_type=password with apikey=anon_key. All 21 backend tests pass cleanly in ~8s. Frontend testids are stable and match the spec. Remaining cosmetic issues (768px marquee overflow, 'Back to the journal' wording) are non-blocking."
+}
