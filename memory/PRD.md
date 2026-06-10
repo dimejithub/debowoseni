@@ -23,17 +23,14 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - Desktop-first responsive at ≥1280, ≥992, 768–991, ≤767, ≤478.
 
 ## What's been implemented (2026-02 — current session continuation)
-- **Taking Your Day — real covers (2 SKUs)**: The original "Taking Your Day" book now uses the supplied jar-with-sunset cover ("A Year of Taking What Is Already Yours"). Added a NEW companion product, "Taking Your Day — 365-Day Transformation Journal", with the supplied open-book cover. Both in `data.js` fallbacks and `seed_content.py`, then re-seeded.
-- **New publication added**: Owoseni A (2023). *What is Digital Transformation? Investigating the Metaphorical Meaning of Digital Transformation and Why It Matters.* Digital Transformation and Society, Vol. 2 No. 1, pp. 78–96. Linked to the Emerald URL.
-- **Publications sorted by year (descending)**: All 6 publications now share the same `sort_order` so they auto-sort newest first via the existing API `.order("sort_order").order("year", desc=True)`. Updated both `data.js` FALLBACK_PUBLICATIONS and `seed_content.py`. Publications seeder now does delete-then-insert (since the schema has no unique constraint on title) so the canonical list in `seed_content.py` stays the source of truth.
-- **Fixed Stagger animation bug on Publications page**: The `Stagger`/`StaggerItem` pattern in framer-motion (with `viewport.once: true`) was leaving items stuck at opacity 0 after the API replaced the fallback data — items never re-animated to opacity 1. Replaced with per-row `Reveal` wrappers using staggered delays, which animate reliably on first scroll. The page now renders all 6 publication rows correctly.
-- **Real book covers**: swapped in the four supplied covers (`How God Gives Feedback`, `Your Marriage In a Mirror`, `Ìmọ̀lẹ̀`, `Ìjìnlẹ̀`) in both `lib/data.js` (FALLBACK_BOOKS) and `backend/seed_content.py`, then re-ran the seeder (idempotent upsert on `slug`).
-- **Fixed pre-existing BookCard field-name bug**: `BookCard.jsx` was reading `book.cover` / `book.oneLiner` / `book.buyUrl` / `book.featured`, but data + Supabase use snake_case. Updated the component to read the canonical fields. Covers, FEATURED badge, and "Get the book" buy buttons now render properly across Home + Books.
-- **Hero section revamped** (`Home.jsx`): replaced static portrait with a cinematic Ken-Burns crossfade backdrop built from the LTE Leicester event images; framed by a dark glassmorphism panel; floating stat-card moved inside the glass panel.
-- **Global email swap**: `Adebowale.owoseni@gmail.com` → `hello@debowoseni.com` everywhere.
-- **Footer wordmark**: oversized `debowoseni.` display type stretching the full width of the footer.
-- **Philosophical Anchor section on About page**: renders the six axioms supplied by Debo as a 3-column glass-card grid.
-- Added `PHILOSOPHICAL_ANCHORS` constant in `data.js`.
+- **Premium book carousel** (`BookCarousel.jsx`): replaced the previous featured-card + 3-col grid on `/books` with a single cinematic 3D-coverflow carousel showing **all books**. Features: large centered active card (cover + editorial copy + "Get the book" CTA + position indicator), side peek covers tilted ±6° at reduced opacity for depth, lime dot pagination, magnetic prev/next arrow buttons, drag/swipe-to-navigate (mobile + desktop), autoplay every 6.5s with pause-on-hover/focus, keyboard arrow-key navigation, framer-motion slide-and-fade transitions. The featured book (`is_featured`) opens first by default. Lint clean, screenshot-verified across multiple frames.
+- **Taking Your Day — real covers (2 SKUs)**: jar/sunset cover + new companion "365-Day Transformation Journal" with open-book cover.
+- **New publication**: Owoseni A (2023). *Metaphorical Meaning of Digital Transformation.* Digital Transformation and Society 2(1), 78–96.
+- **Publications sorted newest-first** (uniform `sort_order` → auto-sorts by year desc via existing API ordering).
+- **Fixed Stagger animation bug on Publications page** (StaggerItem stuck at opacity 0 after API replaced fallback) — swapped to per-row `Reveal` with staggered delays.
+- **Real book covers** for all 4 supplied (`How God Gives Feedback`, `Your Marriage In a Mirror`, `Ìmọ̀lẹ̀`, `Ìjìnlẹ̀`).
+- **BookCard snake_case fix**: now reads `cover_url`/`one_liner`/`buy_url`/`is_featured`.
+- **Hero Ken-Burns motion backdrop**, **global email swap to hello@debowoseni.com**, **oversized `debowoseni.` footer wordmark**, **Philosophical Anchor section on About** (six axioms grid).
 
 ## What's been implemented (2026-12-09)
 - Full design system: dark palette, lime accent, Inter + Italianno fonts, fluid type with `clamp()`, lime radial glows, grain overlay, marquee animations.
