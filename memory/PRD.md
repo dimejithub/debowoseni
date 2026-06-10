@@ -110,3 +110,9 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - NEW Admin "Subscribers" tab: backend GET /api/admin/subscribers (auth required, verified 401 unauth), page at /admin/subscribers (list + count + client-side CSV export for Systeme import), card added to admin dashboard.
 - All verified via Playwright (pills, filtering, post detail render, admin login → subscribers list).
 - NOTE: Webflow CDN image hotlinks could break if user deletes the Webflow site — consider migrating covers to Supabase storage later (P2).
+
+## Session update — 10 June 2026 (Resources search/reading-time + cover replacement)
+- Resources page: search box (`journal-search-input`, filters title+excerpt, empty-state message for no matches) and reading-time labels (~200 wpm, `readingTimeMin` in `lib/utils.js`) on cards + post detail header.
+- ALL 56 blog covers replaced — Webflow template placeholders swapped for thematically matched Unsplash images via `/app/backend/assign_post_images.py` (keyword rules: marriage/fire/time/fog/storm/mind/scripture/work/writing… then category pools; all URLs curl-verified 200; idempotent + deterministic, re-runnable). Owner can still override any cover per-post in admin.
+- Bug fixed during session: `query` state line missing in Journal.jsx caused blank page — re-added, verified.
+- Verified via Playwright: search filtering, empty state, min-read labels, 0 Webflow image srcs remaining, post detail cover + min read.

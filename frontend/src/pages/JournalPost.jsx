@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { getPostBySlug, getPublishedPosts } from "@/lib/api";
 import { FALLBACK_POST_COVER } from "@/lib/data";
+import { readingTimeMin } from "@/lib/utils";
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -82,7 +83,9 @@ export default function JournalPost() {
         <Reveal><p className="text-xs uppercase tracking-[0.24em] text-lime">{post.category}</p></Reveal>
         <Reveal delay={0.08}><h1 className="mt-6">{post.title}</h1></Reveal>
         <Reveal delay={0.16}>
-          <p className="mt-6 text-sm text-muted">{post.author_name} · {formatDate(post.published_at)}</p>
+          <p className="mt-6 text-sm text-muted">
+            {post.author_name} · {formatDate(post.published_at)} · {readingTimeMin(post.body)} min read
+          </p>
         </Reveal>
       </header>
 

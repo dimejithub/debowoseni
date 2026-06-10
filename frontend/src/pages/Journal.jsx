@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, Search } from "lucide-react";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
 import { getPublishedPosts } from "@/lib/api";
 import { FALLBACK_POST_COVER } from "@/lib/data";
+import { readingTimeMin } from "@/lib/utils";
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -19,6 +20,7 @@ const PREFERRED_ORDER = ["Leadership", "Relationships", "Transformation", "Inspi
 export default function Journal() {
   const [posts, setPosts] = useState(null);
   const [filter, setFilter] = useState("All Blogs");
+  const [query, setQuery] = useState("");
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -39,9 +41,17 @@ export default function Journal() {
 
   const visible = useMemo(() => {
     if (!posts) return [];
-    if (filter === "All Blogs") return posts;
-    return posts.filter((p) => p.category === filter);
-  }, [posts, filter]);
+    let list = filter === "All Blogs" ? posts : posts.filter((p) => p.category === filter);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (p) =>
+          (p.title || "").toLowerCase().includes(q) ||
+          (p.excerpt || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [posts, filter, query]);
 
   return (
     <div data-testid="journal-page">
@@ -65,6 +75,22 @@ export default function Journal() {
       </section>
 
       <section className="container-page pb-24">
+        {posts !== null && (
+          <div className="mx-auto mb-8 max-w-xl">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search the journal…"
+                className="w-full rounded-full border border-line bg-surface py-3.5 pl-12 pr-5 text-sm text-ink placeholder:text-muted transition-colors focus:border-lime focus:outline-none"
+                data-testid="journal-search-input"
+              />
+            </label>
+          </div>
+        )}
+
         {posts !== null && categories.length > 1 && (
           <div className="mb-12 flex flex-wrap justify-center gap-2">
             {categories.map((c) => (
@@ -97,7 +123,11 @@ export default function Journal() {
           <div className="mx-auto max-w-xl rounded-[20px] border border-line bg-surface px-8 py-16 text-center" data-testid="journal-empty">
             <span className="font-script text-5xl text-lime">soon</span>
             <p className="mt-3 text-muted">
-              {error ? "The journal is being prepared. Please check back shortly." : "No posts in this category yet. The first ones are on their way."}
+              {error
+                ? "The journal is being prepared. Please check back shortly."
+                : query.trim()
+                ? "No pieces match your search. Try a different word."
+                : "No posts in this category yet. The first ones are on their way."}
             </p>
           </div>
         )}
@@ -128,8 +158,11 @@ export default function Journal() {
                     {p.title}
                   </h3>
                   <p className="line-clamp-3 text-muted">{p.excerpt}</p>
-                  <p className="text-xs text-muted">
-                    {p.author_name || "Debo Owoseni"} · {formatDate(p.published_at)}
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                    <span>{p.author_name || "Debo Owoseni"} · {formatDate(p.published_at)}</span>
+                    <span className="inline-flex items-center gap-1">
+                      · <Clock className="h-3 w-3 text-lime" /> {readingTimeMin(p.body)} min read
+                    </span>
                   </p>
                   <span className="mt-1 inline-flex items-center gap-2 text-sm text-lime opacity-0 transition group-hover:opacity-100">
                     Read post <ArrowRight className="h-4 w-4" />
