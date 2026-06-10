@@ -147,11 +147,6 @@ export function BookCarousel({ books = [] }) {
                     className="h-full w-full object-cover"
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/40 via-transparent to-transparent" />
-                  {(current.is_featured ?? current.featured) && (
-                    <span className="absolute left-5 top-5 inline-flex items-center rounded-full bg-lime px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-bg">
-                      Featured
-                    </span>
-                  )}
                 </motion.div>
               </div>
 
