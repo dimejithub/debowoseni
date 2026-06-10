@@ -23,6 +23,8 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - Desktop-first responsive at ≥1280, ≥992, 768–991, ≤767, ≤478.
 
 ## What's been implemented (2026-02 — current session continuation)
+- **Real book covers**: swapped in the four supplied covers (`How God Gives Feedback`, `Your Marriage In a Mirror`, `Ìmọ̀lẹ̀`, `Ìjìnlẹ̀`) in both `lib/data.js` (FALLBACK_BOOKS) and `backend/seed_content.py`, then re-ran the seeder (idempotent upsert on `slug`) so Supabase now serves the new URLs. Only `Taking Your Day` keeps its stand-in (no cover supplied).
+- **Fixed pre-existing BookCard field-name bug**: `BookCard.jsx` was reading `book.cover` / `book.oneLiner` / `book.buyUrl` / `book.featured`, but data + Supabase use snake_case (`cover_url`, `one_liner`, `buy_url`, `is_featured`). Updated the component to read the canonical fields (with camelCase fallback for safety). Covers, FEATURED badge, and "Get the book" buy buttons now render properly across Home + Books.
 - **Hero section revamped** (`Home.jsx`): replaced static portrait with a cinematic Ken-Burns crossfade backdrop built from the LTE Leicester event images; framed by a dark glassmorphism panel (`backdrop-blur-2xl`, layered overlays, lime accent ring); floating stat-card moved inside the glass panel; tiny scroll cue mouse indicator at the bottom.
 - **Global email swap**: `Adebowale.owoseni@gmail.com` → `hello@debowoseni.com` everywhere (env override in `frontend/.env` + fallback in `data.js`). Confirmed visible on Contact page direct-email card and Footer Connect column.
 - **Footer wordmark**: oversized `debowoseni.` display type (≈19vw) stretching the full width of the footer, with a lime-coloured period; positioned as a brand presence band beneath the legal line.

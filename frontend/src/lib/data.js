@@ -29,7 +29,7 @@ export const FALLBACK_BOOKS = [
     description:
       "A workbook for couples and those preparing for covenant — practical reflections that help you see the relationship you actually have, not the one you've been performing. Designed for slow, honest reading.",
     cover_url:
-      "https://images.unsplash.com/photo-1638376776402-9a4b75fe21bb?crop=entropy&cs=srgb&fm=jpg&w=900&q=85",
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/vryclmhk_your%20marriage%20in%20a%20mirror.jpg",
     buy_url:
       "https://www.amazon.co.uk/Your-Marriage-Mirror-Adebowale-Owoseni-ebook/dp/B0F4F64VNZ",
     is_featured: false,
@@ -43,7 +43,7 @@ export const FALLBACK_BOOKS = [
     description:
       "A collection of spoken-word reflections written for the vulnerable parts of transformation — for the seasons where the old self is no longer accurate and the new self is still being formed.",
     cover_url:
-      "https://images.unsplash.com/photo-1567095751004-aa51a2690368?crop=entropy&cs=srgb&fm=jpg&w=900&q=85",
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/i9g97eh9_imole.jpg",
     buy_url:
       "https://www.amazon.co.uk/%C3%8Cm%C3%B3l%E1%BA%B9%CC%80-reflections-journeys-vulnerable-transformation/dp/B0FQCQ6JRL",
     is_featured: false,
@@ -57,7 +57,7 @@ export const FALLBACK_BOOKS = [
     description:
       "A short book of inspiring reflections to encourage purpose-driven decisions at the moments that matter most — for the crossroads where the easy answer is the wrong one.",
     cover_url:
-      "https://images.unsplash.com/photo-1710438399422-2fca27686bcd?crop=entropy&cs=srgb&fm=jpg&w=900&q=85",
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/97cc65ku_ijinle.jpg",
     buy_url:
       "https://www.amazon.co.uk/Ijinl%E1%BA%B9%CC%80-collection-inspiring-reflections-encourage/dp/B0FF3LV3XF",
     is_featured: false,
@@ -71,7 +71,7 @@ export const FALLBACK_BOOKS = [
     description:
       "A guided devotional that pairs Scripture with structured journaling prompts — built for the leader, the parent, the founder who wants to hear, not just hustle.",
     cover_url:
-      "https://images.pexels.com/photos/2425232/pexels-photo-2425232.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=900",
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/ib1lyvey_How%20God%20gives%20feedback.jpg",
     buy_url: "https://www.amazon.co.uk/dp/B0H4276KFB",
     is_featured: true,
   },
