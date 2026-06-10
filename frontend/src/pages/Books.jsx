@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
-import { BookCarousel } from "@/components/site/BookCarousel";
+import { BookShowcase } from "@/components/site/BookShowcase";
 import { FALLBACK_BOOKS, SYSTEME_BOOKING_URL } from "@/lib/data";
 import { getPublishedBooks } from "@/lib/api";
 
@@ -18,13 +18,6 @@ export default function Books() {
       active = false;
     };
   }, []);
-
-  // Bring the featured book to the front so the carousel opens on it.
-  const ordered = (() => {
-    const featuredIdx = books.findIndex((b) => b.is_featured ?? b.featured);
-    if (featuredIdx <= 0) return books;
-    return [books[featuredIdx], ...books.slice(0, featuredIdx), ...books.slice(featuredIdx + 1)];
-  })();
 
   return (
     <div data-testid="books-page">
@@ -52,11 +45,9 @@ export default function Books() {
         </div>
       </section>
 
-      {/* PREMIUM CAROUSEL — all books, cinematic */}
-      <section className="relative pb-20 md:pb-28">
-        <Reveal>
-          <BookCarousel books={ordered} />
-        </Reveal>
+      {/* All books — clean 3D-mockup grid */}
+      <section className="container-page pb-24 md:pb-32">
+        <BookShowcase books={books} />
       </section>
 
       {/* CTA */}

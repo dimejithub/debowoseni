@@ -18,7 +18,7 @@ import {
   YOUTUBE_CHANNEL_URL,
 } from "@/lib/data";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
-import { BookCard } from "@/components/site/BookCard";
+import { BookShowcase } from "@/components/site/BookShowcase";
 import { ImageMarquee, Marquee } from "@/components/site/Marquee";
 import { CountUp } from "@/components/site/CountUp";
 import { VideoModal } from "@/components/site/VideoModal";
@@ -144,8 +144,6 @@ export default function Home() {
     return () => { active = false; };
   }, []);
 
-  const featured = books.find((b) => b.is_featured) || books[0];
-  const otherBooks = books.filter((b) => (b.id || b.slug) !== (featured?.id || featured?.slug));
   const displayedPosts = posts.length > 0 ? posts.slice(0, 3) : SEED_POSTS.slice(0, 3);
   const eventGallery =
     (events[0]?.gallery && events[0].gallery.length ? events[0].gallery : EVENT_IMAGES).slice(0, 3);
@@ -372,57 +370,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOOKS SHOWCASE — cream background for editorial bookshelf feel */}
-      <section className="cream-section py-24 md:py-32" data-testid="books-showcase">
-        <div className="container-page">
-          <div className="container-narrow">
-            <Reveal><SectionEyebrow>The Bookshelf</SectionEyebrow></Reveal>
-            <Reveal delay={0.08}>
-              <h2 className="mt-5">
-                Explore my <span className="font-display-italic text-lime">writings</span>.
-              </h2>
-            </Reveal>
-            <Reveal delay={0.16}>
-              <p className="mx-auto mt-5 max-w-2xl text-lg muted">
-                Thoughtful resources for the journey of personal transformation, spiritual growth,
-                and purposeful living.
-              </p>
-            </Reveal>
-            <Reveal delay={0.22} className="mt-8 flex justify-center">
-              <Link to="/books" className="btn-ghost" data-testid="books-explore-all">
-                Explore all <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Reveal>
-          </div>
+      {/* BOOKS SHOWCASE — editorial 3D-book grid on the dark canvas */}
+      <section className="container-page py-24 md:py-32" data-testid="books-showcase">
+        <div className="container-narrow">
+          <Reveal><SectionEyebrow>The Bookshelf</SectionEyebrow></Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="mt-5">
+              Explore my <span className="font-display-italic text-lime">writings</span>.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mx-auto mt-5 max-w-2xl text-lg text-ink/85">
+              Thoughtful resources for the journey of personal transformation, spiritual growth,
+              and purposeful living.
+            </p>
+          </Reveal>
+          <Reveal delay={0.22} className="mt-8 flex justify-center">
+            <Link to="/books" className="btn-ghost" data-testid="books-explore-all">
+              Explore all <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Reveal>
+        </div>
 
-          {featured && (
-            <Reveal delay={0.1} className="mt-14">
-              <BookCard book={featured} large />
-            </Reveal>
-          )}
+        <div className="mt-16">
+          <BookShowcase books={books.slice(0, 4)} />
+        </div>
 
-          <Stagger className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {otherBooks.map((b) => (
-              <StaggerItem key={b.id || b.slug}>
-                <BookCard book={b} />
-              </StaggerItem>
-            ))}
-          </Stagger>
-
-          <p className="mt-14 text-center text-sm muted">
-            Coaching & programmes &nbsp;
-            <a
-              href={SYSTEME_BOOKING_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-semibold underline underline-offset-4 hover:text-lime"
-              data-testid="books-coaching-link"
-            >
+        <p className="mt-16 text-center text-sm text-muted">
+          Coaching & programmes &nbsp;
+          <a
+            href={SYSTEME_BOOKING_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-semibold underline underline-offset-4 hover:text-lime"
+            data-testid="books-coaching-link"
+          >
               visit the programmes
             </a>
             .
           </p>
-        </div>
       </section>
 
       {/* EVENTS / GALLERY */}
