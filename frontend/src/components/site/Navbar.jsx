@@ -19,9 +19,9 @@ const NAV_LINKS = [
     label: "Expressions",
     children: [
       { label: "Life Transformation Enquiry™", to: "/expressions/life-transformation-enquiry" },
-      { label: "Academic Research Insight™", href: "#" },
-      { label: "Marriage 101: Back2Basics", href: "#" },
-      { label: "The Enquiry", href: "#" },
+      { label: "Academic Research Insight™", to: "/expressions/academic-research-insight" },
+      { label: "Marriage 101: Back2Basics", to: "/expressions/marriage-101" },
+      { label: "The Enquiry", to: "/expressions/the-enquiry" },
     ],
   },
   { to: "/publications", label: "Publications" },

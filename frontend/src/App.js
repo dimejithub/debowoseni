@@ -11,6 +11,9 @@ import Journal from "@/pages/Journal";
 import JournalPost from "@/pages/JournalPost";
 import Contact from "@/pages/Contact";
 import ExpressionLTE from "@/pages/ExpressionLTE";
+import ExpressionAcademic from "@/pages/ExpressionAcademic";
+import ExpressionMarriage from "@/pages/ExpressionMarriage";
+import TheEnquiry from "@/pages/TheEnquiry";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminPosts from "@/pages/AdminPosts";
@@ -38,6 +41,9 @@ function App() {
             <Route path="/journal/:slug" element={<JournalPost />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/expressions/life-transformation-enquiry" element={<ExpressionLTE />} />
+            <Route path="/expressions/academic-research-insight" element={<ExpressionAcademic />} />
+            <Route path="/expressions/marriage-101" element={<ExpressionMarriage />} />
+            <Route path="/expressions/the-enquiry" element={<TheEnquiry />} />
           </Route>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />

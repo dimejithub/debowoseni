@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
 import { MagneticButton } from "@/components/site/MagneticButton";
+import { EnquiryQuiz } from "@/components/site/EnquiryQuiz";
 import { LTE_PROGRAMMES_URL, SYSTEME_BOOKING_URL } from "@/lib/data";
 
 /**
@@ -224,6 +225,26 @@ export default function ExpressionLTE() {
               </StaggerItem>
             ))}
           </Stagger>
+        </div>
+      </section>
+
+      {/* START THE ENQUIRY — pathway recommender */}
+      <section className="border-t border-line bg-surface/30 py-20 md:py-24" data-testid="lte-quiz-section">
+        <div className="container-page">
+          <div className="container-narrow">
+            <Reveal>
+              <p className="text-xs uppercase tracking-[0.28em] text-muted">Start the Enquiry</p>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">
+                Three questions.{" "}
+                <span className="font-display-italic text-lime">The right pathway.</span>
+              </h2>
+            </Reveal>
+          </div>
+          <Reveal delay={0.16} className="mx-auto mt-10 max-w-3xl">
+            <EnquiryQuiz mode="lte" />
+          </Reveal>
         </div>
       </section>
 
