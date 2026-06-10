@@ -219,21 +219,6 @@ export default function Home() {
                 </button>
               </div>
             </Reveal>
-
-            {/* Floating stat card — repositioned into the glass panel for cohesion */}
-            <motion.div
-              className="mx-auto mt-14 inline-flex items-center gap-5 rounded-2xl border border-white/10 bg-surface/70 px-6 py-4 backdrop-blur-xl"
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              data-testid="floating-stat-card"
-            >
-              <p className="font-display text-4xl leading-none tracking-tight text-ink">
-                250<span className="text-lime">+</span>
-              </p>
-              <p className="max-w-[170px] text-left text-[11px] uppercase tracking-[0.18em] text-muted">
-                Learners &amp; enquirers worldwide
-              </p>
-            </motion.div>
           </motion.div>
 
           {/* subtle scroll cue */}
