@@ -103,3 +103,10 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - LTE Live event now consistent everywhere: **7 March 2026 · Phoenix Cinema, Leicester, UK**. Updated: Supabase `events` row (slug renamed lte-london-workshop → lte-live-leicester, was "LTE Live · London / 2025-11-15"), `data.js` FALLBACK_EVENTS, `seed_content.py` EVENT, Home events-marquee caption, LTE page masterclass note ("last held on 7 March 2026 at Phoenix Cinema, Leicester").
 - Removed the "N images" caption under event galleries on the Events page (user screenshot).
 - Verified via Playwright: Events page shows correct title/date/venue from Supabase, no London/no caption remnants.
+
+## Session update — 10 June 2026 (Webflow blog import + Subscribers admin tab)
+- IMPORTED 56 Webflow blog posts from user CSV (`/app/backend/data/webflow_blogs.csv`, script `/app/backend/import_blogs.py`, idempotent upsert on slug): 54 published (Leadership 6, Relationships 16, Transformation 17, Inspirational 15 — categories normalised: Relationship→Relationships, Inspiration→Inspirational), 2 "Digital Tech & AI" posts kept as DRAFTS (in admin CMS, not on public site, per user instruction). Body = Webflow rich HTML (rendered via DOMPurify), covers/avatars hotlinked from Webflow CDN, published_at from Webflow Created On.
+- Resources page pills now match live-site design: "All Blogs" + 4 categories in fixed order.
+- NEW Admin "Subscribers" tab: backend GET /api/admin/subscribers (auth required, verified 401 unauth), page at /admin/subscribers (list + count + client-side CSV export for Systeme import), card added to admin dashboard.
+- All verified via Playwright (pills, filtering, post detail render, admin login → subscribers list).
+- NOTE: Webflow CDN image hotlinks could break if user deletes the Webflow site — consider migrating covers to Supabase storage later (P2).

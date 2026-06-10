@@ -1,5 +1,5 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, LogOut, FileText, Quote, BookOpen, GraduationCap, Calendar } from "lucide-react";
+import { ArrowLeft, ArrowRight, LogOut, FileText, Quote, BookOpen, GraduationCap, Calendar, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { getHealth } from "@/lib/api";
@@ -10,6 +10,7 @@ const CARDS = [
   { to: "/admin/books", title: "Books", desc: "Featured book + bookshelf.", Icon: BookOpen, testId: "card-books" },
   { to: "/admin/publications", title: "Publications", desc: "Academic papers + Scholar links.", Icon: GraduationCap, testId: "card-publications" },
   { to: "/admin/events", title: "Events", desc: "Past & live events with image galleries.", Icon: Calendar, testId: "card-events" },
+  { to: "/admin/subscribers", title: "Subscribers", desc: "Quiz + newsletter emails. Export CSV for Systeme.", Icon: Mail, testId: "card-subscribers" },
 ];
 
 export default function AdminDashboard() {

@@ -338,6 +338,15 @@ def me(user=Depends(require_user)):
     return {"email": user.email, "id": user.id}
 
 
+@api.get("/admin/subscribers")
+def admin_list_subscribers(user=Depends(require_user)):
+    res = (
+        sb_admin.table("subscribers").select("*")
+        .order("created_at", desc=True).execute()
+    )
+    return {"subscribers": res.data or []}
+
+
 @api.get("/admin/posts")
 def admin_list_posts(user=Depends(require_user)):
     res = sb_admin.table("posts").select("*").order("created_at", desc=True).execute()

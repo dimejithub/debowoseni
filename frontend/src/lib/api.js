@@ -63,6 +63,12 @@ export async function subscribeNewsletter(email) {
   return r.data;
 }
 
+export async function adminListSubscribers() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/subscribers`, { headers });
+  return r.data.subscribers || [];
+}
+
 // ---- Admin generic factory ----
 function adminCrud(resource) {
   return {

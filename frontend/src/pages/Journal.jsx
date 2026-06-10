@@ -14,9 +14,11 @@ function formatDate(iso) {
   } catch { return ""; }
 }
 
+const PREFERRED_ORDER = ["Leadership", "Relationships", "Transformation", "Inspirational"];
+
 export default function Journal() {
   const [posts, setPosts] = useState(null);
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState("All Blogs");
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -28,14 +30,16 @@ export default function Journal() {
   }, []);
 
   const categories = useMemo(() => {
-    if (!posts) return ["All"];
+    if (!posts) return ["All Blogs"];
     const set = new Set(posts.map((p) => p.category).filter(Boolean));
-    return ["All", ...Array.from(set)];
+    const ordered = PREFERRED_ORDER.filter((c) => set.has(c));
+    const rest = Array.from(set).filter((c) => !PREFERRED_ORDER.includes(c));
+    return ["All Blogs", ...ordered, ...rest];
   }, [posts]);
 
   const visible = useMemo(() => {
     if (!posts) return [];
-    if (filter === "All") return posts;
+    if (filter === "All Blogs") return posts;
     return posts.filter((p) => p.category === filter);
   }, [posts, filter]);
 
@@ -73,7 +77,7 @@ export default function Journal() {
                     ? "border-lime bg-lime text-bg"
                     : "border-line bg-surface text-ink hover:border-muted"
                 }`}
-                data-testid={`journal-filter-${c.toLowerCase()}`}
+                data-testid={`journal-filter-${c.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 {c}
               </button>

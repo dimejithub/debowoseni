@@ -22,6 +22,7 @@ import AdminTestimonials from "@/pages/AdminTestimonials";
 import AdminBooks from "@/pages/AdminBooks";
 import AdminPublications from "@/pages/AdminPublications";
 import AdminEvents from "@/pages/AdminEvents";
+import AdminSubscribers from "@/pages/AdminSubscribers";
 import { AuthProvider } from "@/lib/auth";
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
           <Route path="/admin/books" element={<AdminBooks />} />
           <Route path="/admin/publications" element={<AdminPublications />} />
           <Route path="/admin/events" element={<AdminEvents />} />
+          <Route path="/admin/subscribers" element={<AdminSubscribers />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
