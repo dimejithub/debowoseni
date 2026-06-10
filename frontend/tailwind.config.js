@@ -13,7 +13,6 @@ module.exports = {
         muted: "var(--muted)",
         lime: "var(--lime)",
         violet: "var(--violet)",
-        // shadcn aliases mapped to our dark system
         background: "var(--bg)",
         foreground: "var(--ink)",
         card: { DEFAULT: "var(--surface)", foreground: "var(--ink)" },
@@ -26,32 +25,24 @@ module.exports = {
         input: "var(--line)",
         ring: "var(--lime)",
       },
-      borderRadius: {
-        lg: "20px",
-        md: "16px",
-        sm: "10px",
-      },
+      borderRadius: { lg: "20px", md: "16px", sm: "10px" },
       fontFamily: {
-        display: ['"InterDisplay"', "Inter", "system-ui", "sans-serif"],
+        display: ['"Bricolage Grotesque"', "Inter", "system-ui", "sans-serif"],
         sans: ["Inter", "system-ui", "sans-serif"],
-        script: ['"Italianno"', "cursive"],
+        serif: ["Fraunces", "serif"],
       },
       keyframes: {
-        "marquee-x": {
-          from: { transform: "translateX(0%)" },
-          to: { transform: "translateX(-50%)" },
-        },
-        "fade-up": {
-          from: { opacity: "0", transform: "translateY(16px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
+        "marquee-x": { from: { transform: "translateX(0%)" }, to: { transform: "translateX(-50%)" } },
+        "fade-up": { from: { opacity: "0", transform: "translateY(16px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-6px)" } },
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
         "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
       },
       animation: {
-        "marquee-x": "marquee-x 28s linear infinite",
+        "marquee-x": "marquee-x 32s linear infinite",
         "marquee-fast": "marquee-x 18s linear infinite",
         "fade-up": "fade-up 0.7s ease-out forwards",
+        float: "float 4s ease-in-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },

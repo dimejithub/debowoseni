@@ -1,7 +1,36 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ArrowUpRight } from "lucide-react";
 
-export function VideoModal({ open, onClose, url }) {
+/**
+ * Smart Watch Debo' modal:
+ * - If url is a YouTube watch/embed URL → embed
+ * - Otherwise show a styled card linking out to the YouTube channel
+ */
+function toEmbed(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com") && u.pathname === "/watch" && u.searchParams.get("v")) {
+      return `https://www.youtube.com/embed/${u.searchParams.get("v")}`;
+    }
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (u.hostname.includes("youtube.com") && u.pathname.startsWith("/embed/")) {
+      return url;
+    }
+    if (u.hostname.includes("vimeo.com") && /^\/\d+/.test(u.pathname)) {
+      return `https://player.vimeo.com/video/${u.pathname.slice(1)}`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function VideoModal({ open, onClose, url, channelUrl }) {
+  const embed = toEmbed(url);
   return (
     <AnimatePresence>
       {open && (
@@ -30,21 +59,30 @@ export function VideoModal({ open, onClose, url }) {
               <X className="h-5 w-5" /> Close
             </button>
             <div className="aspect-video w-full overflow-hidden rounded-[20px] border border-line bg-surface">
-              {url ? (
+              {embed ? (
                 <iframe
                   title="Watch Debo'"
-                  src={url}
+                  src={embed}
                   className="h-full w-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-10 text-center">
-                  <span className="font-script text-5xl text-lime">soon</span>
-                  <p className="text-muted">
-                    The video will live here. [Debo to supply URL — replace
-                    REACT_APP_VIDEO_URL]
+                <div className="relative flex h-full w-full flex-col items-center justify-center gap-5 p-10 text-center">
+                  <div className="lime-glow-soft absolute inset-0" aria-hidden />
+                  <span className="relative font-script text-7xl text-lime">live</span>
+                  <p className="relative max-w-md text-muted">
+                    Catch the latest streams &amp; keynotes on Debo&apos;s YouTube channel.
                   </p>
+                  <a
+                    href={channelUrl || url || "https://www.youtube.com"}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="btn-lime relative"
+                    data-testid="video-modal-channel-link"
+                  >
+                    Watch on YouTube <ArrowUpRight className="h-4 w-4" />
+                  </a>
                 </div>
               )}
             </div>

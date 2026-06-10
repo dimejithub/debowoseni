@@ -1,10 +1,8 @@
 """debowoseni.com — FastAPI backend.
 
-Acts as a thin admin/forms layer in front of Supabase (Postgres + Auth + Storage).
-- Public reads (published posts) go directly via the frontend Supabase client.
-- Mutations (create/update/delete/upload) go through this backend so the
-  service_role key never touches the browser.
-- Contact + newsletter forms are stored in Supabase via the service role.
+Thin admin/forms layer in front of Supabase (Postgres + Auth + Storage).
+Public reads (published posts/books/publications/testimonials/events) flow through
+this backend; mutations are admin-only with a Supabase JWT.
 """
 
 from __future__ import annotations
@@ -15,7 +13,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile, status
@@ -33,15 +31,10 @@ SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@debowoseni.com")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("debowoseni")
 
-# Service role client: bypasses RLS, used for admin operations.
 sb_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-# Anon client: used to verify a user's JWT (auth.get_user).
 sb_anon: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 app = FastAPI(title="debowoseni.com API")
@@ -50,7 +43,7 @@ bearer = HTTPBearer(auto_error=False)
 
 
 # ---------------------------------------------------------------------------
-# Auth helpers
+# Auth helper
 # ---------------------------------------------------------------------------
 def require_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
     if not creds or not creds.credentials:
@@ -62,9 +55,35 @@ def require_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer)
         return result.user
     except HTTPException:
         raise
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         logger.warning("Auth verification failed: %s", exc)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token") from exc
+
+
+def slugify(text: str) -> str:
+    text = (text or "").lower().strip()
+    text = re.sub(r"[^a-z0-9\s-]", "", text)
+    text = re.sub(r"\s+", "-", text)
+    text = re.sub(r"-+", "-", text)
+    return text[:80] or uuid.uuid4().hex[:8]
+
+
+def ensure_unique_slug(table: str, slug: str, exclude_id: Optional[str] = None) -> str:
+    base = slug
+    n = 1
+    while True:
+        q = sb_admin.table(table).select("id").eq("slug", slug)
+        if exclude_id:
+            q = q.neq("id", exclude_id)
+        res = q.limit(1).execute()
+        if not res.data:
+            return slug
+        n += 1
+        slug = f"{base}-{n}"
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -104,26 +123,84 @@ class SubscribeIn(BaseModel):
     email: EmailStr
 
 
-def slugify(text: str) -> str:
-    text = text.lower().strip()
-    text = re.sub(r"[^a-z0-9\s-]", "", text)
-    text = re.sub(r"\s+", "-", text)
-    text = re.sub(r"-+", "-", text)
-    return text[:80] or uuid.uuid4().hex[:8]
+class TestimonialIn(BaseModel):
+    quote: str
+    attribution: str
+    role: Optional[str] = None
+    avatar_url: Optional[str] = None
+    status: str = Field(default="published", pattern="^(draft|published)$")
+    sort_order: int = 0
 
 
-def ensure_unique_slug(slug: str, exclude_id: Optional[str] = None) -> str:
-    base = slug
-    n = 1
-    while True:
-        q = sb_admin.table("posts").select("id").eq("slug", slug)
-        if exclude_id:
-            q = q.neq("id", exclude_id)
-        res = q.limit(1).execute()
-        if not res.data:
-            return slug
-        n += 1
-        slug = f"{base}-{n}"
+class TestimonialUpdate(BaseModel):
+    quote: Optional[str] = None
+    attribution: Optional[str] = None
+    role: Optional[str] = None
+    avatar_url: Optional[str] = None
+    status: Optional[str] = Field(default=None, pattern="^(draft|published)$")
+    sort_order: Optional[int] = None
+
+
+class BookIn(BaseModel):
+    title: str
+    slug: Optional[str] = None
+    one_liner: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    buy_url: Optional[str] = None
+    is_featured: bool = False
+    status: str = Field(default="published", pattern="^(draft|published)$")
+    sort_order: int = 0
+
+
+class BookUpdate(BaseModel):
+    title: Optional[str] = None
+    slug: Optional[str] = None
+    one_liner: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    buy_url: Optional[str] = None
+    is_featured: Optional[bool] = None
+    status: Optional[str] = Field(default=None, pattern="^(draft|published)$")
+    sort_order: Optional[int] = None
+
+
+class PublicationIn(BaseModel):
+    title: str
+    year: Optional[str] = None
+    url: Optional[str] = None
+    sort_order: int = 0
+
+
+class PublicationUpdate(BaseModel):
+    title: Optional[str] = None
+    year: Optional[str] = None
+    url: Optional[str] = None
+    sort_order: Optional[int] = None
+
+
+class EventIn(BaseModel):
+    title: str
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    gallery: list[str] = []
+    location: Optional[str] = None
+    event_date: Optional[str] = None
+    status: str = Field(default="published", pattern="^(draft|published)$")
+    sort_order: int = 0
+
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    gallery: Optional[list[str]] = None
+    location: Optional[str] = None
+    event_date: Optional[str] = None
+    status: Optional[str] = Field(default=None, pattern="^(draft|published)$")
+    sort_order: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
@@ -136,36 +213,28 @@ def root():
 
 @api.get("/health")
 def health():
-    schema_ready = False
-    bucket_ready = False
-    err = None
-    try:
-        sb_admin.table("posts").select("id").limit(1).execute()
-        schema_ready = True
-    except Exception as exc:
-        err = str(exc)
+    out: dict[str, Any] = {"ok": True, "tables": {}, "bucket_ready": False, "error": None}
+    for t in ("posts", "testimonials", "books", "publications", "events"):
+        try:
+            sb_admin.table(t).select("id").limit(1).execute()
+            out["tables"][t] = True
+        except Exception as exc:
+            out["tables"][t] = False
+            out["error"] = out["error"] or f"{t}: {exc}"
     try:
         buckets = sb_admin.storage.list_buckets()
-        bucket_ready = any(getattr(b, "name", None) == "blog-images" for b in buckets)
-    except Exception as exc:  # pragma: no cover
-        err = err or str(exc)
-    return {
-        "ok": True,
-        "schema_ready": schema_ready,
-        "bucket_ready": bucket_ready,
-        "error": err,
-    }
+        out["bucket_ready"] = any(getattr(b, "name", None) == "blog-images" for b in buckets)
+    except Exception as exc:
+        out["error"] = out["error"] or str(exc)
+    out["schema_ready"] = all(out["tables"].values())
+    return out
 
 
 @api.get("/posts")
 def list_published_posts(limit: int = 50):
     res = (
-        sb_admin.table("posts")
-        .select("*")
-        .eq("status", "published")
-        .order("published_at", desc=True)
-        .limit(min(max(limit, 1), 100))
-        .execute()
+        sb_admin.table("posts").select("*").eq("status", "published")
+        .order("published_at", desc=True).limit(min(max(limit, 1), 100)).execute()
     )
     return {"posts": res.data or []}
 
@@ -176,6 +245,64 @@ def get_post(slug: str):
     rows = res.data or []
     if not rows or rows[0].get("status") != "published":
         raise HTTPException(404, "Post not found")
+    return rows[0]
+
+
+@api.get("/testimonials")
+def list_testimonials():
+    try:
+        res = (
+            sb_admin.table("testimonials").select("*").eq("status", "published")
+            .order("sort_order", desc=False).order("created_at", desc=True).execute()
+        )
+        return {"testimonials": res.data or []}
+    except Exception:
+        return {"testimonials": []}
+
+
+@api.get("/books")
+def list_books():
+    try:
+        res = (
+            sb_admin.table("books").select("*").eq("status", "published")
+            .order("is_featured", desc=True).order("sort_order", desc=False)
+            .order("created_at", desc=True).execute()
+        )
+        return {"books": res.data or []}
+    except Exception:
+        return {"books": []}
+
+
+@api.get("/publications")
+def list_publications():
+    try:
+        res = (
+            sb_admin.table("publications").select("*")
+            .order("sort_order", desc=False).order("year", desc=True).execute()
+        )
+        return {"publications": res.data or []}
+    except Exception:
+        return {"publications": []}
+
+
+@api.get("/events")
+def list_events():
+    try:
+        res = (
+            sb_admin.table("events").select("*").eq("status", "published")
+            .order("sort_order", desc=False).order("event_date", desc=True).execute()
+        )
+        return {"events": res.data or []}
+    except Exception:
+        return {"events": []}
+
+
+@api.get("/events/{slug}")
+def get_event(slug: str):
+    res = sb_admin.table("events").select("*").eq("slug", slug).limit(1).execute()
+    rows = res.data or []
+    if not rows or rows[0].get("status") != "published":
+        raise HTTPException(404, "Event not found")
     return rows[0]
 
 
@@ -204,7 +331,7 @@ def subscribe(payload: SubscribeIn):
 
 
 # ---------------------------------------------------------------------------
-# Admin routes
+# Admin — POSTS
 # ---------------------------------------------------------------------------
 @api.get("/admin/me")
 def me(user=Depends(require_user)):
@@ -213,12 +340,7 @@ def me(user=Depends(require_user)):
 
 @api.get("/admin/posts")
 def admin_list_posts(user=Depends(require_user)):
-    res = (
-        sb_admin.table("posts")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
+    res = sb_admin.table("posts").select("*").order("created_at", desc=True).execute()
     return {"posts": res.data or []}
 
 
@@ -233,8 +355,8 @@ def admin_get_post(post_id: str, user=Depends(require_user)):
 
 @api.post("/admin/posts")
 def admin_create_post(payload: PostIn, user=Depends(require_user)):
-    now = datetime.now(timezone.utc).isoformat()
-    slug = ensure_unique_slug(payload.slug or slugify(payload.title))
+    now = now_iso()
+    slug = ensure_unique_slug("posts", payload.slug or slugify(payload.title))
     record = {
         "title": payload.title,
         "slug": slug,
@@ -259,17 +381,12 @@ def admin_update_post(post_id: str, payload: PostUpdate, user=Depends(require_us
     if not current.data:
         raise HTTPException(404, "Not found")
     existing = current.data[0]
-
     update = payload.model_dump(exclude_unset=True)
     if "slug" in update and update["slug"]:
-        update["slug"] = ensure_unique_slug(slugify(update["slug"]), exclude_id=post_id)
-    if "title" in update and update["title"] and not update.get("slug"):
-        # only auto-rewrite slug when title changes AND existing slug looks auto-generated
-        pass
+        update["slug"] = ensure_unique_slug("posts", slugify(update["slug"]), exclude_id=post_id)
     if update.get("status") == "published" and not existing.get("published_at"):
-        update["published_at"] = datetime.now(timezone.utc).isoformat()
-    update["updated_at"] = datetime.now(timezone.utc).isoformat()
-
+        update["published_at"] = now_iso()
+    update["updated_at"] = now_iso()
     res = sb_admin.table("posts").update(update).eq("id", post_id).execute()
     return (res.data or [{}])[0]
 
@@ -280,6 +397,134 @@ def admin_delete_post(post_id: str, user=Depends(require_user)):
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# Admin — Generic resource factory for testimonials / books / publications / events
+# ---------------------------------------------------------------------------
+def _admin_list(table: str):
+    res = sb_admin.table(table).select("*").order("created_at", desc=True).execute()
+    return res.data or []
+
+
+def _admin_get(table: str, item_id: str):
+    res = sb_admin.table(table).select("*").eq("id", item_id).limit(1).execute()
+    rows = res.data or []
+    if not rows:
+        raise HTTPException(404, "Not found")
+    return rows[0]
+
+
+def _admin_insert(table: str, payload: dict):
+    payload = {**payload, "created_at": now_iso(), "updated_at": now_iso()}
+    res = sb_admin.table(table).insert(payload).execute()
+    return (res.data or [payload])[0]
+
+
+def _admin_update(table: str, item_id: str, payload: dict):
+    payload = {**payload, "updated_at": now_iso()}
+    res = sb_admin.table(table).update(payload).eq("id", item_id).execute()
+    return (res.data or [{}])[0]
+
+
+def _admin_delete(table: str, item_id: str):
+    sb_admin.table(table).delete().eq("id", item_id).execute()
+    return {"ok": True}
+
+
+# TESTIMONIALS
+@api.get("/admin/testimonials")
+def admin_list_testimonials(user=Depends(require_user)):
+    return {"testimonials": _admin_list("testimonials")}
+
+
+@api.post("/admin/testimonials")
+def admin_create_testimonial(payload: TestimonialIn, user=Depends(require_user)):
+    return _admin_insert("testimonials", payload.model_dump())
+
+
+@api.put("/admin/testimonials/{item_id}")
+def admin_update_testimonial(item_id: str, payload: TestimonialUpdate, user=Depends(require_user)):
+    return _admin_update("testimonials", item_id, payload.model_dump(exclude_unset=True))
+
+
+@api.delete("/admin/testimonials/{item_id}")
+def admin_delete_testimonial(item_id: str, user=Depends(require_user)):
+    return _admin_delete("testimonials", item_id)
+
+
+# BOOKS
+@api.get("/admin/books")
+def admin_list_books(user=Depends(require_user)):
+    return {"books": _admin_list("books")}
+
+
+@api.post("/admin/books")
+def admin_create_book(payload: BookIn, user=Depends(require_user)):
+    data = payload.model_dump()
+    data["slug"] = ensure_unique_slug("books", data.get("slug") or slugify(payload.title))
+    return _admin_insert("books", data)
+
+
+@api.put("/admin/books/{item_id}")
+def admin_update_book(item_id: str, payload: BookUpdate, user=Depends(require_user)):
+    data = payload.model_dump(exclude_unset=True)
+    if "slug" in data and data["slug"]:
+        data["slug"] = ensure_unique_slug("books", slugify(data["slug"]), exclude_id=item_id)
+    return _admin_update("books", item_id, data)
+
+
+@api.delete("/admin/books/{item_id}")
+def admin_delete_book(item_id: str, user=Depends(require_user)):
+    return _admin_delete("books", item_id)
+
+
+# PUBLICATIONS
+@api.get("/admin/publications")
+def admin_list_publications(user=Depends(require_user)):
+    return {"publications": _admin_list("publications")}
+
+
+@api.post("/admin/publications")
+def admin_create_publication(payload: PublicationIn, user=Depends(require_user)):
+    return _admin_insert("publications", payload.model_dump())
+
+
+@api.put("/admin/publications/{item_id}")
+def admin_update_publication(item_id: str, payload: PublicationUpdate, user=Depends(require_user)):
+    return _admin_update("publications", item_id, payload.model_dump(exclude_unset=True))
+
+
+@api.delete("/admin/publications/{item_id}")
+def admin_delete_publication(item_id: str, user=Depends(require_user)):
+    return _admin_delete("publications", item_id)
+
+
+# EVENTS
+@api.get("/admin/events")
+def admin_list_events(user=Depends(require_user)):
+    return {"events": _admin_list("events")}
+
+
+@api.post("/admin/events")
+def admin_create_event(payload: EventIn, user=Depends(require_user)):
+    data = payload.model_dump()
+    data["slug"] = ensure_unique_slug("events", data.get("slug") or slugify(payload.title))
+    return _admin_insert("events", data)
+
+
+@api.put("/admin/events/{item_id}")
+def admin_update_event(item_id: str, payload: EventUpdate, user=Depends(require_user)):
+    data = payload.model_dump(exclude_unset=True)
+    if "slug" in data and data["slug"]:
+        data["slug"] = ensure_unique_slug("events", slugify(data["slug"]), exclude_id=item_id)
+    return _admin_update("events", item_id, data)
+
+
+@api.delete("/admin/events/{item_id}")
+def admin_delete_event(item_id: str, user=Depends(require_user)):
+    return _admin_delete("events", item_id)
+
+
+# IMAGE UPLOAD
 @api.post("/admin/upload")
 async def admin_upload(
     file: UploadFile = File(...),
@@ -322,15 +567,11 @@ def seed_admin():
                 logger.info("Admin %s already exists.", ADMIN_EMAIL)
                 return
         sb_admin.auth.admin.create_user(
-            {
-                "email": ADMIN_EMAIL,
-                "password": ADMIN_PASSWORD,
-                "email_confirm": True,
-                "user_metadata": {"role": "admin"},
-            }
+            {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD,
+             "email_confirm": True, "user_metadata": {"role": "admin"}}
         )
         logger.info("Admin %s created.", ADMIN_EMAIL)
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         logger.warning("Admin seeding skipped: %s", exc)
 
 

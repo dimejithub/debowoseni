@@ -12,6 +12,7 @@ async function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// ---- Public ----
 export async function getHealth() {
   const r = await publicApi.get("/health");
   return r.data;
@@ -27,6 +28,31 @@ export async function getPostBySlug(slug) {
   return r.data;
 }
 
+export async function getPublishedTestimonials() {
+  const r = await publicApi.get("/testimonials");
+  return r.data.testimonials || [];
+}
+
+export async function getPublishedBooks() {
+  const r = await publicApi.get("/books");
+  return r.data.books || [];
+}
+
+export async function getPublicationsList() {
+  const r = await publicApi.get("/publications");
+  return r.data.publications || [];
+}
+
+export async function getPublishedEvents() {
+  const r = await publicApi.get("/events");
+  return r.data.events || [];
+}
+
+export async function getEventBySlug(slug) {
+  const r = await publicApi.get(`/events/${slug}`);
+  return r.data;
+}
+
 export async function submitContact(payload) {
   const r = await publicApi.post("/contact", payload);
   return r.data;
@@ -37,7 +63,38 @@ export async function subscribeNewsletter(email) {
   return r.data;
 }
 
-// ---- Admin ----
+// ---- Admin generic factory ----
+function adminCrud(resource) {
+  return {
+    list: async () => {
+      const headers = await authHeaders();
+      const r = await axios.get(`${API}/admin/${resource}`, { headers });
+      return r.data[resource] || [];
+    },
+    create: async (payload) => {
+      const headers = await authHeaders();
+      const r = await axios.post(`${API}/admin/${resource}`, payload, { headers });
+      return r.data;
+    },
+    update: async (id, payload) => {
+      const headers = await authHeaders();
+      const r = await axios.put(`${API}/admin/${resource}/${id}`, payload, { headers });
+      return r.data;
+    },
+    remove: async (id) => {
+      const headers = await authHeaders();
+      const r = await axios.delete(`${API}/admin/${resource}/${id}`, { headers });
+      return r.data;
+    },
+  };
+}
+
+export const adminTestimonials = adminCrud("testimonials");
+export const adminBooks = adminCrud("books");
+export const adminPublications = adminCrud("publications");
+export const adminEvents = adminCrud("events");
+
+// ---- Admin posts (specialised — has separate getById endpoint) ----
 export async function adminListPosts() {
   const headers = await authHeaders();
   const r = await axios.get(`${API}/admin/posts`, { headers });
@@ -76,5 +133,5 @@ export async function adminUpload(file, folder = "posts") {
   const r = await axios.post(`${API}/admin/upload`, form, {
     headers: { ...headers, "Content-Type": "multipart/form-data" },
   });
-  return r.data; // { url, path }
+  return r.data;
 }
