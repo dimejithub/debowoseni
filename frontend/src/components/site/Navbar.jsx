@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, ArrowUpRight, ChevronDown } from "lucide-react";
-import { LOGO, SYSTEME_BOOKING_URL } from "../../lib/data";
+import { Menu, X, ArrowUpRight, ChevronDown, Instagram, Linkedin, Youtube } from "lucide-react";
+import { LOGO, SOCIALS } from "../../lib/data";
 
 /**
  * Nav items. Items with `children` render as a dropdown. Children use either
@@ -32,9 +32,13 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [expOpen, setExpOpen] = useState(false);
   const headerRef = useRef(null);
   const { pathname } = useLocation();
-  const close = () => setOpen(false);
+  const close = () => {
+    setOpen(false);
+    setExpOpen(false);
+  };
 
   void pathname;
 
@@ -109,96 +113,145 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
             data-testid="mobile-menu"
           >
-            <div className="container-page flex h-16 items-center justify-between md:h-20">
-              <span className="font-display text-sm tracking-tight text-ink">Menu</span>
+            <div className="lime-corner-glow pointer-events-none absolute inset-x-0 top-0 h-44" aria-hidden />
+
+            {/* Header — mirrors the navbar */}
+            <div className="container-page relative flex h-16 shrink-0 items-center justify-between md:h-20">
+              <Link to="/" onClick={close} className="inline-flex items-center gap-2.5" data-testid="mobile-menu-logo">
+                <img src={LOGO.primary} alt="debowoseni" className="h-8 w-8 rounded-md" />
+                <span className="font-display text-base font-bold tracking-tight text-ink">debowoseni</span>
+              </Link>
               <button
                 type="button"
                 aria-label="Close menu"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink"
                 data-testid="nav-menu-close"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <motion.ul
-              className="container-page mt-6 flex flex-col gap-5 overflow-y-auto pb-12"
+
+            {/* Links */}
+            <motion.nav
+              className="container-page relative mt-2 flex-1 overflow-y-auto"
               initial="hidden"
               animate="show"
               variants={{
                 hidden: {},
-                show: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
+                show: { transition: { staggerChildren: 0.045, delayChildren: 0.05 } },
               }}
             >
-              {NAV_LINKS.map((l) =>
-                l.children ? (
-                  <motion.li
-                    key={l.label}
-                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                  >
-                    <span className="block font-display text-4xl tracking-tight text-ink/60">
-                      {l.label}
-                    </span>
-                    <ul className="mt-3 ml-5 flex flex-col gap-3 border-l border-line pl-5">
-                      {l.children.map((c) => (
-                        <li key={c.label}>
-                          {c.to ? (
-                            <Link
-                              to={c.to}
-                              onClick={close}
-                              className="block font-display text-2xl tracking-tight text-ink hover:text-lime"
-                              data-testid={`mobile-expression-${slug(c.label)}`}
-                            >
-                              {c.label}
-                            </Link>
-                          ) : (
-                            <a
-                              href={c.href || "#"}
-                              target={c.href && c.href.startsWith("http") ? "_blank" : undefined}
-                              rel={c.href && c.href.startsWith("http") ? "noreferrer noopener" : undefined}
-                              onClick={close}
-                              className="block font-display text-2xl tracking-tight text-ink hover:text-lime"
-                              data-testid={`mobile-expression-${slug(c.label)}`}
-                            >
-                              {c.label}
-                            </a>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.li>
-                ) : (
-                  <motion.li
-                    key={l.to}
-                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                  >
-                    <Link
-                      to={l.to}
-                      onClick={close}
-                      className="block font-display text-4xl tracking-tight text-ink hover:text-lime"
-                      data-testid={`mobile-link-${l.label.toLowerCase()}`}
-                    >
-                      {l.label}
-                    </Link>
-                  </motion.li>
-                )
-              )}
-              <motion.li
-                variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                className="mt-4"
+              <ul className="flex flex-col">
+                {NAV_LINKS.map((l, i) => {
+                  const idx = String(i + 1).padStart(2, "0");
+                  const rowVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+                  if (!l.children) {
+                    return (
+                      <motion.li key={l.to} variants={rowVariants} className="border-b border-line/70">
+                        <Link
+                          to={l.to}
+                          onClick={close}
+                          className="flex items-center justify-between py-4"
+                          data-testid={`mobile-link-${l.label.toLowerCase()}`}
+                        >
+                          <span className="font-display text-2xl tracking-tight text-ink">{l.label}</span>
+                          <span className="font-display text-xs text-muted">{idx}</span>
+                        </Link>
+                      </motion.li>
+                    );
+                  }
+                  return (
+                    <motion.li key={l.label} variants={rowVariants} className="border-b border-line/70">
+                      <button
+                        type="button"
+                        onClick={() => setExpOpen((v) => !v)}
+                        className="flex w-full items-center justify-between py-4 text-left"
+                        aria-expanded={expOpen}
+                        data-testid="mobile-expressions-toggle"
+                      >
+                        <span className="font-display text-2xl tracking-tight text-ink">{l.label}</span>
+                        <span className="flex items-center gap-3">
+                          <span className="font-display text-xs text-muted">{idx}</span>
+                          <ChevronDown
+                            className={`h-5 w-5 text-lime transition-transform duration-300 ${expOpen ? "rotate-180" : ""}`}
+                          />
+                        </span>
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {expOpen && (
+                          <motion.ul
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            className="overflow-hidden"
+                            data-testid="mobile-expressions-list"
+                          >
+                            {l.children.map((c) => (
+                              <li key={c.label} className="pb-1 last:pb-4">
+                                {c.to ? (
+                                  <Link
+                                    to={c.to}
+                                    onClick={close}
+                                    className="flex items-center gap-3 py-2 text-base text-ink/85 hover:text-lime"
+                                    data-testid={`mobile-expression-${slug(c.label)}`}
+                                  >
+                                    <span className="h-4 w-[2px] rounded bg-lime/70" aria-hidden />
+                                    {c.label}
+                                  </Link>
+                                ) : (
+                                  <a
+                                    href={c.href || "#"}
+                                    onClick={close}
+                                    className="flex items-center gap-3 py-2 text-base text-ink/85 hover:text-lime"
+                                    data-testid={`mobile-expression-${slug(c.label)}`}
+                                  >
+                                    <span className="h-4 w-[2px] rounded bg-lime/70" aria-hidden />
+                                    {c.label}
+                                  </a>
+                                )}
+                              </li>
+                            ))}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+            </motion.nav>
+
+            {/* Footer — CTA + socials */}
+            <motion.div
+              className="container-page relative shrink-0 border-t border-line py-5 pb-10"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+            >
+              <Link
+                to="/contact"
+                onClick={close}
+                className="btn-lime w-full justify-center"
+                data-testid="mobile-book-appointment"
               >
-                <Link
-                  to="/contact"
-                  onClick={close}
-                  className="btn-lime"
-                  data-testid="mobile-book-appointment"
-                >
-                  Book Appointment <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </motion.li>
-            </motion.ul>
+                Book Appointment <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <div className="mt-5 flex items-center justify-center gap-6">
+                <a href={SOCIALS.linkedin} target="_blank" rel="noreferrer noopener" aria-label="LinkedIn" className="text-muted hover:text-lime" data-testid="mobile-social-linkedin">
+                  <Linkedin className="h-5 w-5" />
+                </a>
+                <a href={SOCIALS.instagram} target="_blank" rel="noreferrer noopener" aria-label="Instagram" className="text-muted hover:text-lime" data-testid="mobile-social-instagram">
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a href={SOCIALS.youtube} target="_blank" rel="noreferrer noopener" aria-label="YouTube" className="text-muted hover:text-lime" data-testid="mobile-social-youtube">
+                  <Youtube className="h-5 w-5" />
+                </a>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

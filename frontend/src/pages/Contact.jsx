@@ -29,7 +29,7 @@ export default function Contact() {
 
   return (
     <div data-testid="contact-page">
-      <section className="relative overflow-hidden">
+      <section className="lime-corner-glow relative overflow-hidden">
         <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
           <div className="container-narrow">

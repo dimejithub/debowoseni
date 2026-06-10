@@ -171,7 +171,7 @@ export default function ExpressionAcademic() {
       </section>
 
       {/* START THE ENQUIRY */}
-      <section className="border-t border-line bg-surface/30 py-20 md:py-24" data-testid="academic-quiz-section">
+      <section className="lime-corner-glow border-t border-line bg-surface/30 py-20 md:py-24" data-testid="academic-quiz-section">
         <div className="container-page">
           <div className="container-narrow">
             <Reveal>

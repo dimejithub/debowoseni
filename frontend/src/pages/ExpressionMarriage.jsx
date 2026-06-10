@@ -190,7 +190,7 @@ export default function ExpressionMarriage() {
       </section>
 
       {/* START THE ENQUIRY */}
-      <section className="border-t border-line py-20 md:py-24" data-testid="marriage-quiz-section">
+      <section className="lime-corner-glow border-t border-line py-20 md:py-24" data-testid="marriage-quiz-section">
         <div className="container-page">
           <div className="container-narrow">
             <Reveal>

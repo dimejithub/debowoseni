@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ArrowRight, Clock, Search } from "lucide-react";
-import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
+import { Reveal } from "@/components/site/Reveal";
+import { Seo } from "@/components/site/Seo";
 import { getPublishedPosts } from "@/lib/api";
 import { FALLBACK_POST_COVER } from "@/lib/data";
 import { readingTimeMin } from "@/lib/utils";
@@ -55,6 +57,10 @@ export default function Journal() {
 
   return (
     <div data-testid="journal-page">
+      <Seo
+        title="Articles"
+        description="Essays on transformation, leadership, relationships and inspiration — from the desk of Debo' Owoseni."
+      />
       <section className="relative overflow-hidden">
         <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
@@ -74,7 +80,7 @@ export default function Journal() {
         </div>
       </section>
 
-      <section className="container-page pb-24">
+      <section className="lime-corner-glow container-page pb-24 pt-10">
         {posts !== null && (
           <div className="mx-auto mb-8 max-w-xl">
             <label className="relative block">
@@ -133,9 +139,21 @@ export default function Journal() {
         )}
 
         {posts !== null && visible.length > 0 && (
-          <Stagger className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <motion.div
+            key={`${filter}|${query.trim().toLowerCase()}`}
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+          >
             {visible.map((p) => (
-              <StaggerItem key={p.slug}>
+              <motion.div
+                key={p.slug}
+                variants={{
+                  hidden: { opacity: 0, y: 18 },
+                  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+                }}
+              >
                 <Link
                   to={`/articles/${p.slug}`}
                   className="group flex flex-col gap-4"
@@ -168,9 +186,9 @@ export default function Journal() {
                     Read post <ArrowRight className="h-4 w-4" />
                   </span>
                 </Link>
-              </StaggerItem>
+              </motion.div>
             ))}
-          </Stagger>
+          </motion.div>
         )}
       </section>
     </div>

@@ -413,7 +413,7 @@ export default function Home() {
       </section>
 
       {/* IMPACT STATS */}
-      <section className="relative border-y border-line py-24" data-testid="impact-stats">
+      <section className="lime-corner-glow relative border-y border-line py-24" data-testid="impact-stats">
         <div className="lime-glow-soft absolute inset-0" aria-hidden />
         <div className="container-page relative">
           <div className="container-narrow">
@@ -474,7 +474,7 @@ export default function Home() {
       </section>
 
       {/* ARTICLES */}
-      <section className="border-t border-line bg-surface/30 py-24" data-testid="from-journal">
+      <section className="lime-corner-glow border-t border-line bg-surface/30 py-24" data-testid="from-journal">
         <div className="container-page">
           <div className="container-narrow">
             <Reveal><SectionEyebrow>Articles</SectionEyebrow></Reveal>

@@ -1,5 +1,6 @@
 import "@/App.css";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import Home from "@/pages/Home";
@@ -33,6 +34,7 @@ function LegacyArticleRedirect() {
 
 function App() {
   return (
+    <HelmetProvider>
     <AuthProvider>
       <BrowserRouter>
         <Toaster theme="dark" position="bottom-right" richColors
@@ -67,6 +69,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </HelmetProvider>
   );
 }
 

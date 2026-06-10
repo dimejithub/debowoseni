@@ -51,7 +51,7 @@ export default function Books() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-line bg-surface/30 py-20">
+      <section className="lime-corner-glow border-t border-line bg-surface/30 py-20">
         <div className="container-narrow">
           <p className="text-xs uppercase tracking-[0.28em] text-muted">Expressions</p>
           <h3 className="mt-5">

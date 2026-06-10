@@ -4,6 +4,7 @@ import DOMPurify from "isomorphic-dompurify";
 import { ArrowLeft, ArrowRight, Link2, Linkedin, MessageCircle, Twitter } from "lucide-react";
 import { toast } from "sonner";
 import { Reveal } from "@/components/site/Reveal";
+import { Seo } from "@/components/site/Seo";
 import { getPostBySlug, getPublishedPosts } from "@/lib/api";
 import { FALLBACK_POST_COVER } from "@/lib/data";
 import { readingTimeMin } from "@/lib/utils";
@@ -74,6 +75,12 @@ export default function JournalPost() {
 
   return (
     <article className="pt-8" data-testid="journal-post">
+      <Seo
+        title={post.title}
+        description={post.excerpt || undefined}
+        image={post.cover_url || FALLBACK_POST_COVER}
+        type="article"
+      />
       <div className="container-page">
         <Link to="/articles" className="inline-flex items-center gap-2 text-sm text-muted hover:text-lime">
           <ArrowLeft className="h-4 w-4" /> Back to articles

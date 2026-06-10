@@ -65,7 +65,7 @@ export default function TheEnquiry() {
       </section>
 
       {/* ALL EXPRESSIONS */}
-      <section className="border-t border-line py-24 md:py-32" data-testid="enquiry-expressions">
+      <section className="lime-corner-glow border-t border-line py-24 md:py-32" data-testid="enquiry-expressions">
         <div className="container-page">
           <div className="container-narrow">
             <Reveal>

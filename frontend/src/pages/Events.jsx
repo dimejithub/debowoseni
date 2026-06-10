@@ -45,7 +45,7 @@ export default function Events() {
         </div>
       </section>
 
-      <section className="container-page pb-24 space-y-20">
+      <section className="lime-corner-glow container-page pb-24 pt-10 space-y-20">
         {events.map((ev, idx) => (
           <Reveal key={ev.id || ev.slug}>
             <article

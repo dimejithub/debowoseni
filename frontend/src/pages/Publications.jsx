@@ -47,7 +47,7 @@ export default function Publications() {
         </div>
       </section>
 
-      <section className="container-page pb-24">
+      <section className="lime-corner-glow container-page pb-24 pt-10">
         <div className="mx-auto max-w-4xl grid grid-cols-1 gap-4">
           {publications.map((p, i) => (
             <Reveal key={p.id || p.title} delay={Math.min(i * 0.06, 0.36)}>

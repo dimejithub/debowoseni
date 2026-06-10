@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
+import { JourneyTimeline } from "@/components/site/JourneyTimeline";
 import {
   ABOUT_HERO_URL,
   PHILOSOPHICAL_ANCHORS,
@@ -82,6 +83,9 @@ export default function About() {
           </Reveal>
         </div>
       </section>
+
+      {/* THE JOURNEY — scroll-drawn timeline */}
+      <JourneyTimeline />
 
       {/* PHILOSOPHICAL ANCHORS — Debo's six convictions */}
       <section

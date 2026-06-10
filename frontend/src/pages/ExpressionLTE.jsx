@@ -229,7 +229,7 @@ export default function ExpressionLTE() {
       </section>
 
       {/* START THE ENQUIRY — pathway recommender */}
-      <section className="border-t border-line bg-surface/30 py-20 md:py-24" data-testid="lte-quiz-section">
+      <section className="lime-corner-glow border-t border-line bg-surface/30 py-20 md:py-24" data-testid="lte-quiz-section">
         <div className="container-page">
           <div className="container-narrow">
             <Reveal>
