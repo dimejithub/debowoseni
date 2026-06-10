@@ -82,3 +82,14 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 ### Upcoming
 - Build remaining 3 Expressions pages when user supplies content (P1).
 - Wire newsletter/final CTAs to Systeme.io API/embed (P2).
+
+## Session update — 10 June 2026 (Expressions phase 2: full suite + Enquiry quiz)
+- NEW: `components/site/EnquiryQuiz.jsx` — reusable 3-question recommender, modes: `lte` (recommends LTE tier, anchors to #tier-N + external programmes link) and `global` (recommends an Expression; `currentKey` prop makes a matching result CTA say "You're in the right place" → /contact).
+- NEW PAGES: `/expressions/academic-research-insight` (ExpressionAcademic.jsx — from user screenshot content: methodology, thesis structure, writing clarity, pressures, publication strategy; CTAs → /contact, no pricing), `/expressions/marriage-101` (ExpressionMarriage.jsx — pre-marital prep, enrichment, communication, shared vision, faith-based frameworks; book tie-in card to "Your Marriage In a Mirror" → /books; CTAs → /contact), `/expressions/the-enquiry` (TheEnquiry.jsx — quiz-first page + 3 expression cards).
+- LTE page now has "Start the Enquiry" quiz section (lte mode) between hero and tier sections; Academic & Marriage pages embed the global quiz.
+- Navbar Expressions dropdown: all 4 items now internal routes. Mobile menu background made solid (testing agent design nit).
+- Testing: testing agent iteration_3 — 48/48 frontend checks passed (quiz logic all branches, routing, regression, no pricing leakage, no console errors).
+
+### Remaining
+- "Remove this text" clarification from user still pending (msg 332).
+- Newsletter/final CTAs → Systeme.io wiring (P2).
