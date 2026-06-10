@@ -57,19 +57,50 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
+        <nav className="hidden items-center gap-1 lg:flex" data-testid="nav-links">
           {NAV_LINKS.map((l) => (
             <NavLink
               key={l.to}
               to={l.to}
               data-testid={`nav-link-${l.label.toLowerCase()}`}
+              data-cursor="hover"
               className={({ isActive }) =>
-                `text-sm font-medium transition-colors ${
-                  isActive ? "text-lime" : "text-ink/85 hover:text-ink"
+                `nav-link group relative inline-flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive ? "is-active text-lime" : "text-ink/85 hover:text-ink"
                 }`
               }
             >
-              {l.label}
+              {({ isActive }) => (
+                <>
+                  {/* dual-text slide effect: top label slides up, lime label rises from below */}
+                  <span className="relative overflow-hidden">
+                    <span className="inline-block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-full">
+                      {l.label}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 inline-block translate-y-full text-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0"
+                    >
+                      {l.label}
+                    </span>
+                  </span>
+
+                  {/* active-route lime dot */}
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active-dot"
+                      className="ml-1.5 h-1.5 w-1.5 rounded-full bg-lime"
+                      transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                    />
+                  )}
+
+                  {/* hover underline */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute bottom-1 left-3 right-3 h-px origin-left scale-x-0 bg-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
+                  />
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

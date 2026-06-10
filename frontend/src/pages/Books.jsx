@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
-import { BookShowcase } from "@/components/site/BookShowcase";
+import { BookShelf } from "@/components/site/BookShelf";
 import { FALLBACK_BOOKS, SYSTEME_BOOKING_URL } from "@/lib/data";
 import { getPublishedBooks } from "@/lib/api";
 
@@ -45,9 +45,9 @@ export default function Books() {
         </div>
       </section>
 
-      {/* All books — clean 3D-mockup grid */}
+      {/* All books — interactive 3D shelf with mouse-tracked tilt + hover reveal */}
       <section className="container-page pb-24 md:pb-32">
-        <BookShowcase books={books} />
+        <BookShelf books={books} />
       </section>
 
       {/* CTA */}

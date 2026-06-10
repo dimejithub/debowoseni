@@ -18,7 +18,7 @@ import {
   YOUTUBE_CHANNEL_URL,
 } from "@/lib/data";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
-import { BookShowcase } from "@/components/site/BookShowcase";
+import { BookShelf } from "@/components/site/BookShelf";
 import { ImageMarquee, Marquee } from "@/components/site/Marquee";
 import { CountUp } from "@/components/site/CountUp";
 import { VideoModal } from "@/components/site/VideoModal";
@@ -393,7 +393,7 @@ export default function Home() {
         </div>
 
         <div className="mt-16">
-          <BookShowcase books={books.slice(0, 4)} />
+          <BookShelf books={books.slice(0, 3)} />
         </div>
 
         <p className="mt-16 text-center text-sm text-muted">

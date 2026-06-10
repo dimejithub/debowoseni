@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { Grain } from "./Grain";
 import { ScrollProgress } from "./ScrollProgress";
+import { CustomCursor } from "./CustomCursor";
 
 export function SiteLayout() {
   const { pathname } = useLocation();
@@ -16,6 +17,7 @@ export function SiteLayout() {
     <div className="relative min-h-screen bg-bg text-ink">
       <Grain />
       <ScrollProgress />
+      <CustomCursor />
       <Navbar />
       <main className="pt-16 md:pt-20">
         <AnimatePresence mode="wait">
