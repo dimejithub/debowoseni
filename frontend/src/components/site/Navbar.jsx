@@ -70,7 +70,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" data-testid="nav-links">
+        <nav className="hidden items-center gap-2 lg:flex xl:gap-3" data-testid="nav-links">
           {NAV_LINKS.map((l) =>
             l.children ? (
               <NavDropdown key={l.label} item={l} />
@@ -85,7 +85,7 @@ export function Navbar() {
             href={SYSTEME_BOOKING_URL}
             target="_blank"
             rel="noreferrer noopener"
-            className="hidden btn-lime md:inline-flex"
+            className="!hidden btn-lime lg:!inline-flex"
             data-testid="book-appointment-cta"
           >
             Book Appointment
@@ -301,7 +301,7 @@ function NavDropdown({ item }) {
             className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3"
             data-testid="nav-dropdown-panel"
           >
-            <div className="w-[320px] overflow-hidden rounded-2xl border border-line bg-bg/95 p-2 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+            <div className="w-[340px] overflow-hidden rounded-2xl border border-line bg-black p-2 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.85)]">
               {item.children.map((c) => (
                 <a
                   key={c.label}
@@ -309,11 +309,21 @@ function NavDropdown({ item }) {
                   target={c.href && c.href.startsWith("http") ? "_blank" : undefined}
                   rel={c.href && c.href.startsWith("http") ? "noreferrer noopener" : undefined}
                   data-cursor="hover"
-                  className="group/item relative flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm text-ink/85 transition-all hover:bg-lime/10 hover:text-lime"
+                  className="group/item relative flex items-center gap-3 overflow-hidden rounded-xl px-4 py-3 text-sm text-ink/85 transition-colors duration-300 hover:text-bg"
                   data-testid={`nav-expression-${slug(c.label)}`}
                 >
-                  <span className="flex-1">{c.label}</span>
-                  <ArrowUpRight className="h-4 w-4 opacity-40 transition-all duration-300 group-hover/item:opacity-100 group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5" />
+                  {/* sliding lime background fill */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-lime transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/item:scale-x-100"
+                  />
+                  {/* leading lime bar indicator (always visible at low opacity) */}
+                  <span
+                    aria-hidden
+                    className="relative z-10 h-4 w-[2px] origin-center rounded bg-lime/60 transition-all duration-300 group-hover/item:bg-bg group-hover/item:h-5"
+                  />
+                  <span className="relative z-10 flex-1">{c.label}</span>
+                  <ArrowUpRight className="relative z-10 h-4 w-4 opacity-50 transition-all duration-300 group-hover/item:opacity-100 group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5" />
                 </a>
               ))}
             </div>
