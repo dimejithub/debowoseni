@@ -78,7 +78,7 @@ export default function Events() {
                     testId={`event-marquee-${ev.slug || idx}`}
                   />
                   <p className="mt-5 text-center text-xs uppercase tracking-[0.24em] text-muted">
-                    Hover to pause &nbsp;·&nbsp; {(ev.gallery || []).length} image
+                    {(ev.gallery || []).length} image
                     {(ev.gallery || []).length === 1 ? "" : "s"}
                   </p>
                 </div>

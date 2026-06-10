@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Mail, RotateCcw, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { LTE_PROGRAMMES_URL } from "@/lib/data";
+import { subscribeNewsletter } from "@/lib/api";
 
 /**
  * EnquiryQuiz — 3-question recommender.
@@ -111,6 +113,9 @@ export function EnquiryQuiz({ mode = "global", currentKey = null }) {
   const quiz = QUIZZES[mode];
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [email, setEmail] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const [pending, setPending] = useState(false);
 
   const pick = (key) => {
     setAnswers([...answers, key]);
@@ -119,18 +124,38 @@ export function EnquiryQuiz({ mode = "global", currentKey = null }) {
   const reset = () => {
     setAnswers([]);
     setStep(0);
+    setUnlocked(false);
   };
 
-  const done = step >= quiz.questions.length;
+  // Email gate: capture the visitor before revealing the recommendation.
+  // Capture is best-effort — an API hiccup never blocks the result.
+  const submitEmail = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setPending(true);
+    try {
+      await subscribeNewsletter(email);
+      toast.success("You're on the list.", {
+        description: "Your recommendation is below — insights will follow by email.",
+      });
+    } catch {
+      // ignore — still reveal the result
+    } finally {
+      setPending(false);
+      setUnlocked(true);
+    }
+  };
+
+  const answered = step >= quiz.questions.length;
   let resultKey = null;
-  if (done) {
+  if (answered) {
     const counts = {};
     answers.forEach((k) => {
       counts[k] = (counts[k] || 0) + 1;
     });
     resultKey = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
   }
-  const result = done ? quiz.results[resultKey] : null;
+  const result = answered ? quiz.results[resultKey] : null;
 
   return (
     <div
@@ -138,7 +163,7 @@ export function EnquiryQuiz({ mode = "global", currentKey = null }) {
       data-testid="enquiry-quiz"
     >
       <AnimatePresence mode="wait">
-        {!done ? (
+        {!answered ? (
           <motion.div
             key={step}
             initial={{ opacity: 0, x: 24 }}
@@ -179,6 +204,49 @@ export function EnquiryQuiz({ mode = "global", currentKey = null }) {
                 </button>
               ))}
             </div>
+          </motion.div>
+        ) : !unlocked ? (
+          <motion.div
+            key="gate"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            data-testid="quiz-email-gate"
+          >
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-muted">
+              <Sparkles className="h-4 w-4 text-lime" /> Your recommendation is ready
+            </p>
+            <h3 className="mt-4 font-display text-2xl tracking-tight text-ink md:text-3xl">
+              Where should we send it?
+            </h3>
+            <p className="mt-3 max-w-md text-sm text-muted">
+              Enter your email to reveal your result — plus occasional insights from
+              Dr. Debo&apos;. Unsubscribe anytime.
+            </p>
+            <form onSubmit={submitEmail} className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <span className="relative flex-1">
+                <Mail className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-full border border-line bg-bg py-3.5 pl-12 pr-5 text-sm text-ink placeholder:text-muted transition-colors focus:border-lime focus:outline-none"
+                  data-testid="quiz-email-input"
+                />
+              </span>
+              <button
+                type="submit"
+                disabled={pending}
+                className="btn-lime justify-center disabled:opacity-60"
+                data-testid="quiz-email-submit"
+              >
+                {pending ? "Unlocking…" : "Reveal my recommendation"}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
           </motion.div>
         ) : (
           <motion.div

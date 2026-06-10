@@ -93,3 +93,8 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 ### Remaining
 - "Remove this text" clarification from user still pending (msg 332).
 - Newsletter/final CTAs → Systeme.io wiring (P2).
+
+## Session update — 10 June 2026 (text removals + quiz email gate)
+- REMOVED (user screenshots): the "Coaching & programmes live inside the Expressions…" line under the Home books section, and "Hover to pause" captions on Home events marquee + Events page galleries.
+- EnquiryQuiz now has an EMAIL GATE: after Q3, visitor must enter email ("Where should we send it?") before the recommendation is revealed. Email posts to `/api/newsletter` → Supabase `subscribers` (verified 200). Capture is best-effort — API failure never blocks the result. data-testids: quiz-email-gate, quiz-email-input, quiz-email-submit.
+- Systeme takeover of the subscriber list is still pending (export Supabase `subscribers` or wire Systeme API later — P2).

@@ -377,18 +377,6 @@ export default function Home() {
         <div className="mt-16">
           <BookShelf books={books.slice(0, 3)} />
         </div>
-
-        <p className="mt-16 text-center text-sm text-muted">
-          Coaching &amp; programmes live inside the{" "}
-          <Link
-            to="/expressions/life-transformation-enquiry"
-            className="font-semibold underline underline-offset-4 hover:text-lime"
-            data-testid="books-coaching-link"
-          >
-            Expressions
-          </Link>
-          {" "}— start with Life Transformation Enquiry™.
-        </p>
       </section>
 
       {/* EVENTS / GALLERY */}
@@ -417,7 +405,7 @@ export default function Home() {
           <Reveal delay={0.3} className="mt-14">
             <ImageMarquee images={eventGallery} duration={75} width={300} testId="events-marquee" />
             <p className="mt-6 text-center text-xs uppercase tracking-[0.24em] text-muted">
-              Hover to pause &nbsp;·&nbsp; A glimpse from LTE Live · Leicester
+              A glimpse from LTE Live · Leicester
             </p>
           </Reveal>
         </div>
