@@ -34,23 +34,32 @@ BOOKS = [
          buy_url="https://www.amazon.co.uk/Ijinl%E1%BA%B9%CC%80-collection-inspiring-reflections-encourage/dp/B0FF3LV3XF",
          is_featured=False, status="published", sort_order=30),
     dict(slug="taking-your-day", title="Taking Your Day",
-         one_liner="A 365-day devotional for the purpose-driven, one steady morning at a time.",
-         description="A year-long companion of short, sharp readings — written to be read first thing, before the day decides what you'll be. [Blurb to be confirmed]",
-         cover_url="https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?crop=entropy&cs=srgb&fm=jpg&w=900&q=85",
+         one_liner="A Year of Taking What Is Already Yours — daily readings for the purpose-driven.",
+         description="A year-long companion of short, sharp readings — written to be read first thing, before the day decides what you'll be. The morning anchor for those who want their hours back on purpose.",
+         cover_url="https://customer-assets.emergentagent.com/job_debo-platform/artifacts/nnfg2q4o_Taking%20your%20day.png",
          buy_url=None, is_featured=False, status="published", sort_order=40),
+    dict(slug="taking-your-day-journal", title="Taking Your Day — 365-Day Transformation Journal",
+         one_liner="The companion journal to Taking Your Day — 365 days of guided pages for reflection and direction.",
+         description="The lined, dated companion to Taking Your Day. One page a day, twelve months, for the reader who wants to write the day they intend to live.",
+         cover_url="https://customer-assets.emergentagent.com/job_debo-platform/artifacts/ih15vs0v_Taking%20your%20day%20journal.png",
+         buy_url=None, is_featured=False, status="published", sort_order=50),
 ]
 
 PUBLICATIONS = [
+    dict(title="Generative AI in Research", year="2026",
+         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
+    dict(title="Artificial Intelligence in the Informal Economy", year="2026",
+         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
+    dict(title="Effectuated Spirituality", year="2025",
+         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
     dict(title="Generative AI in Higher Education", year="2024",
          url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
-    dict(title="Generative AI in Research", year="2026",
-         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=20),
-    dict(title="Artificial Intelligence in the Informal Economy", year="2026",
-         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=30),
-    dict(title="Effectuated Spirituality", year="2025",
-         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=40),
+    dict(title="What is Digital Transformation? Investigating the Metaphorical Meaning of Digital Transformation and Why It Matters",
+         year="2023",
+         url="https://www.emerald.com/dts/article/2/1/78/102283/What-is-digital-transformation-Investigating-the",
+         sort_order=10),
     dict(title="Employment 5.0", year="2022",
-         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=50),
+         url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
 ]
 
 TESTIMONIALS = [
@@ -91,13 +100,11 @@ def upsert(table: str, rows: list, key: str, has_updated_at: bool = True):
 
 upsert("books", BOOKS, "slug")
 
-# Publications: no unique constraint on title and no updated_at — insert only if empty
-existing_pubs = sb.table("publications").select("id").execute().data or []
-if not existing_pubs:
-    sb.table("publications").insert(PUBLICATIONS).execute()
-    print(f"  publications: {len(PUBLICATIONS)} row(s) inserted")
-else:
-    print(f"  publications: {len(existing_pubs)} already present, skipping")
+# Publications: no unique constraint on title — replace wholesale to keep the
+# canonical list in seed_content.py as the source of truth.
+sb.table("publications").delete().neq("title", "__never_match__").execute()
+sb.table("publications").insert(PUBLICATIONS).execute()
+print(f"  publications: replaced with {len(PUBLICATIONS)} row(s)")
 
 # Testimonials have no unique key besides id, so we clear+insert if empty
 existing = sb.table("testimonials").select("id").execute().data or []

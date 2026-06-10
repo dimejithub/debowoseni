@@ -80,21 +80,35 @@ export const FALLBACK_BOOKS = [
     slug: "taking-your-day",
     title: "Taking Your Day",
     one_liner:
-      "A 365-day devotional for the purpose-driven, one steady morning at a time.",
+      "A Year of Taking What Is Already Yours — daily readings for the purpose-driven.",
     description:
-      "[Blurb TBC] A year-long companion of short, sharp readings — written to be read first thing, before the day decides what you'll be.",
+      "A year-long companion of short, sharp readings — written to be read first thing, before the day decides what you'll be. The morning anchor for those who want their hours back on purpose.",
     cover_url:
-      "https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?crop=entropy&cs=srgb&fm=jpg&w=900&q=85",
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/nnfg2q4o_Taking%20your%20day.png",
+    buy_url: null,
+    is_featured: false,
+  },
+  {
+    id: "taking-your-day-journal",
+    slug: "taking-your-day-journal",
+    title: "Taking Your Day — 365-Day Transformation Journal",
+    one_liner:
+      "The companion journal to Taking Your Day — 365 days of guided pages for reflection and direction.",
+    description:
+      "The lined, dated companion to Taking Your Day. One page a day, twelve months, for the reader who wants to write the day they intend to live.",
+    cover_url:
+      "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/ih15vs0v_Taking%20your%20day%20journal.png",
     buy_url: null,
     is_featured: false,
   },
 ];
 
 export const FALLBACK_PUBLICATIONS = [
-  { title: "Generative AI in Higher Education", year: "2024", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
   { title: "Generative AI in Research", year: "2026", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
   { title: "Artificial Intelligence in the Informal Economy", year: "2026", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
   { title: "Effectuated Spirituality", year: "2025", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
+  { title: "Generative AI in Higher Education", year: "2024", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
+  { title: "What is Digital Transformation? Investigating the Metaphorical Meaning of Digital Transformation and Why It Matters", year: "2023", url: "https://www.emerald.com/dts/article/2/1/78/102283/What-is-digital-transformation-Investigating-the" },
   { title: "Employment 5.0", year: "2022", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
 ];
 

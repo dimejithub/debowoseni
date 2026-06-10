@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
+import { Reveal } from "@/components/site/Reveal";
 import { FALLBACK_PUBLICATIONS, SCHOLAR_URL } from "@/lib/data";
 import { getPublicationsList } from "@/lib/api";
 
@@ -48,9 +48,9 @@ export default function Publications() {
       </section>
 
       <section className="container-page pb-24">
-        <Stagger className="mx-auto max-w-4xl grid grid-cols-1 gap-4">
+        <div className="mx-auto max-w-4xl grid grid-cols-1 gap-4">
           {publications.map((p, i) => (
-            <StaggerItem key={p.id || p.title}>
+            <Reveal key={p.id || p.title} delay={Math.min(i * 0.06, 0.36)}>
               <a
                 href={p.url || SCHOLAR_URL}
                 target="_blank"
@@ -70,9 +70,9 @@ export default function Publications() {
                   <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </span>
               </a>
-            </StaggerItem>
+            </Reveal>
           ))}
-        </Stagger>
+        </div>
       </section>
     </div>
   );
