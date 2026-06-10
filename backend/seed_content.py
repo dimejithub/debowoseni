@@ -54,7 +54,7 @@ PUBLICATIONS = [
          url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
     dict(title="Generative AI in Higher Education", year="2024",
          url="https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en", sort_order=10),
-    dict(title="What is Digital Transformation? Investigating the Metaphorical Meaning of Digital Transformation and Why It Matters",
+    dict(title="Metaphorical Meaning of Digital Transformation",
          year="2023",
          url="https://www.emerald.com/dts/article/2/1/78/102283/What-is-digital-transformation-Investigating-the",
          sort_order=10),
