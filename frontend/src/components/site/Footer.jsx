@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { CONTACT_EMAIL, LOGO, SOCIALS, SYSTEME_BOOKING_URL } from "../../lib/data";
+import { CONTACT_EMAIL, SOCIALS, SYSTEME_BOOKING_URL } from "../../lib/data";
 import { subscribeNewsletter } from "../../lib/api";
 import { toast } from "sonner";
 
@@ -118,6 +118,17 @@ export function Footer() {
             Built with care · <Link to="/admin/login" className="hover:text-lime" data-testid="footer-admin-link">Admin</Link>
           </p>
         </div>
+      </div>
+
+      {/* Oversized wordmark — brand presence across the foot of the page */}
+      <div
+        className="pointer-events-none mt-12 select-none overflow-hidden"
+        aria-hidden
+        data-testid="footer-wordmark"
+      >
+        <p className="font-display block w-full whitespace-nowrap text-center text-[19vw] leading-[0.85] tracking-[-0.06em] text-ink/90">
+          debowoseni<span className="text-lime">.</span>
+        </p>
       </div>
     </footer>
   );

@@ -189,7 +189,41 @@ export const SYSTEME_BOOKING_URL =
   process.env.REACT_APP_SYSTEME_BOOKING_URL || "https://lte.debowoseni.com/";
 
 export const CONTACT_EMAIL =
-  process.env.REACT_APP_CONTACT_EMAIL || "Adebowale.owoseni@gmail.com";
+  process.env.REACT_APP_CONTACT_EMAIL || "hello@debowoseni.com";
+
+// Debo's six philosophical anchors — surfaced on the About page.
+export const PHILOSOPHICAL_ANCHORS = [
+  {
+    n: "01",
+    title: "Loving is leading",
+    body: "If you cannot love, you cannot truly lead.",
+  },
+  {
+    n: "02",
+    title: "All actions are seeds",
+    body: "Plant wisely.",
+  },
+  {
+    n: "03",
+    title: "Time tells",
+    body: "If you give it time.",
+  },
+  {
+    n: "04",
+    title: "Lead without titles",
+    body: "The best leaders often lead without titles.",
+  },
+  {
+    n: "05",
+    title: "One life. One purpose.",
+    body: "Expressed through several assignments and multiple platforms.",
+  },
+  {
+    n: "06",
+    title: "People are led, not used",
+    body: "People should be led, not merely managed, and never used.",
+  },
+];
 
 export const VIDEO_URL = process.env.REACT_APP_VIDEO_URL || "";
 

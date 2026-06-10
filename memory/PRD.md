@@ -22,6 +22,13 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - Lime accent used with restraint.
 - Desktop-first responsive at ≥1280, ≥992, 768–991, ≤767, ≤478.
 
+## What's been implemented (2026-02 — current session continuation)
+- **Hero section revamped** (`Home.jsx`): replaced static portrait with a cinematic Ken-Burns crossfade backdrop built from the LTE Leicester event images; framed by a dark glassmorphism panel (`backdrop-blur-2xl`, layered overlays, lime accent ring); floating stat-card moved inside the glass panel; tiny scroll cue mouse indicator at the bottom.
+- **Global email swap**: `Adebowale.owoseni@gmail.com` → `hello@debowoseni.com` everywhere (env override in `frontend/.env` + fallback in `data.js`). Confirmed visible on Contact page direct-email card and Footer Connect column.
+- **Footer wordmark**: oversized `debowoseni.` display type (≈19vw) stretching the full width of the footer, with a lime-coloured period; positioned as a brand presence band beneath the legal line.
+- **Philosophical Anchor section on About page**: new full section between bio and pillars titled "Six convictions that hold the work together" — renders the six axioms supplied by Debo (01 Loving is leading, 02 All actions are seeds, 03 Time tells, 04 Lead without titles, 05 One life. One purpose., 06 People are led, not used) as a 3-column glass-card grid with hover-grown lime hairlines.
+- Added `PHILOSOPHICAL_ANCHORS` constant in `data.js`.
+
 ## What's been implemented (2026-12-09)
 - Full design system: dark palette, lime accent, Inter + Italianno fonts, fluid type with `clamp()`, lime radial glows, grain overlay, marquee animations.
 - Home page: hero with mission headline + Explore Programmes + Watch Debo' (modal), portrait + floating 250+ stat card, trusted-by logo marquee, About teaser, Publications strip (5 papers), **Books showcase replacing pricing** with featured "How God Gives Feedback" + 4 others, Impact stats with animated count-ups (250K+ / 98+ / 23+), value chips, testimonials (placeholder copy designed for real quotes), From-the-Journal pulling latest 3 from Supabase, lime "LET'S GET STARTED" marquee CTA band, footer newsletter form.
