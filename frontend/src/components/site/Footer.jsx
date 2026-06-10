@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { CONTACT_EMAIL, SOCIALS, SYSTEME_BOOKING_URL } from "../../lib/data";
+import { CONTACT_EMAIL, LOGO, SOCIALS, SYSTEME_BOOKING_URL } from "../../lib/data";
 import { subscribeNewsletter } from "../../lib/api";
 import { toast } from "sonner";
 

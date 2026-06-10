@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
 import {
   ABOUT_HERO_URL,
-  BRAND_LOGOS,
   EVENT_IMAGES,
   FALLBACK_BOOKS,
   FALLBACK_EVENTS,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/data";
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
 import { BookCard } from "@/components/site/BookCard";
-import { LogoMarquee, Marquee } from "@/components/site/Marquee";
+import { ImageMarquee, Marquee } from "@/components/site/Marquee";
 import { CountUp } from "@/components/site/CountUp";
 import { VideoModal } from "@/components/site/VideoModal";
 import { MagneticButton } from "@/components/site/MagneticButton";
@@ -161,15 +160,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRUSTED BY MARQUEE */}
-      <section className="overflow-hidden border-y border-line bg-surface/40 py-10" data-testid="trusted-by">
-        <div className="container-page mb-5 text-center">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted">
-            Trusted by leading institutions & partners
-          </p>
-        </div>
-        <LogoMarquee logos={BRAND_LOGOS} />
-      </section>
+      {/* TRANSITION DIVIDER */}
+      <div className="border-t border-line bg-bg" data-testid="hero-divider" />
 
       {/* CREAM MISSION BAND — editorial white-space for contrast */}
       <section className="cream-section py-24 md:py-32" data-testid="mission-band">
@@ -359,26 +351,12 @@ export default function Home() {
             </Reveal>
           </div>
 
-          <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {eventGallery.map((src, i) => (
-              <StaggerItem key={src + i}>
-                <Link
-                  to="/events"
-                  className="card-lift group block overflow-hidden rounded-[18px] border border-line bg-surface"
-                  data-testid={`event-tile-${i}`}
-                >
-                  <div className="aspect-[4/5] overflow-hidden">
-                    <img
-                      src={src}
-                      alt="LTE workshop"
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
-                  </div>
-                </Link>
-              </StaggerItem>
-            ))}
-          </Stagger>
+          <Reveal delay={0.3} className="mt-14">
+            <ImageMarquee images={eventGallery} duration={75} width={300} testId="events-marquee" />
+            <p className="mt-6 text-center text-xs uppercase tracking-[0.24em] text-muted">
+              Hover to pause &nbsp;·&nbsp; A glimpse from LTE Live · Leicester
+            </p>
+          </Reveal>
         </div>
       </section>
 

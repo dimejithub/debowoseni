@@ -176,6 +176,15 @@ export const SOCIALS = {
   facebook: "https://facebook.com/",
 };
 
+// Brand logo (the "db" mark) — lime on transparent/black.
+export const LOGO = {
+  primary:
+    "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/r4hr3nhb_2.svg",
+  // White-on-black variant for use on cream/light surfaces.
+  light:
+    "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/70utsxwx_4.svg",
+};
+
 export const SYSTEME_BOOKING_URL =
   process.env.REACT_APP_SYSTEME_BOOKING_URL || "https://lte.debowoseni.com/";
 

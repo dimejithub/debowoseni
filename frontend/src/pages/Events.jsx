@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
-import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
+import { Reveal } from "@/components/site/Reveal";
+import { ImageMarquee } from "@/components/site/Marquee";
 import { FALLBACK_EVENTS } from "@/lib/data";
 import { getPublishedEvents } from "@/lib/api";
 
@@ -69,16 +70,18 @@ export default function Events() {
               </div>
 
               {ev.gallery && ev.gallery.length > 0 && (
-                <Stagger className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {ev.gallery.slice(0, 6).map((src, i) => (
-                    <StaggerItem key={src + i}>
-                      <div className="card-lift overflow-hidden rounded-[16px] border border-line">
-                        <img src={src} alt="" loading="lazy"
-                          className="aspect-square w-full object-cover transition duration-700 hover:scale-105" />
-                      </div>
-                    </StaggerItem>
-                  ))}
-                </Stagger>
+                <div className="mt-12">
+                  <ImageMarquee
+                    images={ev.gallery}
+                    duration={80}
+                    width={280}
+                    testId={`event-marquee-${ev.slug || idx}`}
+                  />
+                  <p className="mt-5 text-center text-xs uppercase tracking-[0.24em] text-muted">
+                    Hover to pause &nbsp;·&nbsp; {(ev.gallery || []).length} image
+                    {(ev.gallery || []).length === 1 ? "" : "s"}
+                  </p>
+                </div>
               )}
             </article>
           </Reveal>

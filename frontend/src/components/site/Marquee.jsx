@@ -44,3 +44,46 @@ export function LogoMarquee({ logos }) {
     </div>
   );
 }
+
+/**
+ * ImageMarquee — slow horizontal scroll of images, perfect for event galleries.
+ * Pauses on hover so visitors can catch a glimpse.
+ */
+export function ImageMarquee({
+  images = [],
+  duration = 60,
+  width = 320,
+  aspect = "aspect-[4/5]",
+  testId = "image-marquee",
+}) {
+  if (!images.length) return null;
+  // Duplicate the stream so the loop is seamless (50% translate completes one set)
+  const stream = [...images, ...images];
+  return (
+    <div
+      className="marquee-mask group relative overflow-hidden"
+      data-testid={testId}
+    >
+      <div
+        className="flex w-max items-center gap-5 py-4 group-hover:[animation-play-state:paused]"
+        style={{ animation: `marquee-x ${duration}s linear infinite` }}
+      >
+        {stream.map((src, i) => (
+          <div
+            key={`${src}-${i}`}
+            className={`card-lift relative ${aspect} overflow-hidden rounded-[18px] border border-line bg-surface`}
+            style={{ width }}
+            data-testid={`marquee-tile-${i}`}
+          >
+            <img
+              src={src}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

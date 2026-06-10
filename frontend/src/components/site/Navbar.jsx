@@ -1,9 +1,10 @@
 /* Navbar uses minimal state — scroll behaviour is class-toggled via a ref. */
+
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, ArrowUpRight } from "lucide-react";
-import { SYSTEME_BOOKING_URL } from "../../lib/data";
+import { LOGO, SYSTEME_BOOKING_URL } from "../../lib/data";
 
 const NAV_LINKS = [
   { to: "/about", label: "About" },
@@ -18,14 +19,11 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const headerRef = useRef(null);
   const { pathname } = useLocation();
-  const lastPath = useRef(pathname);
+  const close = () => setOpen(false);
 
-  // Close the menu whenever the route changes — done during render with a ref guard so
-  // we never call setState from inside an effect.
-  if (lastPath.current !== pathname) {
-    lastPath.current = pathname;
-    if (open) setOpen(false);
-  }
+  // pathname is read on every render; mobile links call `close` on click so we
+  // never need to setState from inside an effect.
+  void pathname;
 
   useEffect(() => {
     const el = headerRef.current;
@@ -47,10 +45,13 @@ export function Navbar() {
         [&.is-scrolled]:bg-bg/75 [&.is-scrolled]:backdrop-blur-xl [&.is-scrolled]:border-b [&.is-scrolled]:border-line"
     >
       <div className="container-page flex h-16 items-center justify-between md:h-20">
-        <Link to="/" className="group inline-flex items-center gap-2" data-testid="nav-logo">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface font-display text-sm font-bold tracking-tight text-ink">
-            do
-          </span>
+        <Link to="/" className="group inline-flex items-center gap-2.5" data-testid="nav-logo">
+          <img
+            src={LOGO.primary}
+            alt="debowoseni"
+            className="h-9 w-9 rounded-md transition-transform group-hover:scale-105"
+            loading="eager"
+          />
           <span className="hidden font-display text-base font-bold tracking-tight text-ink md:inline">
             debowoseni
           </span>
@@ -134,6 +135,7 @@ export function Navbar() {
                 >
                   <Link
                     to={l.to}
+                    onClick={close}
                     className="block font-display text-4xl tracking-tight text-ink hover:text-lime"
                     data-testid={`mobile-link-${l.label.toLowerCase()}`}
                   >
