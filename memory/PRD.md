@@ -69,3 +69,16 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 3. Supply social handles in `frontend/src/lib/data.js` (`SOCIALS`) — currently bare profile-root URLs.
 4. Upload real portrait and book covers (drop into `frontend/src/lib/data.js` constants or upload via /admin and reference).
 5. Add real testimonials with attributions to `frontend/src/lib/data.js`.
+
+## Session update — 10 June 2026 (Expressions phase)
+- NEW PAGE: `/expressions/life-transformation-enquiry` (`frontend/src/pages/ExpressionLTE.jsx`) — premium dark LTE page built from lte.debowoseni.com/programmes. Three pathway tiers (1-to-1 Coaching, In-Person Bootcamp, Online Bootcamp) with "What you gain", sticky format/included cards, testimonials, stats band, free-masterclass block, final CTA. **No pricing or bank details by design** — CTAs hand off to `LTE_PROGRAMMES_URL` (https://lte.debowoseni.com/programmes) for upsell.
+- Navbar Expressions dropdown + mobile menu now support internal `to` routes; LTE item routes internally. Other 3 Expressions (Academic Research Insight™, Marriage 101: Back2Basics, The Enquiry) still `#` placeholders awaiting content.
+- All "Book Appointment" CTAs (navbar desktop/mobile, footer, About, home marquee band) now go to internal `/contact` (was Systeme.io).
+- Home hero "Explore Programmes" + Books page CTA + Contact "Programmes" card now route to the internal LTE page.
+- Home Books-section line now reads "Coaching & programmes live inside the Expressions — start with Life Transformation Enquiry™."
+- All flows verified via Playwright (dropdown nav, CTA routing, no pricing leakage).
+- PENDING from user (msg 332): "remove this text on the site" — screenshot showed the Expressions list; user answered "Something else — please specify" without details. AWAITING CLARIFICATION.
+
+### Upcoming
+- Build remaining 3 Expressions pages when user supplies content (P1).
+- Wire newsletter/final CTAs to Systeme.io API/embed (P2).

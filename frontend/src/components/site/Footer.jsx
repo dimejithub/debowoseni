@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { CONTACT_EMAIL, SOCIALS, SYSTEME_BOOKING_URL } from "../../lib/data";
+import { CONTACT_EMAIL, SOCIALS } from "../../lib/data";
 import { subscribeNewsletter } from "../../lib/api";
 import { toast } from "sonner";
 
@@ -87,15 +87,13 @@ export function Footer() {
             <ul className="space-y-3 text-ink/85">
               <li><Link to="/contact" className="lime-link">Contact</Link></li>
               <li>
-                <a
-                  href={SYSTEME_BOOKING_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
+                <Link
+                  to="/contact"
                   className="lime-link inline-flex items-center gap-1"
                   data-testid="footer-book-appointment"
                 >
                   Book Appointment <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
+                </Link>
               </li>
               <li>
                 <a href={`mailto:${CONTACT_EMAIL}`} className="lime-link">

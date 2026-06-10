@@ -10,6 +10,7 @@ import Events from "@/pages/Events";
 import Journal from "@/pages/Journal";
 import JournalPost from "@/pages/JournalPost";
 import Contact from "@/pages/Contact";
+import ExpressionLTE from "@/pages/ExpressionLTE";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminPosts from "@/pages/AdminPosts";
@@ -36,6 +37,7 @@ function App() {
             <Route path="/journal" element={<Journal />} />
             <Route path="/journal/:slug" element={<JournalPost />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/expressions/life-transformation-enquiry" element={<ExpressionLTE />} />
           </Route>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />

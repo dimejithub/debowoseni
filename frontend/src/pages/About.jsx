@@ -5,7 +5,6 @@ import {
   ABOUT_HERO_URL,
   PHILOSOPHICAL_ANCHORS,
   PORTRAIT_URL,
-  SYSTEME_BOOKING_URL,
   VALUE_CHIPS,
 } from "@/lib/data";
 import { MagneticButton } from "@/components/site/MagneticButton";
@@ -182,10 +181,8 @@ export default function About() {
 
         <Reveal delay={0.18} className="mt-14 flex flex-wrap items-center justify-center gap-3">
           <MagneticButton
-            as="a"
-            href={SYSTEME_BOOKING_URL}
-            target="_blank"
-            rel="noreferrer noopener"
+            as={Link}
+            to="/contact"
             className="btn-lime"
             data-testid="about-book-appointment"
           >

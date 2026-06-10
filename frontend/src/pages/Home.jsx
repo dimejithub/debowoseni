@@ -12,7 +12,6 @@ import {
   SCHOLAR_URL,
   SEED_POSTS,
   STATS,
-  SYSTEME_BOOKING_URL,
   VALUE_CHIPS,
   VIDEO_URL,
   YOUTUBE_CHANNEL_URL,
@@ -196,10 +195,8 @@ export default function Home() {
             <Reveal delay={0.28}>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                 <MagneticButton
-                  as="a"
-                  href={SYSTEME_BOOKING_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
+                  as={Link}
+                  to="/expressions/life-transformation-enquiry"
                   className="btn-lime"
                   data-testid="hero-explore-programmes"
                 >
@@ -382,18 +379,16 @@ export default function Home() {
         </div>
 
         <p className="mt-16 text-center text-sm text-muted">
-          Coaching & programmes &nbsp;
-          <a
-            href={SYSTEME_BOOKING_URL}
-            target="_blank"
-            rel="noreferrer noopener"
+          Coaching &amp; programmes live inside the{" "}
+          <Link
+            to="/expressions/life-transformation-enquiry"
             className="font-semibold underline underline-offset-4 hover:text-lime"
             data-testid="books-coaching-link"
           >
-              visit the programmes
-            </a>
-            .
-          </p>
+            Expressions
+          </Link>
+          {" "}— start with Life Transformation Enquiry™.
+        </p>
       </section>
 
       {/* EVENTS / GALLERY */}
@@ -540,10 +535,8 @@ export default function Home() {
       </section>
 
       {/* CTA BAND */}
-      <a
-        href={SYSTEME_BOOKING_URL}
-        target="_blank"
-        rel="noreferrer noopener"
+      <Link
+        to="/contact"
         className="block overflow-hidden bg-lime"
         data-testid="cta-marquee-band"
       >
@@ -557,7 +550,7 @@ export default function Home() {
             "Let's get started",
           ]}
         />
-      </a>
+      </Link>
 
       <VideoModal
         open={videoOpen}

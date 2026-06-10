@@ -202,6 +202,9 @@ export const LOGO = {
 export const SYSTEME_BOOKING_URL =
   process.env.REACT_APP_SYSTEME_BOOKING_URL || "https://lte.debowoseni.com/";
 
+// LTE upsell landing page (pricing lives there, never on this site).
+export const LTE_PROGRAMMES_URL = "https://lte.debowoseni.com/programmes";
+
 export const CONTACT_EMAIL =
   process.env.REACT_APP_CONTACT_EMAIL || "hello@debowoseni.com";
 

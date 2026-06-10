@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { ArrowUpRight, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Reveal } from "@/components/site/Reveal";
 import { submitContact } from "@/lib/api";
-import { CONTACT_EMAIL, SOCIALS, SYSTEME_BOOKING_URL } from "@/lib/data";
+import { CONTACT_EMAIL, SOCIALS } from "@/lib/data";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -92,12 +93,12 @@ export default function Contact() {
             </div>
 
             <div className="card-lift rounded-[20px] border border-line bg-white p-7">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted">Book a session</p>
-              <p className="mt-3 text-muted">Prefer a calendar slot? Choose a window that fits.</p>
-              <a href={SYSTEME_BOOKING_URL} target="_blank" rel="noreferrer noopener"
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">Programmes</p>
+              <p className="mt-3 text-muted">Ready to go deeper? Explore the Life Transformation Enquiry™ pathways.</p>
+              <Link to="/expressions/life-transformation-enquiry"
                 className="btn-lime mt-5" data-testid="contact-book-appointment">
-                Book Appointment <ArrowUpRight className="h-4 w-4" />
-              </a>
+                Explore programmes <ArrowUpRight className="h-4 w-4" />
+              </Link>
             </div>
 
             <div className="card-lift rounded-[20px] border border-line bg-white p-7">

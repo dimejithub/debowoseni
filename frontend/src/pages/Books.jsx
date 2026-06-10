@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { BookShelf } from "@/components/site/BookShelf";
-import { FALLBACK_BOOKS, SYSTEME_BOOKING_URL } from "@/lib/data";
+import { FALLBACK_BOOKS } from "@/lib/data";
 import { getPublishedBooks } from "@/lib/api";
 
 export default function Books() {
@@ -53,20 +53,18 @@ export default function Books() {
       {/* CTA */}
       <section className="border-t border-line bg-surface/30 py-20">
         <div className="container-narrow">
-          <p className="text-xs uppercase tracking-[0.28em] text-muted">Programmes</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-muted">Expressions</p>
           <h3 className="mt-5">
-            Want the work behind the books? Explore the coaching journeys.
+            Want the work behind the books? Explore the Expressions.
           </h3>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href={SYSTEME_BOOKING_URL}
-              target="_blank"
-              rel="noreferrer noopener"
+            <Link
+              to="/expressions/life-transformation-enquiry"
               className="btn-lime"
               data-testid="books-explore-programmes"
             >
-              See programmes <ArrowUpRight className="h-4 w-4" />
-            </a>
+              Life Transformation Enquiry™ <ArrowUpRight className="h-4 w-4" />
+            </Link>
             <Link to="/contact" className="btn-ghost" data-testid="books-contact-link">
               Request signed copies <ArrowUpRight className="h-4 w-4" />
             </Link>
