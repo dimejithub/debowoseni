@@ -78,7 +78,7 @@ export function Footer() {
               <li><Link to="/about" className="lime-link">About</Link></li>
               <li><Link to="/books" className="lime-link">Books</Link></li>
               <li><Link to="/publications" className="lime-link">Publications</Link></li>
-              <li><Link to="/journal" className="lime-link">Journal</Link></li>
+              <li><Link to="/journal" className="lime-link">Resources</Link></li>
             </ul>
           </div>
 

@@ -3,15 +3,30 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, ChevronDown } from "lucide-react";
 import { LOGO, SYSTEME_BOOKING_URL } from "../../lib/data";
 
+/**
+ * Nav items. Items with `children` render as a dropdown. Children use either
+ * `to` (internal route) or `href` (external link). For Expressions, the
+ * destination URLs are placeholders (`#`) until Debo provides the real
+ * landing pages or external programme URLs.
+ */
 const NAV_LINKS = [
   { to: "/about", label: "About" },
   { to: "/books", label: "Books" },
+  {
+    label: "Expressions",
+    children: [
+      { label: "Life Transformation Enquiry™", href: "#", note: "TBC" },
+      { label: "Academic Research Insight™", href: "#", note: "TBC" },
+      { label: "Marriage 101: Back2Basics", href: "#", note: "TBC" },
+      { label: "The Enquiry", href: "#", note: "TBC" },
+    ],
+  },
   { to: "/publications", label: "Publications" },
   { to: "/events", label: "Events" },
-  { to: "/journal", label: "Journal" },
+  { to: "/journal", label: "Resources" },
   { to: "/contact", label: "Contact" },
 ];
 
@@ -21,8 +36,6 @@ export function Navbar() {
   const { pathname } = useLocation();
   const close = () => setOpen(false);
 
-  // pathname is read on every render; mobile links call `close` on click so we
-  // never need to setState from inside an effect.
   void pathname;
 
   useEffect(() => {
@@ -58,51 +71,13 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" data-testid="nav-links">
-          {NAV_LINKS.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              data-testid={`nav-link-${l.label.toLowerCase()}`}
-              data-cursor="hover"
-              className={({ isActive }) =>
-                `nav-link group relative inline-flex items-center px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? "is-active text-lime" : "text-ink/85 hover:text-ink"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* dual-text slide effect: top label slides up, lime label rises from below */}
-                  <span className="relative overflow-hidden">
-                    <span className="inline-block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-full">
-                      {l.label}
-                    </span>
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 inline-block translate-y-full text-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0"
-                    >
-                      {l.label}
-                    </span>
-                  </span>
-
-                  {/* active-route lime dot */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="nav-active-dot"
-                      className="ml-1.5 h-1.5 w-1.5 rounded-full bg-lime"
-                      transition={{ type: "spring", stiffness: 280, damping: 26 }}
-                    />
-                  )}
-
-                  {/* hover underline */}
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute bottom-1 left-3 right-3 h-px origin-left scale-x-0 bg-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
-                  />
-                </>
-              )}
-            </NavLink>
-          ))}
+          {NAV_LINKS.map((l) =>
+            l.children ? (
+              <NavDropdown key={l.label} item={l} />
+            ) : (
+              <NavItem key={l.to} item={l} />
+            )
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -151,29 +126,56 @@ export function Navbar() {
               </button>
             </div>
             <motion.ul
-              className="container-page mt-6 flex flex-col gap-5"
+              className="container-page mt-6 flex flex-col gap-5 overflow-y-auto pb-12"
               initial="hidden"
               animate="show"
               variants={{
                 hidden: {},
-                show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+                show: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } },
               }}
             >
-              {NAV_LINKS.map((l) => (
-                <motion.li
-                  key={l.to}
-                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                >
-                  <Link
-                    to={l.to}
-                    onClick={close}
-                    className="block font-display text-4xl tracking-tight text-ink hover:text-lime"
-                    data-testid={`mobile-link-${l.label.toLowerCase()}`}
+              {NAV_LINKS.map((l) =>
+                l.children ? (
+                  <motion.li
+                    key={l.label}
+                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
                   >
-                    {l.label}
-                  </Link>
-                </motion.li>
-              ))}
+                    <span className="block font-display text-4xl tracking-tight text-ink/60">
+                      {l.label}
+                    </span>
+                    <ul className="mt-3 ml-5 flex flex-col gap-3 border-l border-line pl-5">
+                      {l.children.map((c) => (
+                        <li key={c.label}>
+                          <a
+                            href={c.href || "#"}
+                            target={c.href && c.href.startsWith("http") ? "_blank" : undefined}
+                            rel={c.href && c.href.startsWith("http") ? "noreferrer noopener" : undefined}
+                            onClick={close}
+                            className="block font-display text-2xl tracking-tight text-ink hover:text-lime"
+                            data-testid={`mobile-expression-${slug(c.label)}`}
+                          >
+                            {c.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.li>
+                ) : (
+                  <motion.li
+                    key={l.to}
+                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                  >
+                    <Link
+                      to={l.to}
+                      onClick={close}
+                      className="block font-display text-4xl tracking-tight text-ink hover:text-lime"
+                      data-testid={`mobile-link-${l.label.toLowerCase()}`}
+                    >
+                      {l.label}
+                    </Link>
+                  </motion.li>
+                )
+              )}
               <motion.li
                 variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
                 className="mt-4"
@@ -193,5 +195,131 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </header>
+  );
+}
+
+function slug(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function NavItem({ item }) {
+  return (
+    <NavLink
+      to={item.to}
+      data-testid={`nav-link-${item.label.toLowerCase()}`}
+      data-cursor="hover"
+      className={({ isActive }) =>
+        `nav-link group relative inline-flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+          isActive ? "is-active text-lime" : "text-ink/85 hover:text-ink"
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span className="relative overflow-hidden">
+            <span className="inline-block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-full">
+              {item.label}
+            </span>
+            <span
+              aria-hidden
+              className="absolute inset-0 inline-block translate-y-full text-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-0"
+            >
+              {item.label}
+            </span>
+          </span>
+          {isActive && (
+            <motion.span
+              layoutId="nav-active-dot"
+              className="ml-1.5 h-1.5 w-1.5 rounded-full bg-lime"
+              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+            />
+          )}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-1 left-3 right-3 h-px origin-left scale-x-0 bg-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
+          />
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function NavDropdown({ item }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      data-testid={`nav-dropdown-${item.label.toLowerCase()}`}
+    >
+      <button
+        type="button"
+        data-cursor="hover"
+        className="nav-link group relative inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-ink/85 transition-colors hover:text-ink"
+        aria-expanded={hovered}
+        aria-haspopup="true"
+      >
+        <span className="relative overflow-hidden">
+          <span
+            className={`inline-block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              hovered ? "-translate-y-full" : ""
+            }`}
+          >
+            {item.label}
+          </span>
+          <span
+            aria-hidden
+            className={`absolute inset-0 inline-block text-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              hovered ? "translate-y-0" : "translate-y-full"
+            }`}
+          >
+            {item.label}
+          </span>
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-300 ${
+            hovered ? "rotate-180 text-lime" : ""
+          }`}
+        />
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute bottom-1 left-3 right-6 h-px origin-left bg-lime transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            hovered ? "scale-x-100" : "scale-x-0"
+          }`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3"
+            data-testid="nav-dropdown-panel"
+          >
+            <div className="w-[320px] overflow-hidden rounded-2xl border border-line bg-bg/95 p-2 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+              {item.children.map((c) => (
+                <a
+                  key={c.label}
+                  href={c.href || "#"}
+                  target={c.href && c.href.startsWith("http") ? "_blank" : undefined}
+                  rel={c.href && c.href.startsWith("http") ? "noreferrer noopener" : undefined}
+                  data-cursor="hover"
+                  className="group/item relative flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm text-ink/85 transition-all hover:bg-lime/10 hover:text-lime"
+                  data-testid={`nav-expression-${slug(c.label)}`}
+                >
+                  <span className="flex-1">{c.label}</span>
+                  <ArrowUpRight className="h-4 w-4 opacity-40 transition-all duration-300 group-hover/item:opacity-100 group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5" />
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
