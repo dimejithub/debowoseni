@@ -47,30 +47,31 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="container-page pb-24">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 md:grid-cols-12 md:gap-12">
+      <section className="cream-section py-20 md:py-24" data-testid="contact-form-section">
+        <div className="container-page">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 md:grid-cols-12 md:gap-12">
           <div className="md:col-span-7">
             <form
               onSubmit={onSubmit}
-              className="rounded-[24px] border border-line bg-surface p-6 md:p-10"
+              className="card-lift rounded-[24px] border border-line bg-white p-6 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.25)] md:p-10"
               data-testid="contact-form"
             >
               <label className="block">
                 <span className="text-xs uppercase tracking-[0.2em] text-muted">Name</span>
                 <input required value={form.name} onChange={onChange("name")}
-                  className="mt-2 w-full rounded-full border border-line bg-bg px-5 py-3 text-ink placeholder:text-muted focus:border-lime focus:outline-none"
+                  className="mt-2 w-full rounded-full border border-line bg-white px-5 py-3 text-cream-ink placeholder:text-muted focus:border-lime focus:outline-none focus:ring-2 focus:ring-lime/30"
                   placeholder="Your name" data-testid="contact-name" />
               </label>
               <label className="mt-6 block">
                 <span className="text-xs uppercase tracking-[0.2em] text-muted">Email</span>
                 <input type="email" required value={form.email} onChange={onChange("email")}
-                  className="mt-2 w-full rounded-full border border-line bg-bg px-5 py-3 text-ink placeholder:text-muted focus:border-lime focus:outline-none"
+                  className="mt-2 w-full rounded-full border border-line bg-white px-5 py-3 text-cream-ink placeholder:text-muted focus:border-lime focus:outline-none focus:ring-2 focus:ring-lime/30"
                   placeholder="you@email.com" data-testid="contact-email" />
               </label>
               <label className="mt-6 block">
                 <span className="text-xs uppercase tracking-[0.2em] text-muted">Message</span>
                 <textarea required rows={6} value={form.message} onChange={onChange("message")}
-                  className="mt-2 w-full resize-y rounded-[18px] border border-line bg-bg px-5 py-4 text-ink placeholder:text-muted focus:border-lime focus:outline-none"
+                  className="mt-2 w-full resize-y rounded-[18px] border border-line bg-white px-5 py-4 text-cream-ink placeholder:text-muted focus:border-lime focus:outline-none focus:ring-2 focus:ring-lime/30"
                   placeholder="What's on your mind?" data-testid="contact-message" />
               </label>
               <button type="submit" disabled={pending} className="btn-lime mt-8 disabled:opacity-60" data-testid="contact-submit">
@@ -81,16 +82,16 @@ export default function Contact() {
           </div>
 
           <aside className="space-y-6 md:col-span-5">
-            <div className="rounded-[20px] border border-line bg-surface p-7">
+            <div className="card-lift rounded-[20px] border border-line bg-white p-7">
               <p className="text-xs uppercase tracking-[0.2em] text-muted">Direct email</p>
               <a href={`mailto:${CONTACT_EMAIL}`}
-                className="mt-3 inline-flex items-center gap-2 font-display text-xl tracking-tight text-ink hover:text-lime"
+                className="mt-3 inline-flex items-center gap-2 font-display text-xl tracking-tight text-cream-ink hover:text-lime"
                 data-testid="contact-direct-email">
                 <Mail className="h-5 w-5" /> {CONTACT_EMAIL}
               </a>
             </div>
 
-            <div className="rounded-[20px] border border-line bg-surface p-7">
+            <div className="card-lift rounded-[20px] border border-line bg-white p-7">
               <p className="text-xs uppercase tracking-[0.2em] text-muted">Book a session</p>
               <p className="mt-3 text-muted">Prefer a calendar slot? Choose a window that fits.</p>
               <a href={SYSTEME_BOOKING_URL} target="_blank" rel="noreferrer noopener"
@@ -99,9 +100,9 @@ export default function Contact() {
               </a>
             </div>
 
-            <div className="rounded-[20px] border border-line bg-surface p-7">
+            <div className="card-lift rounded-[20px] border border-line bg-white p-7">
               <p className="text-xs uppercase tracking-[0.2em] text-muted">Social</p>
-              <ul className="mt-3 space-y-2 text-ink/85">
+              <ul className="mt-3 space-y-2 text-cream-ink/85">
                 <li><a className="lime-link" href={SOCIALS.linkedin} target="_blank" rel="noreferrer">LinkedIn →</a></li>
                 <li><a className="lime-link" href={SOCIALS.twitter} target="_blank" rel="noreferrer">X / Twitter →</a></li>
                 <li><a className="lime-link" href={SOCIALS.instagram} target="_blank" rel="noreferrer">Instagram →</a></li>
@@ -109,6 +110,7 @@ export default function Contact() {
               </ul>
             </div>
           </aside>
+          </div>
         </div>
       </section>
     </div>

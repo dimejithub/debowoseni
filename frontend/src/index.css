@@ -199,8 +199,8 @@
   }
   .btn-ghost:hover { border-color: var(--lime); color: var(--lime); transform: translateY(-2px); }
 
-  .card-lift { transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), border-color 260ms; }
-  .card-lift:hover { transform: translateY(-6px); border-color: color-mix(in srgb, var(--muted) 60%, var(--line)); }
+  .card-lift { transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), border-color 260ms, box-shadow 260ms; }
+  .card-lift:hover { transform: translateY(-6px); border-color: var(--lime); box-shadow: 0 0 0 1px rgba(188,234,62,0.18), 0 18px 40px -20px rgba(188,234,62,0.25); }
 
   /* CREAM SECTION — used to break the dark rhythm with editorial white-space.
      Use as a parent that wraps inverted-color content. */
@@ -233,6 +233,8 @@
   .cream-section [class*="border-line"] { border-color: var(--cream-line) !important; }
   .cream-section .bg-surface { background: rgba(255,255,255,0.55) !important; }
   .cream-section .text-muted { color: #6a655c !important; }
+  .cream-section .lime-link { color: var(--cream-ink); }
+  .cream-section .lime-link:hover { color: var(--lime); }
 
   /* Article body — readable measure */
   .article-body { color: var(--ink); font-size: 1.125rem; line-height: 1.8; }

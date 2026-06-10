@@ -529,7 +529,7 @@ export default function Home() {
                   className="group flex flex-col gap-4"
                   data-testid={`home-journal-card-${p.slug}`}
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-[16px] border border-line bg-surface">
+                  <div className="card-lift relative aspect-[4/3] overflow-hidden rounded-[16px] border border-line bg-surface">
                     <img
                       src={p.cover_url || "https://images.pexels.com/photos/7505924/pexels-photo-7505924.jpeg?w=800"}
                       alt={p.title}
