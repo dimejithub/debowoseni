@@ -8,7 +8,7 @@ export const PORTRAIT_URL =
 export const ABOUT_HERO_URL =
   "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/lo5vcm24_do%20hero%201.png";
 
-// Three real event photos (LTE workshop)
+// Three real event photos (LTE Leicester workshop)
 export const EVENT_IMAGES = [
   "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/auoge5e1__D5A3033.jpg",
   "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/t2iwgjek__D5A3030.jpg",
@@ -144,9 +144,9 @@ export const FALLBACK_TESTIMONIALS = [
 // Fallback events (used until admin populates `events` table)
 export const FALLBACK_EVENTS = [
   {
-    id: "lte-london-workshop",
+    id: "lte-leicester-workshop",
     slug: "lte-london-workshop",
-    title: "LTE Live · London",
+    title: "LTE Live · Leicester",
     description:
       "A live cohort of the Life Transformation Experience — purpose-driven professionals walking through the Wheel of Life and the LTE map together.",
     cover_url:
@@ -156,7 +156,7 @@ export const FALLBACK_EVENTS = [
       "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/t2iwgjek__D5A3030.jpg",
       "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/7b2phnc9__D5A3048.jpg",
     ],
-    location: "London, UK",
+    location: "Leicester, UK",
   },
 ];
 

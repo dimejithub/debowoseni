@@ -51,8 +51,8 @@ export function Navbar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-surface font-display text-sm font-bold tracking-tight text-ink">
             do
           </span>
-          <span className="hidden font-display text-sm font-bold tracking-tight text-ink md:inline">
-            Debo&apos; Owoseni
+          <span className="hidden font-display text-base font-bold tracking-tight text-ink md:inline">
+            debowoseni
           </span>
         </Link>
 

@@ -9,13 +9,9 @@ function formatDate(iso) {
   if (!iso) return "";
   try {
     return new Date(iso).toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+      day: "numeric", month: "long", year: "numeric",
     });
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 export default function Journal() {
@@ -27,14 +23,8 @@ export default function Journal() {
     let active = true;
     getPublishedPosts(100)
       .then((p) => active && setPosts(p))
-      .catch((e) => {
-        if (!active) return;
-        setError(e?.message || "Failed to load");
-        setPosts([]);
-      });
-    return () => {
-      active = false;
-    };
+      .catch((e) => { if (active) { setError(e?.message || "Failed to load"); setPosts([]); } });
+    return () => { active = false; };
   }, []);
 
   const categories = useMemo(() => {
@@ -52,28 +42,27 @@ export default function Journal() {
   return (
     <div data-testid="journal-page">
       <section className="relative overflow-hidden">
-        <div className="lime-glow absolute inset-x-0 top-0 h-[40vh]" aria-hidden />
+        <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
-          <Reveal>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted">The Journal</p>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <h1 className="mt-6 max-w-4xl font-display">
-              Thoughts that move people <span className="text-lime">forward</span>.
-            </h1>
-          </Reveal>
-          <Reveal delay={0.18}>
-            <p className="mt-6 max-w-2xl text-lg text-ink/85">
-              Short pieces written at the intersection of faith, knowledge, and purpose.
-            </p>
-          </Reveal>
+          <div className="container-narrow">
+            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">The Journal</p></Reveal>
+            <Reveal delay={0.08}>
+              <h1 className="mx-auto mt-7 max-w-4xl">
+                Thoughts that move people <span className="font-display-italic text-lime">forward</span>.
+              </h1>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-7 max-w-2xl text-lg md:text-xl text-ink/85">
+                Short pieces written at the intersection of faith, knowledge, and purpose.
+              </p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
       <section className="container-page pb-24">
-        {/* Category filter */}
         {posts !== null && categories.length > 1 && (
-          <div className="mb-10 flex flex-wrap gap-2">
+          <div className="mb-12 flex flex-wrap justify-center gap-2">
             {categories.map((c) => (
               <button
                 key={c}
@@ -101,15 +90,10 @@ export default function Journal() {
         )}
 
         {posts !== null && visible.length === 0 && (
-          <div
-            className="rounded-[20px] border border-line bg-surface px-8 py-16 text-center"
-            data-testid="journal-empty"
-          >
+          <div className="mx-auto max-w-xl rounded-[20px] border border-line bg-surface px-8 py-16 text-center" data-testid="journal-empty">
             <span className="font-script text-5xl text-lime">soon</span>
             <p className="mt-3 text-muted">
-              {error
-                ? "The journal is being prepared. Please check back shortly."
-                : "No posts in this category yet. The first ones are on their way."}
+              {error ? "The journal is being prepared. Please check back shortly." : "No posts in this category yet. The first ones are on their way."}
             </p>
           </div>
         )}
@@ -136,7 +120,7 @@ export default function Journal() {
                       </span>
                     )}
                   </div>
-                  <h3 className="font-display text-2xl leading-tight tracking-tight text-ink group-hover:text-lime">
+                  <h3 className="text-2xl leading-tight text-ink group-hover:text-lime">
                     {p.title}
                   </h3>
                   <p className="line-clamp-3 text-muted">{p.excerpt}</p>

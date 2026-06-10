@@ -21,58 +21,69 @@ export default function Books() {
   return (
     <div data-testid="books-page">
       <section className="relative overflow-hidden">
-        <div className="lime-glow absolute inset-x-0 top-0 h-[40vh]" aria-hidden />
+        <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
-          <Reveal><p className="text-xs uppercase tracking-[0.24em] text-muted">The Bookshelf</p></Reveal>
-          <Reveal delay={0.08}>
-            <h1 className="mt-6 max-w-4xl">
-              Explore my <span className="font-display-italic text-lime">writings</span>.
-            </h1>
-          </Reveal>
-          <Reveal delay={0.18}>
-            <p className="mt-6 max-w-2xl text-lg text-ink/85">
-              Thoughtful resources for the journey of personal transformation, spiritual
-              growth, and purposeful living.
-            </p>
-          </Reveal>
+          <div className="container-narrow">
+            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">The Bookshelf</p></Reveal>
+            <Reveal delay={0.08}>
+              <h1 className="mx-auto mt-7 max-w-4xl">
+                Explore my <span className="font-display-italic text-lime">writings</span>.
+              </h1>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-7 max-w-2xl text-lg md:text-xl text-ink/85">
+                Thoughtful resources for the journey of personal transformation, spiritual
+                growth, and purposeful living.
+              </p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
       {featured && (
-        <section className="container-page pb-12">
-          <Reveal><BookCard book={featured} large /></Reveal>
+        <section className="cream-section py-16 md:py-24">
+          <div className="container-page">
+            <Reveal><BookCard book={featured} large /></Reveal>
+          </div>
         </section>
       )}
 
-      <section className="container-page pb-24">
-        <div className="mb-10 flex items-end justify-between">
+      <section className="container-page py-20">
+        <div className="container-narrow mb-12">
           <Reveal><h2>More from the shelf</h2></Reveal>
-          <Link to="/contact" className="text-sm text-muted hover:text-lime" data-testid="books-contact-link">
-            Request signed copies →
-          </Link>
+          <Reveal delay={0.06}>
+            <p className="mt-5 text-lg text-ink/85">
+              Slow, honest reading for the person who wants to be different on the other side.
+            </p>
+          </Reveal>
         </div>
         <Stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {others.map((b) => (
             <StaggerItem key={b.id || b.slug}><BookCard book={b} /></StaggerItem>
           ))}
         </Stagger>
+        <Reveal className="mt-12 flex justify-center">
+          <Link to="/contact" className="btn-ghost" data-testid="books-contact-link">
+            Request signed copies <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </Reveal>
       </section>
 
       <section className="border-t border-line bg-surface/30 py-20">
-        <div className="container-page flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted">Programmes</p>
-            <h3 className="mt-3 max-w-2xl">Want the work behind the books? Explore the coaching journeys.</h3>
+        <div className="container-narrow">
+          <p className="text-xs uppercase tracking-[0.28em] text-muted">Programmes</p>
+          <h3 className="mt-5">Want the work behind the books? Explore the coaching journeys.</h3>
+          <div className="mt-8 flex justify-center">
+            <a
+              href={SYSTEME_BOOKING_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="btn-lime"
+              data-testid="books-explore-programmes"
+            >
+              See programmes <ArrowUpRight className="h-4 w-4" />
+            </a>
           </div>
-          <a
-            href={SYSTEME_BOOKING_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="btn-lime"
-            data-testid="books-explore-programmes"
-          >
-            See programmes <ArrowUpRight className="h-4 w-4" />
-          </a>
         </div>
       </section>
     </div>

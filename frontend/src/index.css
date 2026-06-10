@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Fonts — bold editorial display + clean body */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..900,0;1,9..144,400..900,100&family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..900,0;1,9..144,400..900,100&family=Inter:wght@400;500;600;700;800&display=swap");
 
 @layer base {
   :root {
@@ -12,9 +11,14 @@
     --surface-2: #141a19;
     --line: #1f2624;
     --ink: #f3f5f2;
-    --muted: #9aa39e;
+    --muted: #b9c2bd;
     --lime: #bcea3e;
     --violet: #7970ff;
+    /* Cream + warm tones for light-section contrast */
+    --cream: #f4efe6;
+    --cream-2: #ebe4d6;
+    --cream-ink: #1c1916;
+    --cream-line: #d8d0bf;
     --radius: 20px;
     color-scheme: dark;
   }
@@ -23,10 +27,7 @@
   *::before,
   *::after { border-color: var(--line); }
 
-  html,
-  body,
-  #root { background: var(--bg); color: var(--ink); }
-
+  html, body, #root { background: var(--bg); color: var(--ink); }
   html, body { overflow-x: hidden; overflow-x: clip; }
 
   body {
@@ -35,13 +36,14 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 17px;
+    line-height: 1.75;
   }
 
   ::selection { background: var(--lime); color: var(--bg); }
   *:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; border-radius: 6px; }
 }
 
-/* Type ramp — display in Bricolage Grotesque at heavier weights */
 @layer base {
   h1 {
     font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
@@ -73,11 +75,10 @@
     line-height: 1.2;
     font-weight: 700;
   }
-  p, li { line-height: 1.7; }
+  p, li { line-height: 1.78; }
 }
 
 @layer utilities {
-  /* Italic display = Fraunces (replaces Italianno where it's used for headlines) */
   .font-display {
     font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
     font-weight: 700;
@@ -96,7 +97,7 @@
   }
 
   .container-prose {
-    max-width: 720px;
+    max-width: 740px;
     margin-left: auto; margin-right: auto;
     padding-left: 1.25rem; padding-right: 1.25rem;
   }
@@ -105,8 +106,15 @@
     margin-left: auto; margin-right: auto;
     padding-left: 1.5rem; padding-right: 1.5rem;
   }
-  .text-ink-soft { color: color-mix(in srgb, var(--ink) 75%, transparent); }
-  .border-hair { border-color: var(--line); }
+  /* New: a tighter prose container used for centered section intros */
+  .container-narrow {
+    max-width: 880px;
+    margin-left: auto; margin-right: auto;
+    padding-left: 1.25rem; padding-right: 1.25rem;
+    text-align: center;
+  }
+
+  .text-ink-soft { color: color-mix(in srgb, var(--ink) 78%, transparent); }
 
   .lime-glow {
     background-image: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(188, 234, 62, 0.16), transparent 60%);
@@ -154,10 +162,9 @@
   .lime-link:hover { color: var(--lime); }
   .lime-link:hover::after { transform: scaleX(1); transform-origin: left; }
 
-  /* CTA pill — bold lime, with magnetic feel */
   .btn-lime {
     display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.85rem 1.75rem;
+    padding: 0.95rem 1.85rem;
     border-radius: 999px;
     background: var(--lime);
     color: var(--bg);
@@ -174,7 +181,7 @@
 
   .btn-ghost {
     display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.85rem 1.5rem;
+    padding: 0.95rem 1.6rem;
     border-radius: 999px;
     border: 1px solid var(--line);
     background: color-mix(in srgb, var(--surface) 90%, transparent);
@@ -184,31 +191,62 @@
   }
   .btn-ghost:hover { border-color: var(--lime); color: var(--lime); transform: translateY(-2px); }
 
-  /* Subtle card hover lift */
   .card-lift { transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1), border-color 260ms; }
   .card-lift:hover { transform: translateY(-6px); border-color: color-mix(in srgb, var(--muted) 60%, var(--line)); }
 
-  /* Article body */
-  .article-body { color: var(--ink); font-size: 1.0625rem; }
-  .article-body p { margin-bottom: 1.25rem; }
-  .article-body h2 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: clamp(1.5rem, 2vw + 0.5rem, 2rem); }
+  /* CREAM SECTION — used to break the dark rhythm with editorial white-space.
+     Use as a parent that wraps inverted-color content. */
+  .cream-section {
+    background: var(--cream);
+    color: var(--cream-ink);
+  }
+  .cream-section h1,
+  .cream-section h2,
+  .cream-section h3,
+  .cream-section h4,
+  .cream-section p,
+  .cream-section li {
+    color: var(--cream-ink);
+  }
+  .cream-section .muted { color: #5a5650; }
+  .cream-section .chip {
+    background: rgba(255,255,255,0.4);
+    border-color: var(--cream-line);
+    color: var(--cream-ink);
+  }
+  .cream-section .btn-lime { color: var(--bg); }
+  .cream-section .btn-ghost {
+    background: rgba(255,255,255,0.5);
+    border-color: var(--cream-line);
+    color: var(--cream-ink);
+  }
+  .cream-section .btn-ghost:hover { color: var(--cream-ink); border-color: var(--cream-ink); }
+  .cream-section .border-line,
+  .cream-section [class*="border-line"] { border-color: var(--cream-line) !important; }
+  .cream-section .bg-surface { background: rgba(255,255,255,0.55) !important; }
+  .cream-section .text-muted { color: #6a655c !important; }
+
+  /* Article body — readable measure */
+  .article-body { color: var(--ink); font-size: 1.125rem; line-height: 1.8; }
+  .article-body p { margin-bottom: 1.4rem; }
+  .article-body h2 { margin-top: 2.5rem; margin-bottom: 1rem; font-size: clamp(1.6rem, 2vw + 0.5rem, 2.1rem); }
   .article-body h3 { margin-top: 2rem; margin-bottom: 0.75rem; }
   .article-body a { color: var(--lime); text-decoration: underline; text-underline-offset: 4px; }
-  .article-body ul, .article-body ol { padding-left: 1.5rem; margin-bottom: 1.25rem; }
+  .article-body ul, .article-body ol { padding-left: 1.5rem; margin-bottom: 1.4rem; }
   .article-body li { margin-bottom: 0.5rem; }
   .article-body blockquote {
-    margin: 2rem 0;
+    margin: 2.25rem 0;
     padding: 1.25rem 1.5rem;
     border-left: 2px solid var(--lime);
     font-family: "Fraunces", serif;
     font-style: italic;
-    font-size: 1.6rem;
+    font-size: 1.7rem;
     line-height: 1.35;
     font-variation-settings: "SOFT" 100;
     color: var(--ink);
   }
   .article-body img {
-    margin: 1.5rem 0;
+    margin: 1.75rem 0;
     border-radius: 16px;
     border: 1px solid var(--line);
     width: 100%; height: auto;
@@ -219,16 +257,6 @@
     font-size: 0.9em;
   }
 
-  /* Tilt on hover for premium book/event cards */
-  .tilt {
-    transform-style: preserve-3d;
-    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .tilt:hover {
-    transform: perspective(900px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
-  }
-
-  /* Scroll progress bar */
   .scroll-progress {
     position: fixed; left: 0; top: 0;
     height: 2px; width: var(--progress, 0%);

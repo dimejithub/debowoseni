@@ -25,20 +25,22 @@ export default function Events() {
   return (
     <div data-testid="events-page">
       <section className="relative overflow-hidden">
-        <div className="lime-glow absolute inset-x-0 top-0 h-[40vh]" aria-hidden />
+        <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
-          <Reveal><p className="text-xs uppercase tracking-[0.24em] text-muted">Past &amp; Live Events</p></Reveal>
-          <Reveal delay={0.08}>
-            <h1 className="mt-6 max-w-4xl">
-              Rooms where <span className="font-display-italic text-lime">transformation</span> happens.
-            </h1>
-          </Reveal>
-          <Reveal delay={0.18}>
-            <p className="mt-6 max-w-2xl text-lg text-ink/85">
-              Keynotes, LTE Live cohorts, and workshops — moments where the work moves from
-              page to person.
-            </p>
-          </Reveal>
+          <div className="container-narrow">
+            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">Past &amp; Live Events</p></Reveal>
+            <Reveal delay={0.08}>
+              <h1 className="mx-auto mt-7 max-w-4xl">
+                Rooms where <span className="font-display-italic text-lime">transformation</span> happens.
+              </h1>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-7 max-w-2xl text-lg md:text-xl text-ink/85">
+                Keynotes, LTE Live cohorts, and workshops — moments where the work moves from
+                page to person.
+              </p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -46,37 +48,38 @@ export default function Events() {
         {events.map((ev, idx) => (
           <Reveal key={ev.id || ev.slug}>
             <article
-              className="rounded-[20px] border border-line bg-surface p-6 md:p-10"
+              className={`rounded-[24px] border p-6 md:p-12 ${
+                idx % 2 === 0 ? "border-line bg-surface" : "cream-section border-cream-line"
+              }`}
               data-testid={`event-${ev.slug || idx}`}
             >
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-12">
-                <div className="md:col-span-5">
-                  <h2 className="text-3xl md:text-4xl">{ev.title}</h2>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted">
-                    {ev.event_date && <span>{formatDate(ev.event_date)}</span>}
-                    {ev.location && (
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" /> {ev.location}
-                      </span>
-                    )}
-                  </div>
-                  {ev.description && (
-                    <p className="mt-6 text-ink/85">{ev.description}</p>
+              <div className="container-narrow !text-center">
+                <h2>{ev.title}</h2>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted">
+                  {ev.event_date && <span>{formatDate(ev.event_date)}</span>}
+                  {ev.location && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" /> {ev.location}
+                    </span>
                   )}
                 </div>
-                <div className="md:col-span-7">
-                  <Stagger className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {(ev.gallery || []).slice(0, 6).map((src, i) => (
-                      <StaggerItem key={src + i}>
-                        <div className="card-lift overflow-hidden rounded-[14px] border border-line">
-                          <img src={src} alt="" loading="lazy"
-                            className="aspect-square w-full object-cover transition duration-700 hover:scale-105" />
-                        </div>
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
-                </div>
+                {ev.description && (
+                  <p className="mx-auto mt-7 max-w-2xl text-lg">{ev.description}</p>
+                )}
               </div>
+
+              {ev.gallery && ev.gallery.length > 0 && (
+                <Stagger className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {ev.gallery.slice(0, 6).map((src, i) => (
+                    <StaggerItem key={src + i}>
+                      <div className="card-lift overflow-hidden rounded-[16px] border border-line">
+                        <img src={src} alt="" loading="lazy"
+                          className="aspect-square w-full object-cover transition duration-700 hover:scale-105" />
+                      </div>
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              )}
             </article>
           </Reveal>
         ))}

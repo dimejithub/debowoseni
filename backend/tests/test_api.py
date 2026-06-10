@@ -264,6 +264,202 @@ class TestAdminPostCRUD:
         assert r2.status_code == 404
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 — public list endpoints (testimonials/books/publications/events)
+# ---------------------------------------------------------------------------
+class TestPublicListsPhase2:
+    def test_health_all_tables(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/health", timeout=30)
+        assert r.status_code == 200
+        d = r.json()
+        assert d["schema_ready"] is True
+        for t in ("posts", "testimonials", "books", "publications", "events"):
+            assert d["tables"].get(t) is True, f"table missing: {t}"
+        assert d["bucket_ready"] is True
+
+    def test_books_seed_and_featured(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/books", timeout=30)
+        assert r.status_code == 200
+        books = r.json()["books"]
+        assert len(books) >= 5
+        featured = [b for b in books if b.get("is_featured")]
+        assert any("How God Gives Feedback" in (b.get("title") or "") for b in featured), (
+            f"Expected featured 'How God Gives Feedback', got featured={[b.get('title') for b in featured]}"
+        )
+
+    def test_testimonials_sorted(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/testimonials", timeout=30)
+        assert r.status_code == 200
+        ts = r.json()["testimonials"]
+        assert len(ts) >= 3
+        orders = [t.get("sort_order", 0) for t in ts]
+        assert orders == sorted(orders), f"not sorted ascending: {orders}"
+
+    def test_publications_seed(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/publications", timeout=30)
+        assert r.status_code == 200
+        pubs = r.json()["publications"]
+        assert len(pubs) >= 5
+        titles = " | ".join(p.get("title", "") for p in pubs)
+        for expected in [
+            "Generative AI in Higher Education",
+            "Generative AI in Research",
+            "Artificial Intelligence in the Informal Economy",
+            "Effectuated Spirituality",
+            "Employment 5.0",
+        ]:
+            assert expected in titles, f"missing publication: {expected}"
+
+    def test_events_seed_and_gallery(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/events", timeout=30)
+        assert r.status_code == 200
+        events = r.json()["events"]
+        assert len(events) >= 1
+        lte = next((e for e in events if "Leicester" in (e.get("title") or "")), None)
+        assert lte is not None, f"LTE Leicester event not found: {[e.get('title') for e in events]}"
+        gallery = lte.get("gallery") or []
+        assert isinstance(gallery, list) and len(gallery) >= 3
+        assert (lte.get("location") or "").strip() == "Leicester, UK", f"location: {lte.get('location')}"
+
+    def test_event_by_slug_and_404(self, api_client):
+        r = api_client.get(f"{BASE_URL}/api/events/lte-london-workshop", timeout=30)
+        assert r.status_code == 200
+        body = r.json()
+        assert body.get("title") == "LTE Live · Leicester", f"title: {body.get('title')}"
+        assert (body.get("location") or "").strip() == "Leicester, UK"
+        r2 = api_client.get(f"{BASE_URL}/api/events/does-not-exist-xyz", timeout=30)
+        assert r2.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — admin auth guard on new resources
+# ---------------------------------------------------------------------------
+class TestAdminAuthGuardPhase2:
+    @pytest.mark.parametrize("path", [
+        "/api/admin/testimonials",
+        "/api/admin/books",
+        "/api/admin/publications",
+        "/api/admin/events",
+    ])
+    def test_admin_get_requires_token(self, api_client, path):
+        r = api_client.get(f"{BASE_URL}{path}", timeout=30)
+        assert r.status_code == 401
+
+    @pytest.mark.parametrize("path", [
+        "/api/admin/testimonials",
+        "/api/admin/books",
+        "/api/admin/publications",
+        "/api/admin/events",
+    ])
+    def test_admin_post_requires_token(self, api_client, path):
+        r = api_client.post(f"{BASE_URL}{path}", json={"title": "x", "quote": "x", "attribution": "x"}, timeout=30)
+        assert r.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — admin CRUD: books, testimonials, publications, events
+# ---------------------------------------------------------------------------
+class TestAdminBooksCRUD:
+    def test_books_crud_and_autoslug(self, auth_client):
+        title = f"TEST_ Book {uuid.uuid4().hex[:6]}"
+        r = auth_client.post(
+            f"{BASE_URL}/api/admin/books",
+            json={"title": title, "one_liner": "TEST_ ol", "is_featured": False},
+            timeout=30,
+        )
+        assert r.status_code == 200, r.text
+        b = r.json()
+        assert b["id"]
+        assert b["title"] == title
+        assert b["slug"] and b["slug"].startswith("test-book-")
+        bid = b["id"]
+
+        # update
+        ru = auth_client.put(
+            f"{BASE_URL}/api/admin/books/{bid}",
+            json={"one_liner": "TEST_ ol updated", "is_featured": True},
+            timeout=30,
+        )
+        assert ru.status_code == 200, ru.text
+        assert ru.json()["one_liner"] == "TEST_ ol updated"
+        assert ru.json()["is_featured"] is True
+
+        # delete
+        rd = auth_client.delete(f"{BASE_URL}/api/admin/books/{bid}", timeout=30)
+        assert rd.status_code == 200
+
+
+class TestAdminTestimonialsCRUD:
+    def test_testimonials_crud(self, auth_client):
+        r = auth_client.post(
+            f"{BASE_URL}/api/admin/testimonials",
+            json={"quote": "TEST_ quote", "attribution": "TEST_ Person", "role": "Tester", "sort_order": 999},
+            timeout=30,
+        )
+        assert r.status_code == 200, r.text
+        tid = r.json()["id"]
+        ru = auth_client.put(
+            f"{BASE_URL}/api/admin/testimonials/{tid}",
+            json={"role": "Senior Tester"},
+            timeout=30,
+        )
+        assert ru.status_code == 200
+        assert ru.json()["role"] == "Senior Tester"
+        rd = auth_client.delete(f"{BASE_URL}/api/admin/testimonials/{tid}", timeout=30)
+        assert rd.status_code == 200
+
+
+class TestAdminPublicationsCRUD:
+    """Ensures publications table works WITHOUT updated_at column."""
+
+    def test_publications_crud_no_updated_at_error(self, auth_client):
+        r = auth_client.post(
+            f"{BASE_URL}/api/admin/publications",
+            json={"title": f"TEST_ Pub {uuid.uuid4().hex[:6]}", "year": "2025", "url": "https://example.com", "sort_order": 999},
+            timeout=30,
+        )
+        assert r.status_code == 200, r.text
+        pid = r.json()["id"]
+        # update should also succeed without updated_at
+        ru = auth_client.put(
+            f"{BASE_URL}/api/admin/publications/{pid}",
+            json={"year": "2026"},
+            timeout=30,
+        )
+        assert ru.status_code == 200, ru.text
+        assert ru.json()["year"] == "2026"
+        rd = auth_client.delete(f"{BASE_URL}/api/admin/publications/{pid}", timeout=30)
+        assert rd.status_code == 200
+
+
+class TestAdminEventsCRUD:
+    def test_events_crud_gallery_persists(self, auth_client):
+        title = f"TEST_ Event {uuid.uuid4().hex[:6]}"
+        gallery = ["https://example.com/a.png", "https://example.com/b.png"]
+        r = auth_client.post(
+            f"{BASE_URL}/api/admin/events",
+            json={"title": title, "description": "TEST_", "gallery": gallery, "location": "Nowhere"},
+            timeout=30,
+        )
+        assert r.status_code == 200, r.text
+        ev = r.json()
+        eid = ev["id"]
+        assert ev["gallery"] == gallery
+
+        # add another image via update
+        new_gallery = gallery + ["https://example.com/c.png"]
+        ru = auth_client.put(
+            f"{BASE_URL}/api/admin/events/{eid}",
+            json={"gallery": new_gallery},
+            timeout=30,
+        )
+        assert ru.status_code == 200, ru.text
+        assert ru.json()["gallery"] == new_gallery
+
+        rd = auth_client.delete(f"{BASE_URL}/api/admin/events/{eid}", timeout=30)
+        assert rd.status_code == 200
+
+
 class TestAdminUpload:
     def test_upload_image_returns_public_url(self, access_token):
         # 1x1 PNG

@@ -46,6 +46,12 @@ function formatDate(iso) {
   }
 }
 
+function SectionEyebrow({ children }) {
+  return (
+    <p className="text-xs uppercase tracking-[0.28em] text-muted">{children}</p>
+  );
+}
+
 export default function Home() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -55,7 +61,7 @@ export default function Home() {
   const [events, setEvents] = useState(FALLBACK_EVENTS);
 
   const { scrollY } = useScroll();
-  const heroPortraitY = useTransform(scrollY, [0, 800], [0, -60]);
+  const heroPortraitY = useTransform(scrollY, [0, 800], [0, -40]);
 
   useEffect(() => {
     let active = true;
@@ -75,70 +81,70 @@ export default function Home() {
 
   return (
     <div data-testid="home-page">
-      {/* HERO */}
+      {/* HERO — centered */}
       <section className="relative overflow-hidden" data-testid="hero-section">
-        <div className="lime-glow absolute inset-x-0 top-0 h-[60vh]" aria-hidden />
-        <div className="container-page relative grid grid-cols-1 gap-10 pb-20 pt-14 md:gap-14 md:pb-32 md:pt-20 lg:grid-cols-12 lg:items-center">
-          <div className="lg:col-span-7">
-            <Reveal>
-              <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-muted">
-                <span className="inline-block h-px w-8 bg-line" /> Debo&apos; Owoseni
-              </p>
-            </Reveal>
-            <Reveal delay={0.08}>
-              <h1 className="mt-6">
-                A mission to catalyse transformation in{" "}
-                <span className="font-display-italic text-lime">one million lives</span>
-                <span className="font-display-italic"> by 2035…</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.18}>
-              <p className="mt-7 max-w-xl text-lg text-ink/85">
-                Powering bold and transformative ideas with strategy, creativity, and
-                growth — at the intersection of faith, knowledge, and service.
-              </p>
-            </Reveal>
-            <Reveal delay={0.28}>
-              <div className="mt-9 flex flex-wrap items-center gap-3">
-                <MagneticButton
-                  as="a"
-                  href={SYSTEME_BOOKING_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-lime"
-                  data-testid="hero-explore-programmes"
-                >
-                  Explore Programmes
-                  <ArrowUpRight className="h-4 w-4" />
-                </MagneticButton>
-                <button
-                  type="button"
-                  onClick={() => setVideoOpen(true)}
-                  className="btn-ghost"
-                  data-testid="hero-watch-debo"
-                >
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-bg">
-                    <Play className="h-3 w-3 fill-current text-lime" />
-                  </span>
-                  Watch Debo&apos;
-                </button>
-              </div>
-            </Reveal>
-          </div>
+        <div className="lime-glow absolute inset-x-0 top-0 h-[70vh]" aria-hidden />
+        <div className="container-page relative pt-16 pb-20 md:pt-24 md:pb-28 text-center">
+          <Reveal>
+            <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.28em] text-muted">
+              <span className="inline-block h-px w-8 bg-line" />
+              Debo&apos; Owoseni
+              <span className="inline-block h-px w-8 bg-line" />
+            </p>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <h1 className="mx-auto mt-7 max-w-5xl">
+              A mission to catalyse transformation in{" "}
+              <span className="font-display-italic text-lime">one million lives</span>{" "}
+              <span className="font-display-italic">by 2035…</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={0.18}>
+            <p className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85">
+              Powering bold and transformative ideas with strategy, creativity, and growth —
+              at the intersection of faith, knowledge, and service.
+            </p>
+          </Reveal>
+          <Reveal delay={0.28}>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <MagneticButton
+                as="a"
+                href={SYSTEME_BOOKING_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="btn-lime"
+                data-testid="hero-explore-programmes"
+              >
+                Explore Programmes
+                <ArrowUpRight className="h-4 w-4" />
+              </MagneticButton>
+              <button
+                type="button"
+                onClick={() => setVideoOpen(true)}
+                className="btn-ghost"
+                data-testid="hero-watch-debo"
+              >
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-bg">
+                  <Play className="h-3 w-3 fill-current text-lime" />
+                </span>
+                Watch Debo&apos;
+              </button>
+            </div>
+          </Reveal>
 
-          <motion.div className="relative lg:col-span-5" style={{ y: heroPortraitY }}>
-            <Reveal delay={0.3}>
-              <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[24px] border border-line bg-surface">
+          <Reveal delay={0.36}>
+            <motion.div className="relative mx-auto mt-16 max-w-2xl" style={{ y: heroPortraitY }}>
+              <div className="overflow-hidden rounded-[28px] border border-line bg-surface">
                 <img
                   src={PORTRAIT_URL}
                   alt="Debo' Owoseni — Transformation Coach, Academic, Author"
-                  className="aspect-[4/5] w-full object-cover"
+                  className="aspect-[4/3] w-full object-cover"
                   loading="eager"
                 />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/55 via-transparent to-transparent" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg/50 via-transparent to-transparent" />
               </div>
               <motion.div
-                className="absolute -left-2 bottom-6 max-w-[230px] rounded-[20px] border border-line bg-surface/95 p-5 backdrop-blur md:-left-10"
+                className="absolute -left-3 bottom-6 max-w-[230px] rounded-[20px] border border-line bg-surface/95 p-5 text-left backdrop-blur md:-left-10"
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 data-testid="floating-stat-card"
@@ -150,100 +156,124 @@ export default function Home() {
                   Learners & enquirers worldwide
                 </p>
               </motion.div>
-            </Reveal>
-          </motion.div>
+            </motion.div>
+          </Reveal>
         </div>
       </section>
 
       {/* TRUSTED BY MARQUEE */}
       <section className="overflow-hidden border-y border-line bg-surface/40 py-10" data-testid="trusted-by">
-        <div className="container-page mb-5 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-[0.22em] text-muted">
+        <div className="container-page mb-5 text-center">
+          <p className="text-xs uppercase tracking-[0.24em] text-muted">
             Trusted by leading institutions & partners
           </p>
-          <p className="text-xs text-muted">[Real partner marks coming soon]</p>
         </div>
         <LogoMarquee logos={BRAND_LOGOS} />
       </section>
 
-      {/* ABOUT TEASER */}
-      <section className="container-page py-24 md:py-32" data-testid="about-teaser">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:items-center md:gap-16">
-          <Reveal className="md:col-span-5">
-            <div className="overflow-hidden rounded-[20px] border border-line">
-              <img
-                src={ABOUT_HERO_URL}
-                alt="Debo' Owoseni"
-                className="aspect-[4/5] w-full object-cover"
-                loading="lazy"
-              />
+      {/* CREAM MISSION BAND — editorial white-space for contrast */}
+      <section className="cream-section py-24 md:py-32" data-testid="mission-band">
+        <div className="container-narrow">
+          <Reveal>
+            <p className="text-xs uppercase tracking-[0.28em] muted">The Brief</p>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="mt-6">
+              Direction, not motivation. <br className="hidden sm:block" />
+              <span className="font-display-italic">Practice, not performance.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mx-auto mt-7 max-w-2xl text-lg md:text-xl text-cream-ink/80">
+              Two decades of teaching, writing, and walking alongside purpose-driven people — distilled into
+              a body of work designed to outlast a season.
+            </p>
+          </Reveal>
+          <Reveal delay={0.24}>
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
+              {VALUE_CHIPS.map((c) => (
+                <span key={c} className="chip" data-testid={`value-chip-${c.toLowerCase().replace(/[^a-z]+/g, "-")}`}>{c}</span>
+              ))}
             </div>
           </Reveal>
-          <div className="md:col-span-7">
-            <Reveal>
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">About Debo&apos;</p>
-            </Reveal>
-            <Reveal delay={0.1}>
-              <h2 className="mt-4 max-w-2xl">
-                A bold &amp; brilliant <span className="text-lime">transformation</span> architect.
-              </h2>
-            </Reveal>
-            <Reveal delay={0.2}>
-              <p className="mt-6 max-w-2xl text-ink/85 text-lg">
-                A life-transformation coach, academic, and published author working at the
-                intersection of intellectual rigour and spiritual depth. For over 18 years,
-                Debo&apos; has supported purpose-driven professionals navigating transitions of
-                calling, work, relationships, and identity — and he researches how people
-                and institutions adapt within complex digital environments, with a particular
-                focus on the ethical and human implications of emerging technologies, including AI.
-              </p>
-            </Reveal>
-            <Reveal delay={0.3}>
-              <Link to="/about" className="mt-8 btn-ghost inline-flex" data-testid="about-read-bio">
-                Read the full story <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Reveal>
-          </div>
         </div>
+      </section>
+
+      {/* ABOUT TEASER — centered intro */}
+      <section className="container-page py-24 md:py-32" data-testid="about-teaser">
+        <div className="container-narrow">
+          <Reveal><SectionEyebrow>About Debo&apos;</SectionEyebrow></Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="mt-5">
+              A bold &amp; brilliant <span className="font-display-italic text-lime">transformation</span> architect.
+            </h2>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-ink/85">
+              A life-transformation coach, academic, and published author working at the intersection of
+              intellectual rigour and spiritual depth. For 18+ years, Debo&apos; has supported purpose-driven
+              professionals through transitions of calling, work, relationships, and identity.
+            </p>
+          </Reveal>
+        </div>
+
+        <Reveal delay={0.22} className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-[24px] border border-line">
+          <img
+            src={ABOUT_HERO_URL}
+            alt="Debo' Owoseni"
+            className="aspect-[16/10] w-full object-cover"
+            loading="lazy"
+          />
+        </Reveal>
+
+        <Reveal delay={0.28} className="mt-10 flex justify-center">
+          <Link to="/about" className="btn-ghost" data-testid="about-read-bio">
+            Read the full story <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Reveal>
       </section>
 
       {/* PUBLICATIONS STRIP */}
       <section className="border-t border-line bg-surface/30 py-24" data-testid="publications-strip">
         <div className="container-page">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-            <Reveal>
-              <h2>
-                Explore my <span className="text-lime">publications</span>.
-              </h2>
-              <p className="mt-3 max-w-xl text-muted">
+          <div className="container-narrow">
+            <Reveal><SectionEyebrow>Academic Work</SectionEyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">Explore my <span className="font-display-italic text-lime">publications</span>.</h2>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-5 max-w-2xl text-lg text-ink/85">
                 Peer-reviewed academic work on AI, education, research, and the informal economy.
               </p>
             </Reveal>
-            <a
-              href={SCHOLAR_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-2 text-sm text-lime hover:underline"
-              data-testid="publications-access-all"
-            >
-              Access all <ArrowUpRight className="h-4 w-4" />
-            </a>
+            <Reveal delay={0.22} className="mt-8 flex justify-center">
+              <a
+                href={SCHOLAR_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="btn-ghost"
+                data-testid="publications-access-all"
+              >
+                Access all <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </Reveal>
           </div>
-          <Stagger className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+          <Stagger className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {publications.slice(0, 6).map((p, i) => (
               <StaggerItem key={p.id || p.title}>
                 <a
                   href={p.url || SCHOLAR_URL}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="card-lift group flex h-full flex-col justify-between rounded-[20px] border border-line bg-surface p-7"
+                  className="card-lift group flex h-full flex-col justify-between rounded-[20px] border border-line bg-surface p-7 text-center"
                   data-testid={`publication-${i}`}
                 >
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted">{p.year}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted">{p.year}</p>
                     <h3 className="mt-4 text-2xl leading-tight">{p.title}</h3>
                   </div>
-                  <span className="mt-8 inline-flex items-center gap-2 text-sm text-lime opacity-0 transition group-hover:opacity-100">
+                  <span className="mt-8 inline-flex items-center justify-center gap-2 text-sm text-lime opacity-0 transition group-hover:opacity-100">
                     Access library <ArrowUpRight className="h-4 w-4" />
                   </span>
                 </a>
@@ -253,73 +283,83 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BOOKS SHOWCASE */}
-      <section className="container-page py-24 md:py-32" data-testid="books-showcase">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <Reveal>
-            <p className="text-xs uppercase tracking-[0.24em] text-muted">The Bookshelf</p>
-            <h2 className="mt-3 max-w-2xl">
-              Explore my <span className="text-lime">writings</span>.
-            </h2>
-            <p className="mt-4 max-w-xl text-muted">
-              Thoughtful resources for the journey of personal transformation, spiritual
-              growth, and purposeful living.
-            </p>
-          </Reveal>
-          <Link to="/books" className="btn-ghost" data-testid="books-explore-all">
-            Explore all <ArrowRight className="h-4 w-4" />
-          </Link>
+      {/* BOOKS SHOWCASE — cream background for editorial bookshelf feel */}
+      <section className="cream-section py-24 md:py-32" data-testid="books-showcase">
+        <div className="container-page">
+          <div className="container-narrow">
+            <Reveal><SectionEyebrow>The Bookshelf</SectionEyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">
+                Explore my <span className="font-display-italic text-lime">writings</span>.
+              </h2>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-5 max-w-2xl text-lg muted">
+                Thoughtful resources for the journey of personal transformation, spiritual growth,
+                and purposeful living.
+              </p>
+            </Reveal>
+            <Reveal delay={0.22} className="mt-8 flex justify-center">
+              <Link to="/books" className="btn-ghost" data-testid="books-explore-all">
+                Explore all <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Reveal>
+          </div>
+
+          {featured && (
+            <Reveal delay={0.1} className="mt-14">
+              <BookCard book={featured} large />
+            </Reveal>
+          )}
+
+          <Stagger className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {otherBooks.map((b) => (
+              <StaggerItem key={b.id || b.slug}>
+                <BookCard book={b} />
+              </StaggerItem>
+            ))}
+          </Stagger>
+
+          <p className="mt-14 text-center text-sm muted">
+            Coaching & programmes &nbsp;
+            <a
+              href={SYSTEME_BOOKING_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="font-semibold underline underline-offset-4 hover:text-lime"
+              data-testid="books-coaching-link"
+            >
+              visit the programmes
+            </a>
+            .
+          </p>
         </div>
-
-        {featured && (
-          <Reveal delay={0.1} className="mt-12">
-            <BookCard book={featured} large />
-          </Reveal>
-        )}
-
-        <Stagger className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {otherBooks.map((b) => (
-            <StaggerItem key={b.id || b.slug}>
-              <BookCard book={b} />
-            </StaggerItem>
-          ))}
-        </Stagger>
-
-        <p className="mt-12 text-center text-sm text-muted">
-          Coaching & programmes &nbsp;
-          <a
-            href={SYSTEME_BOOKING_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-lime hover:underline"
-            data-testid="books-coaching-link"
-          >
-            visit the programmes
-          </a>
-          .
-        </p>
       </section>
 
       {/* EVENTS / GALLERY */}
       <section className="border-t border-line bg-surface/30 py-24 md:py-32" data-testid="events-section">
         <div className="container-page">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-            <Reveal>
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Events &amp; LTE Live</p>
-              <h2 className="mt-3 max-w-2xl">
-                Rooms where <span className="text-lime">transformation</span> happens.
+          <div className="container-narrow">
+            <Reveal><SectionEyebrow>Events &amp; LTE Live</SectionEyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">
+                Rooms where <span className="font-display-italic text-lime">transformation</span> happens.
               </h2>
-              <p className="mt-4 max-w-xl text-muted">
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mx-auto mt-5 max-w-2xl text-lg text-ink/85">
                 Cohort sessions, keynote talks, and Life Transformation Experience workshops —
                 in person and online.
               </p>
             </Reveal>
-            <Link to="/events" className="btn-ghost" data-testid="events-see-all">
-              See all events <ArrowRight className="h-4 w-4" />
-            </Link>
+            <Reveal delay={0.22} className="mt-8 flex justify-center">
+              <Link to="/events" className="btn-ghost" data-testid="events-see-all">
+                See all events <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Reveal>
           </div>
 
-          <Stagger className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
             {eventGallery.map((src, i) => (
               <StaggerItem key={src + i}>
                 <Link
@@ -343,22 +383,24 @@ export default function Home() {
       </section>
 
       {/* IMPACT STATS */}
-      <section className="relative border-y border-line bg-surface/30 py-24" data-testid="impact-stats">
+      <section className="relative border-y border-line py-24" data-testid="impact-stats">
         <div className="lime-glow-soft absolute inset-0" aria-hidden />
         <div className="container-page relative">
-          <Reveal>
-            <h2 className="max-w-3xl">
-              The work speaks. The <span className="text-lime">numbers</span> confirm.
-            </h2>
-            <p className="mt-4 max-w-xl text-muted">
-              Two decades. One mission. Helping people move from scattered to purposeful.
-            </p>
-          </Reveal>
+          <div className="container-narrow">
+            <Reveal>
+              <h2>The work speaks. The <span className="font-display-italic text-lime">numbers</span> confirm.</h2>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <p className="mx-auto mt-5 max-w-2xl text-lg text-ink/85">
+                Two decades. One mission. Helping people move from scattered to purposeful.
+              </p>
+            </Reveal>
+          </div>
 
           <Stagger className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3">
             {STATS.map((s, i) => (
               <StaggerItem key={s.label}>
-                <div className="card-lift rounded-[20px] border border-line bg-surface p-8" data-testid={`stat-${i}`}>
+                <div className="card-lift rounded-[20px] border border-line bg-surface p-8 text-center" data-testid={`stat-${i}`}>
                   <p className="font-display text-[clamp(3rem,6vw,5rem)] leading-none tracking-tight text-ink">
                     <CountUp value={s.value} suffix={s.suffix} />
                   </p>
@@ -367,60 +409,58 @@ export default function Home() {
               </StaggerItem>
             ))}
           </Stagger>
-
-          <div className="mt-14 flex flex-wrap gap-3">
-            {VALUE_CHIPS.map((c) => (
-              <span key={c} className="chip" data-testid={`value-chip-${c.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
-                {c}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="container-page py-24 md:py-32" data-testid="testimonials">
-        <Reveal>
-          <p className="text-xs uppercase tracking-[0.24em] text-muted">Voices</p>
-          <h2 className="mt-3 max-w-2xl">
-            Real people. Real <span className="text-lime">results</span>.
-          </h2>
-        </Reveal>
+      {/* TESTIMONIALS — cream-toned for warmth */}
+      <section className="cream-section py-24 md:py-32" data-testid="testimonials">
+        <div className="container-page">
+          <div className="container-narrow">
+            <Reveal><SectionEyebrow>Voices</SectionEyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">
+                Real people. Real <span className="font-display-italic text-lime">results</span>.
+              </h2>
+            </Reveal>
+          </div>
 
-        <Stagger className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {testimonials.slice(0, 3).map((t) => (
-            <StaggerItem key={t.id}>
-              <figure
-                className="card-lift flex h-full flex-col gap-6 rounded-[20px] border border-line bg-surface p-7"
-                data-testid={`testimonial-${t.id}`}
-              >
-                <span className="font-script text-6xl leading-none text-lime">&ldquo;</span>
-                <blockquote className="text-ink/90 text-lg">{t.quote}</blockquote>
-                <figcaption className="mt-auto text-sm text-muted">
-                  — {t.attribution}{t.role ? ` · ${t.role}` : ""}
-                </figcaption>
-              </figure>
-            </StaggerItem>
-          ))}
-        </Stagger>
+          <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {testimonials.slice(0, 3).map((t) => (
+              <StaggerItem key={t.id}>
+                <figure
+                  className="card-lift flex h-full flex-col gap-6 rounded-[20px] border border-line bg-surface p-8"
+                  data-testid={`testimonial-${t.id}`}
+                >
+                  <span className="font-script text-6xl leading-none text-lime">&ldquo;</span>
+                  <blockquote className="text-lg leading-relaxed">{t.quote}</blockquote>
+                  <figcaption className="mt-auto text-sm muted">
+                    — {t.attribution}{t.role ? ` · ${t.role}` : ""}
+                  </figcaption>
+                </figure>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
       </section>
 
       {/* FROM THE JOURNAL */}
       <section className="border-t border-line bg-surface/30 py-24" data-testid="from-journal">
         <div className="container-page">
-          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-            <Reveal>
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">From the Journal</p>
-              <h2 className="mt-3 max-w-xl">
-                Thoughts that move people <span className="text-lime">forward</span>.
+          <div className="container-narrow">
+            <Reveal><SectionEyebrow>From the Journal</SectionEyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-5">
+                Thoughts that move people <span className="font-display-italic text-lime">forward</span>.
               </h2>
             </Reveal>
-            <Link to="/journal" className="inline-flex items-center gap-2 text-sm text-lime hover:underline" data-testid="journal-read-latest">
-              Read the journal <ArrowRight className="h-4 w-4" />
-            </Link>
+            <Reveal delay={0.16} className="mt-7 flex justify-center">
+              <Link to="/journal" className="btn-ghost" data-testid="journal-read-latest">
+                Read the journal <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Reveal>
           </div>
 
-          <Stagger className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <Stagger className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
             {displayedPosts.map((p) => (
               <StaggerItem key={p.slug}>
                 <Link

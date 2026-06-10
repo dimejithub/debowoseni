@@ -413,14 +413,21 @@ def _admin_get(table: str, item_id: str):
     return rows[0]
 
 
+_TABLES_WITHOUT_UPDATED_AT = {"publications"}
+
+
 def _admin_insert(table: str, payload: dict):
-    payload = {**payload, "created_at": now_iso(), "updated_at": now_iso()}
+    extras = {"created_at": now_iso()}
+    if table not in _TABLES_WITHOUT_UPDATED_AT:
+        extras["updated_at"] = now_iso()
+    payload = {**payload, **extras}
     res = sb_admin.table(table).insert(payload).execute()
     return (res.data or [payload])[0]
 
 
 def _admin_update(table: str, item_id: str, payload: dict):
-    payload = {**payload, "updated_at": now_iso()}
+    if table not in _TABLES_WITHOUT_UPDATED_AT:
+        payload = {**payload, "updated_at": now_iso()}
     res = sb_admin.table(table).update(payload).eq("id", item_id).execute()
     return (res.data or [{}])[0]
 
