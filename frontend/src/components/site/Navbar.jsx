@@ -26,7 +26,7 @@ const NAV_LINKS = [
   },
   { to: "/publications", label: "Publications" },
   { to: "/events", label: "Events" },
-  { to: "/journal", label: "Resources" },
+  { to: "/articles", label: "Resources" },
   { to: "/contact", label: "Contact" },
 ];
 

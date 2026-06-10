@@ -59,7 +59,7 @@ export default function Journal() {
         <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
           <div className="container-narrow">
-            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">The Journal</p></Reveal>
+            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">Articles</p></Reveal>
             <Reveal delay={0.08}>
               <h1 className="mx-auto mt-7 max-w-4xl">
                 Thoughts that move people <span className="font-display-italic text-lime">forward</span>.
@@ -83,7 +83,7 @@ export default function Journal() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search the journal…"
+                placeholder="Search articles…"
                 className="w-full rounded-full border border-line bg-surface py-3.5 pl-12 pr-5 text-sm text-ink placeholder:text-muted transition-colors focus:border-lime focus:outline-none"
                 data-testid="journal-search-input"
               />
@@ -124,7 +124,7 @@ export default function Journal() {
             <span className="font-script text-5xl text-lime">soon</span>
             <p className="mt-3 text-muted">
               {error
-                ? "The journal is being prepared. Please check back shortly."
+                ? "The articles are being prepared. Please check back shortly."
                 : query.trim()
                 ? "No pieces match your search. Try a different word."
                 : "No posts in this category yet. The first ones are on their way."}
@@ -137,7 +137,7 @@ export default function Journal() {
             {visible.map((p) => (
               <StaggerItem key={p.slug}>
                 <Link
-                  to={`/journal/${p.slug}`}
+                  to={`/articles/${p.slug}`}
                   className="group flex flex-col gap-4"
                   data-testid={`journal-card-${p.slug}`}
                 >

@@ -105,9 +105,8 @@ export default function Contact() {
               <p className="text-xs uppercase tracking-[0.2em] text-muted">Social</p>
               <ul className="mt-3 space-y-2 text-cream-ink/85">
                 <li><a className="lime-link" href={SOCIALS.linkedin} target="_blank" rel="noreferrer">LinkedIn →</a></li>
-                <li><a className="lime-link" href={SOCIALS.twitter} target="_blank" rel="noreferrer">X / Twitter →</a></li>
                 <li><a className="lime-link" href={SOCIALS.instagram} target="_blank" rel="noreferrer">Instagram →</a></li>
-                <li><a className="lime-link" href={SOCIALS.facebook} target="_blank" rel="noreferrer">Facebook →</a></li>
+                <li><a className="lime-link" href={SOCIALS.youtube} target="_blank" rel="noreferrer">YouTube →</a></li>
               </ul>
             </div>
           </aside>

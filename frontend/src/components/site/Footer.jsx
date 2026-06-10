@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { CONTACT_EMAIL, SOCIALS } from "../../lib/data";
+import { ArrowUpRight, Instagram, Linkedin, Youtube } from "lucide-react";
+import { CONTACT_EMAIL, LOGO, SOCIALS } from "../../lib/data";
 import { subscribeNewsletter } from "../../lib/api";
 import { toast } from "sonner";
 
@@ -36,11 +36,16 @@ export function Footer() {
       <div className="container-page">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-12">
           <div className="md:col-span-5">
-            <Link to="/" className="inline-flex items-center gap-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface font-display text-sm font-semibold text-ink">
-                do
+            <Link to="/" className="inline-flex items-center gap-2.5" data-testid="footer-logo">
+              <img
+                src={LOGO.primary}
+                alt="debowoseni"
+                className="h-9 w-9 rounded-md"
+                loading="lazy"
+              />
+              <span className="font-display text-base font-bold tracking-tight text-ink">
+                debowoseni
               </span>
-              <span className="font-display tracking-tight text-ink">Debo&apos; Owoseni</span>
             </Link>
             <p className="mt-5 max-w-md italic text-ink/85">
               A mission to catalyse transformation in{" "}
@@ -78,7 +83,7 @@ export function Footer() {
               <li><Link to="/about" className="lime-link">About</Link></li>
               <li><Link to="/books" className="lime-link">Books</Link></li>
               <li><Link to="/publications" className="lime-link">Publications</Link></li>
-              <li><Link to="/journal" className="lime-link">Resources</Link></li>
+              <li><Link to="/articles" className="lime-link">Resources</Link></li>
             </ul>
           </div>
 
@@ -102,10 +107,9 @@ export function Footer() {
               </li>
             </ul>
             <div className="mt-6 flex items-center gap-3">
-              <SocialIcon href={SOCIALS.twitter} label="X / Twitter"><Twitter className="h-4 w-4" /></SocialIcon>
-              <SocialIcon href={SOCIALS.instagram} label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
               <SocialIcon href={SOCIALS.linkedin} label="LinkedIn"><Linkedin className="h-4 w-4" /></SocialIcon>
-              <SocialIcon href={SOCIALS.facebook} label="Facebook"><Facebook className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href={SOCIALS.instagram} label="Instagram"><Instagram className="h-4 w-4" /></SocialIcon>
+              <SocialIcon href={SOCIALS.youtube} label="YouTube"><Youtube className="h-4 w-4" /></SocialIcon>
             </div>
           </div>
         </div>

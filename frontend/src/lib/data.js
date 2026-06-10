@@ -185,10 +185,9 @@ export const BRAND_LOGOS = [
 ];
 
 export const SOCIALS = {
-  twitter: "https://x.com/",
-  instagram: "https://instagram.com/",
-  linkedin: "https://linkedin.com/in/",
-  facebook: "https://facebook.com/",
+  linkedin: "https://www.linkedin.com/in/adebowaleowoseni/",
+  instagram: "https://www.instagram.com/debo.owoseni/",
+  youtube: "https://www.youtube.com/@adebowaleowoseni",
 };
 
 // Brand logo (the "db" mark) — lime on transparent/black.

@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import Home from "@/pages/Home";
@@ -25,6 +25,12 @@ import AdminEvents from "@/pages/AdminEvents";
 import AdminSubscribers from "@/pages/AdminSubscribers";
 import { AuthProvider } from "@/lib/auth";
 
+// Old /journal URLs (pre-rename) redirect to /articles.
+function LegacyArticleRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/articles/${slug}`} replace />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -38,8 +44,10 @@ function App() {
             <Route path="/books" element={<Books />} />
             <Route path="/publications" element={<Publications />} />
             <Route path="/events" element={<Events />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/journal/:slug" element={<JournalPost />} />
+            <Route path="/articles" element={<Journal />} />
+            <Route path="/articles/:slug" element={<JournalPost />} />
+            <Route path="/journal" element={<Navigate to="/articles" replace />} />
+            <Route path="/journal/:slug" element={<LegacyArticleRedirect />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/expressions/life-transformation-enquiry" element={<ExpressionLTE />} />
             <Route path="/expressions/academic-research-insight" element={<ExpressionAcademic />} />

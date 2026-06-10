@@ -203,9 +203,10 @@ export default function Home() {
                   Explore Programmes
                   <ArrowUpRight className="h-4 w-4" />
                 </MagneticButton>
-                <button
-                  type="button"
-                  onClick={() => setVideoOpen(true)}
+                <a
+                  href={YOUTUBE_CHANNEL_URL}
+                  target="_blank"
+                  rel="noreferrer noopener"
                   className="btn-ghost backdrop-blur"
                   data-testid="hero-watch-debo"
                 >
@@ -213,7 +214,7 @@ export default function Home() {
                     <Play className="h-3 w-3 fill-current text-lime" />
                   </span>
                   Watch Debo&apos;
-                </button>
+                </a>
               </div>
             </Reveal>
           </motion.div>
@@ -472,19 +473,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FROM THE JOURNAL */}
+      {/* ARTICLES */}
       <section className="border-t border-line bg-surface/30 py-24" data-testid="from-journal">
         <div className="container-page">
           <div className="container-narrow">
-            <Reveal><SectionEyebrow>From the Journal</SectionEyebrow></Reveal>
+            <Reveal><SectionEyebrow>Articles</SectionEyebrow></Reveal>
             <Reveal delay={0.08}>
               <h2 className="mt-5">
                 Thoughts that move people <span className="font-display-italic text-lime">forward</span>.
               </h2>
             </Reveal>
             <Reveal delay={0.16} className="mt-7 flex justify-center">
-              <Link to="/journal" className="btn-ghost" data-testid="journal-read-latest">
-                Read the journal <ArrowRight className="h-4 w-4" />
+              <Link to="/articles" className="btn-ghost" data-testid="journal-read-latest">
+                Read all articles <ArrowRight className="h-4 w-4" />
               </Link>
             </Reveal>
           </div>
@@ -493,7 +494,7 @@ export default function Home() {
             {displayedPosts.map((p) => (
               <StaggerItem key={p.slug}>
                 <Link
-                  to={p.placeholder ? "/journal" : `/journal/${p.slug}`}
+                  to={p.placeholder ? "/articles" : `/articles/${p.slug}`}
                   className="group flex flex-col gap-4"
                   data-testid={`home-journal-card-${p.slug}`}
                 >

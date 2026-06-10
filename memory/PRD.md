@@ -116,3 +116,13 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - ALL 56 blog covers replaced — Webflow template placeholders swapped for thematically matched Unsplash images via `/app/backend/assign_post_images.py` (keyword rules: marriage/fire/time/fog/storm/mind/scripture/work/writing… then category pools; all URLs curl-verified 200; idempotent + deterministic, re-runnable). Owner can still override any cover per-post in admin.
 - Bug fixed during session: `query` state line missing in Journal.jsx caused blank page — re-added, verified.
 - Verified via Playwright: search filtering, empty state, min-read labels, 0 Webflow image srcs remaining, post detail cover + min read.
+
+## Session update — 10 June 2026 (footer brand, Articles rename, share buttons, socials)
+- Footer brand now mirrors navbar: lime "db" SVG logo + "debowoseni" wordmark (footer-logo).
+- "Journal" → "Articles" everywhere user-facing: routes moved to /articles + /articles/:slug with legacy /journal/* redirects (LegacyArticleRedirect in App.js); copy updated in Journal.jsx, JournalPost.jsx, Home.jsx ("Articles", "Search articles…", "Back to articles", "More articles", "Read all articles"). data-testids kept as journal-* to avoid test churn.
+- Social share buttons (ShareRow in JournalPost.jsx): WhatsApp / X / LinkedIn / copy-link after each article body (share-whatsapp, share-x, share-linkedin, share-copy-link).
+- SOCIALS now exactly 3 (user decision, TikTok dropped as non-premium): LinkedIn /in/adebowaleowoseni, Instagram @debo.owoseni, YouTube @adebowaleowoseni. Footer + Contact updated.
+- Hero "Watch Debo'" now links to the YouTube channel (placeholder until user records the brand video; VideoModal kept in code for later re-wiring via VIDEO_URL env).
+- DB CLEANUP: stripped outdated "About the Author" footer blocks (old handles incl. TikTok) from all 54 imported article bodies.
+- NEW DOC: /app/SYSTEME_IO_GUIDE.md — 4-phase Systeme.io wiring guide (CSV now → API sync later → automations → funnel hygiene). Phase 2 (real-time API sync + quiz-result tags) awaits user's SYSTEME_API_KEY.
+- All verified via Playwright (footer logo/socials, redirects, share row, watch href, bio removal).
