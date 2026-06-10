@@ -98,3 +98,8 @@ A world-class personal platform for Debo' Owoseni — Transformation Coach · Ac
 - REMOVED (user screenshots): the "Coaching & programmes live inside the Expressions…" line under the Home books section, and "Hover to pause" captions on Home events marquee + Events page galleries.
 - EnquiryQuiz now has an EMAIL GATE: after Q3, visitor must enter email ("Where should we send it?") before the recommendation is revealed. Email posts to `/api/newsletter` → Supabase `subscribers` (verified 200). Capture is best-effort — API failure never blocks the result. data-testids: quiz-email-gate, quiz-email-input, quiz-email-submit.
 - Systeme takeover of the subscriber list is still pending (export Supabase `subscribers` or wire Systeme API later — P2).
+
+## Session update — 10 June 2026 (event consistency + caption removal)
+- LTE Live event now consistent everywhere: **7 March 2026 · Phoenix Cinema, Leicester, UK**. Updated: Supabase `events` row (slug renamed lte-london-workshop → lte-live-leicester, was "LTE Live · London / 2025-11-15"), `data.js` FALLBACK_EVENTS, `seed_content.py` EVENT, Home events-marquee caption, LTE page masterclass note ("last held on 7 March 2026 at Phoenix Cinema, Leicester").
+- Removed the "N images" caption under event galleries on the Events page (user screenshot).
+- Verified via Playwright: Events page shows correct title/date/venue from Supabase, no London/no caption remnants.

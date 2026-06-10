@@ -77,10 +77,6 @@ export default function Events() {
                     width={280}
                     testId={`event-marquee-${ev.slug || idx}`}
                   />
-                  <p className="mt-5 text-center text-xs uppercase tracking-[0.24em] text-muted">
-                    {(ev.gallery || []).length} image
-                    {(ev.gallery || []).length === 1 ? "" : "s"}
-                  </p>
                 </div>
               )}
             </article>

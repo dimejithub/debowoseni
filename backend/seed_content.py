@@ -75,8 +75,8 @@ TESTIMONIALS = [
 ]
 
 EVENT = dict(
-    slug="lte-london-workshop",
-    title="LTE Live · London",
+    slug="lte-live-leicester",
+    title="LTE Live · Leicester",
     description="A live cohort of the Life Transformation Experience — purpose-driven professionals walking through the Wheel of Life and the LTE map together. In-person session with rich conversation and practical tools.",
     cover_url="https://customer-assets.emergentagent.com/job_debo-platform/artifacts/auoge5e1__D5A3033.jpg",
     gallery=[
@@ -84,8 +84,8 @@ EVENT = dict(
         "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/t2iwgjek__D5A3030.jpg",
         "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/7b2phnc9__D5A3048.jpg",
     ],
-    location="London, UK",
-    event_date="2025-11-15",
+    location="Phoenix Cinema, Leicester, UK",
+    event_date="2026-03-07",
     status="published",
     sort_order=10,
 )

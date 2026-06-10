@@ -431,6 +431,12 @@ export default function ExpressionLTE() {
               to a programme.
             </h3>
           </Reveal>
+          <Reveal delay={0.12}>
+            <p className="mx-auto mt-5 max-w-xl text-sm text-muted">
+              The last LTE Live masterclass was held on 7 March 2026 at Phoenix Cinema,
+              Leicester — new dates are announced on the LTE page.
+            </p>
+          </Reveal>
           <Reveal delay={0.16}>
             <div className="mt-8 flex justify-center">
               <a

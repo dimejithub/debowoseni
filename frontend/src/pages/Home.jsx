@@ -405,7 +405,7 @@ export default function Home() {
           <Reveal delay={0.3} className="mt-14">
             <ImageMarquee images={eventGallery} duration={75} width={300} testId="events-marquee" />
             <p className="mt-6 text-center text-xs uppercase tracking-[0.24em] text-muted">
-              A glimpse from LTE Live · Leicester
+              A glimpse from LTE Live · Phoenix Cinema, Leicester · 7 March 2026
             </p>
           </Reveal>
         </div>
