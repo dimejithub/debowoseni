@@ -117,7 +117,7 @@ export function Footer() {
         <div className="mt-16 flex flex-col items-start justify-between gap-3 border-t border-line pt-8 text-sm text-muted md:flex-row md:items-center">
           <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
           <p className="text-xs">
-            Built with care · <Link to="/admin/login" className="hover:text-lime" data-testid="footer-admin-link">Admin</Link>
+            Built with care by <Link to="/admin/login" className="no-underline text-muted hover:text-muted" data-testid="footer-admin-link">Dimedia</Link>
           </p>
         </div>
       </div>
