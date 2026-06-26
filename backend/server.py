@@ -7,6 +7,7 @@ this backend; mutations are admin-only with a Supabase JWT.
 
 from __future__ import annotations
 
+import io
 import logging
 import os
 import re
@@ -21,6 +22,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
 from starlette.middleware.cors import CORSMiddleware
 from supabase import Client, create_client
+from PIL import Image, ImageOps
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -541,6 +543,38 @@ def admin_delete_event(item_id: str, user=Depends(require_user)):
 
 
 # IMAGE UPLOAD
+
+# Cap the largest stored dimension and re-encode to WebP. A typical 3–5 MB
+# phone photo drops to ~100–300 KB with no visible quality loss at display size.
+MAX_IMAGE_DIM = 1600
+WEBP_QUALITY = 80
+
+
+def optimize_image(contents: bytes, content_type: Optional[str]):
+    """Resize + re-encode a raster image to WebP.
+
+    Returns (out_bytes, ext, content_type). For inputs Pillow can't safely
+    process (SVGs, animated GIFs/WebP) the original bytes pass through with
+    ext=None so the caller keeps the original filename and content type.
+    """
+    try:
+        img = Image.open(io.BytesIO(contents))
+        # Preserve animation rather than flattening to a single frame.
+        if getattr(img, "is_animated", False):
+            return contents, None, content_type
+        img = ImageOps.exif_transpose(img)  # honour phone photo orientation
+        # Only ever downscale, never upscale.
+        img.thumbnail((MAX_IMAGE_DIM, MAX_IMAGE_DIM), Image.Resampling.LANCZOS)
+        # Keep transparency where it exists, otherwise flatten to RGB.
+        img = img.convert("RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB")
+        out = io.BytesIO()
+        img.save(out, format="WEBP", quality=WEBP_QUALITY, method=6)
+        return out.getvalue(), "webp", "image/webp"
+    except Exception as exc:  # noqa: BLE001 — non-images are stored untouched
+        logger.info("Image optimise skipped (%s); storing original.", exc)
+        return contents, None, content_type
+
+
 @api.post("/admin/upload")
 async def admin_upload(
     file: UploadFile = File(...),
@@ -548,14 +582,24 @@ async def admin_upload(
     user=Depends(require_user),
 ):
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", file.filename or "image")
-    object_path = f"{folder}/{uuid.uuid4().hex}-{safe_name}"
     contents = await file.read()
+
+    opt_bytes, opt_ext, opt_ct = optimize_image(contents, file.content_type)
+    if opt_ext:
+        base = re.sub(r"\.[^.]+$", "", safe_name) or "image"
+        safe_name = f"{base}.{opt_ext}"
+        contents = opt_bytes
+        content_type = opt_ct
+    else:
+        content_type = file.content_type or "application/octet-stream"
+
+    object_path = f"{folder}/{uuid.uuid4().hex}-{safe_name}"
     try:
         sb_admin.storage.from_("blog-images").upload(
             path=object_path,
             file=contents,
             file_options={
-                "content-type": file.content_type or "application/octet-stream",
+                "content-type": content_type,
                 "upsert": "true",
             },
         )
