@@ -14,7 +14,6 @@ import { LOGO, SOCIALS } from "../../lib/data";
  */
 const NAV_LINKS = [
   { to: "/about", label: "About" },
-  { to: "/books", label: "Books" },
   {
     label: "Expressions",
     children: [
@@ -24,20 +23,26 @@ const NAV_LINKS = [
       { label: "The Enquiry", to: "/expressions/the-enquiry" },
     ],
   },
-  { to: "/publications", label: "Publications" },
   { to: "/events", label: "Events" },
-  { to: "/articles", label: "Resources" },
+  {
+    label: "Resources",
+    children: [
+      { label: "Books", to: "/books" },
+      { label: "Publications", to: "/publications" },
+      { label: "Blogs", to: "/articles" },
+    ],
+  },
   { to: "/contact", label: "Contact" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [expOpen, setExpOpen] = useState(false);
+  const [openKey, setOpenKey] = useState(null);
   const headerRef = useRef(null);
   const { pathname } = useLocation();
   const close = () => {
     setOpen(false);
-    setExpOpen(false);
+    setOpenKey(null);
   };
 
   void pathname;
@@ -164,32 +169,34 @@ export function Navbar() {
                       </motion.li>
                     );
                   }
+                  const isOpen = openKey === l.label;
+                  const key = slug(l.label);
                   return (
                     <motion.li key={l.label} variants={rowVariants} className="border-b border-line/70">
                       <button
                         type="button"
-                        onClick={() => setExpOpen((v) => !v)}
+                        onClick={() => setOpenKey((k) => (k === l.label ? null : l.label))}
                         className="flex w-full items-center justify-between py-4 text-left"
-                        aria-expanded={expOpen}
-                        data-testid="mobile-expressions-toggle"
+                        aria-expanded={isOpen}
+                        data-testid={`mobile-${key}-toggle`}
                       >
                         <span className="font-display text-2xl tracking-tight text-ink">{l.label}</span>
                         <span className="flex items-center gap-3">
                           <span className="font-display text-xs text-muted">{idx}</span>
                           <ChevronDown
-                            className={`h-5 w-5 text-lime transition-transform duration-300 ${expOpen ? "rotate-180" : ""}`}
+                            className={`h-5 w-5 text-lime transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
                           />
                         </span>
                       </button>
                       <AnimatePresence initial={false}>
-                        {expOpen && (
+                        {isOpen && (
                           <motion.ul
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                             className="overflow-hidden"
-                            data-testid="mobile-expressions-list"
+                            data-testid={`mobile-${key}-list`}
                           >
                             {l.children.map((c) => (
                               <li key={c.label} className="pb-1 last:pb-4">
@@ -198,7 +205,7 @@ export function Navbar() {
                                     to={c.to}
                                     onClick={close}
                                     className="flex items-center gap-3 py-2 text-base text-ink/85 hover:text-lime"
-                                    data-testid={`mobile-expression-${slug(c.label)}`}
+                                    data-testid={`mobile-${key}-${slug(c.label)}`}
                                   >
                                     <span className="h-4 w-[2px] rounded bg-lime/70" aria-hidden />
                                     {c.label}
@@ -208,7 +215,7 @@ export function Navbar() {
                                     href={c.href || "#"}
                                     onClick={close}
                                     className="flex items-center gap-3 py-2 text-base text-ink/85 hover:text-lime"
-                                    data-testid={`mobile-expression-${slug(c.label)}`}
+                                    data-testid={`mobile-${key}-${slug(c.label)}`}
                                   >
                                     <span className="h-4 w-[2px] rounded bg-lime/70" aria-hidden />
                                     {c.label}
