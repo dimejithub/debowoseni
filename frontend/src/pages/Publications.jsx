@@ -1,90 +1,195 @@
-import { useEffect, useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ArrowRight, Clock, Search } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
-import { FALLBACK_PUBLICATIONS, SCHOLAR_URL } from "@/lib/data";
-import { getPublicationsList } from "@/lib/api";
+import { Seo } from "@/components/site/Seo";
+import { getPublishedPosts } from "@/lib/api";
+import { FALLBACK_POST_COVER } from "@/lib/data";
+import { readingTimeMin } from "@/lib/utils";
 
-export default function Publications() {
-  const [publications, setPublications] = useState(FALLBACK_PUBLICATIONS);
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      day: "numeric", month: "long", year: "numeric",
+    });
+  } catch { return ""; }
+}
+
+const PREFERRED_ORDER = ["Leadership", "Relationships", "Transformation", "Inspirational"];
+
+export default function Journal() {
+  const [posts, setPosts] = useState(null);
+  const [filter, setFilter] = useState("All Blogs");
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let active = true;
-    getPublicationsList().then((p) => active && p.length && setPublications(p)).catch(() => {});
+    getPublishedPosts(100)
+      .then((p) => active && setPosts(p))
+      .catch((e) => { if (active) { setError(e?.message || "Failed to load"); setPosts([]); } });
     return () => { active = false; };
   }, []);
 
+  const categories = useMemo(() => {
+    if (!posts) return ["All Blogs"];
+    const set = new Set(posts.map((p) => p.category).filter(Boolean));
+    const ordered = PREFERRED_ORDER.filter((c) => set.has(c));
+    const rest = Array.from(set).filter((c) => !PREFERRED_ORDER.includes(c));
+    return ["All Blogs", ...ordered, ...rest];
+  }, [posts]);
+
+  const visible = useMemo(() => {
+    if (!posts) return [];
+    let list = filter === "All Blogs" ? posts : posts.filter((p) => p.category === filter);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (p) =>
+          (p.title || "").toLowerCase().includes(q) ||
+          (p.excerpt || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [posts, filter, query]);
+
   return (
-    <div data-testid="publications-page">
+    <div data-testid="journal-page">
+      <Seo
+        title="Blogs"
+        description="Essays on transformation, leadership, relationships and inspiration — from the desk of Debo' Owoseni."
+      />
       <section className="relative overflow-hidden">
         <div className="lime-glow absolute inset-x-0 top-0 h-[45vh]" aria-hidden />
         <div className="container-page relative py-20 md:py-28">
           <div className="container-narrow">
-            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">Academic Work</p></Reveal>
+            <Reveal><p className="text-xs uppercase tracking-[0.28em] text-muted">Blogs</p></Reveal>
             <Reveal delay={0.08}>
               <h1 className="mx-auto mt-7 max-w-4xl">
-                Explore my <span className="font-display-italic text-lime">publications</span>.
+                Thoughts that move people <span className="font-display-italic text-lime">forward</span>.
               </h1>
             </Reveal>
             <Reveal delay={0.16}>
               <p className="mx-auto mt-7 max-w-2xl text-lg md:text-xl text-ink/85">
-                Peer-reviewed research on AI, higher education, research practice, and the
-                informal economy — with a focus on the ethical and human implications of
-                emerging technologies.
+                Short pieces written at the intersection of faith, knowledge, and purpose.
               </p>
-            </Reveal>
-            <Reveal delay={0.22} className="mt-9 flex justify-center">
-              <a
-                href={SCHOLAR_URL}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="btn-ghost"
-                data-testid="publications-scholar"
-              >
-                View on Google Scholar <ArrowUpRight className="h-4 w-4" />
-              </a>
             </Reveal>
           </div>
         </div>
       </section>
 
       <section className="lime-corner-glow container-page pb-24 pt-10">
-        <div className="mx-auto max-w-4xl grid grid-cols-1 gap-4">
-          {publications.map((p, i) => (
-            <Reveal key={p.id || p.title} delay={Math.min(i * 0.06, 0.36)}>
-              <a
-                href={p.url || SCHOLAR_URL}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="card-lift group flex items-center gap-6 rounded-[20px] border border-line bg-surface px-6 py-7"
-                data-testid={`publication-row-${i}`}
-              >
-                <p className="w-14 font-display text-3xl tracking-tight text-muted md:text-4xl">
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <div className="flex-1">
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted">{p.year}</p>
-                  <h3 className="mt-2 text-2xl leading-tight md:text-3xl">{p.title}</h3>
-                </div>
-                <span className="hidden items-center gap-2 text-sm text-lime md:inline-flex">
-                  Access library
-                  <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                </span>
-              </a>
-            </Reveal>
-          ))}
-        </div>
+        {posts !== null && (
+          <div className="mx-auto mb-8 max-w-xl">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search blogs…"
+                className="w-full rounded-full border border-line bg-surface py-3.5 pl-12 pr-5 text-sm text-ink placeholder:text-muted transition-colors focus:border-lime focus:outline-none"
+                data-testid="journal-search-input"
+              />
+            </label>
+          </div>
+        )}
 
-        <div className="mt-12 flex justify-center">
-          <a
-            href={SCHOLAR_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="btn-ghost"
-            data-testid="publications-see-more"
+        {posts !== null && categories.length > 1 && (
+          <div className="mb-12 flex flex-wrap justify-center gap-2">
+            {categories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setFilter(c)}
+                className={`rounded-full border px-4 py-2 text-sm transition ${
+                  filter === c
+                    ? "border-lime bg-lime text-bg"
+                    : "border-line bg-surface text-ink hover:border-muted"
+                }`}
+                data-testid={`journal-filter-${c.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {posts === null && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-72 animate-pulse rounded-[20px] border border-line bg-surface" />
+            ))}
+          </div>
+        )}
+
+        {posts !== null && visible.length === 0 && (
+          <div className="mx-auto max-w-xl rounded-[20px] border border-line bg-surface px-8 py-16 text-center" data-testid="journal-empty">
+            <span className="font-script text-5xl text-lime">soon</span>
+            <p className="mt-3 text-muted">
+              {error
+                ? "The blogs are being prepared. Please check back shortly."
+                : query.trim()
+                ? "No pieces match your search. Try a different word."
+                : "No posts in this category yet. The first ones are on their way."}
+            </p>
+          </div>
+        )}
+
+        {posts !== null && visible.length > 0 && (
+          <motion.div
+            key={`${filter}|${query.trim().toLowerCase()}`}
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
           >
-            See more on Google Scholar <ArrowUpRight className="h-4 w-4" />
-          </a>
-        </div>
+            {visible.map((p) => (
+              <motion.div
+                key={p.slug}
+                variants={{
+                  hidden: { opacity: 0, y: 18 },
+                  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+                }}
+              >
+                <Link
+                  to={`/articles/${p.slug}`}
+                  className="group flex flex-col gap-4"
+                  data-testid={`journal-card-${p.slug}`}
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-[16px] border border-line bg-surface">
+                    <img
+                      src={p.cover_url || FALLBACK_POST_COVER}
+                      alt={p.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                    {p.category && (
+                      <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-lime px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-bg">
+                        {p.category}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-2xl leading-tight text-ink group-hover:text-lime">
+                    {p.title}
+                  </h3>
+                  <p className="line-clamp-3 text-muted">{p.excerpt}</p>
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                    <span>{p.author_name || "Debo Owoseni"} · {formatDate(p.published_at)}</span>
+                    <span className="inline-flex items-center gap-1">
+                      · <Clock className="h-3 w-3 text-lime" /> {readingTimeMin(p.body)} min read
+                    </span>
+                  </p>
+                  <span className="mt-1 inline-flex items-center gap-2 text-sm text-lime opacity-0 transition group-hover:opacity-100">
+                    Read post <ArrowRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </section>
     </div>
   );
