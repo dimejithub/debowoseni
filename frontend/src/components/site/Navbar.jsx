@@ -78,7 +78,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-2 lg:flex xl:gap-3" data-testid="nav-links">
+        <nav className="hidden items-center gap-5 lg:flex xl:gap-7" data-testid="nav-links">
           {NAV_LINKS.map((l) =>
             l.children ? (
               <NavDropdown key={l.label} item={l} />
