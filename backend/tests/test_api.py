@@ -479,7 +479,7 @@ class TestAdminUpload:
         data = r.json()
         assert data["url"].startswith("http")
         assert "blog-images" in data["url"]
-        # Public URL loads
+        # Public URL loads and is the optimised WebP (RIFF....WEBP signature)
         rr = requests.get(data["url"], timeout=30)
         assert rr.status_code == 200, f"Public URL did not load: {rr.status_code}"
-        assert rr.content[:4] == b"\x89PNG"
+        assert rr.content[:4] == b"RIFF" and rr.content[8:12] == b"WEBP"
