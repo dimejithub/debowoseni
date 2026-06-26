@@ -104,12 +104,12 @@ export const FALLBACK_BOOKS = [
 ];
 
 export const FALLBACK_PUBLICATIONS = [
-  { title: "Generative AI in Research", year: "2026", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
-  { title: "Artificial Intelligence in the Informal Economy", year: "2026", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
-  { title: "Effectuated Spirituality", year: "2025", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
-  { title: "Generative AI in Higher Education", year: "2024", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
-  { title: "Metaphorical Meaning of Digital Transformation", year: "2023", url: "https://www.emerald.com/dts/article/2/1/78/102283/What-is-digital-transformation-Investigating-the" },
-  { title: "Employment 5.0", year: "2022", url: "https://scholar.google.com/citations?user=la2x65UAAAAJ&hl=en" },
+  { title: "Generative AI in Research", year: "2026", url: "https://link.springer.com/book/10.1007/978-3-032-02440-4" },
+  { title: "Artificial Intelligence in the Informal Economy", year: "2026", url: "https://doi.org/10.1108/IJEBR-12-2024-1457" },
+  { title: "Effectuated Spirituality", year: "2025", url: "https://doi.org/10.1108/JEEE-09-2024-0409" },
+  { title: "Generative AI in Higher Education", year: "2024", url: "https://doi.org/10.1007/978-3-031-60179-8" },
+  { title: "Metaphorical Meaning of Digital Transformation", year: "2023", url: "https://doi.org/10.1108/DTS-10-2022-0049" },
+  { title: "Employment 5.0", year: "2022", url: "https://doi.org/10.1016/j.techsoc.2022.102086" },
 ];
 
 export const SCHOLAR_URL =
