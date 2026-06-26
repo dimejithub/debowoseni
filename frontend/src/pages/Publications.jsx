@@ -73,6 +73,18 @@ export default function Publications() {
             </Reveal>
           ))}
         </div>
+
+        <div className="mt-12 flex justify-center">
+          <a
+            href={SCHOLAR_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="btn-ghost"
+            data-testid="publications-see-more"
+          >
+            See more on Google Scholar <ArrowUpRight className="h-4 w-4" />
+          </a>
+        </div>
       </section>
     </div>
   );
