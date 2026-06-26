@@ -23,7 +23,6 @@ const NAV_LINKS = [
       { label: "The Enquiry", to: "/expressions/the-enquiry" },
     ],
   },
-  { to: "/events", label: "Events" },
   {
     label: "Resources",
     children: [
@@ -32,7 +31,7 @@ const NAV_LINKS = [
       { label: "Blogs", to: "/articles" },
     ],
   },
-  { to: "/contact", label: "Contact" },
+  { to: "/events", label: "Events" },
 ];
 
 export function Navbar() {
