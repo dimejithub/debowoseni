@@ -7,7 +7,10 @@ import { adminEvents, adminUpload } from "@/lib/api";
 
 const EMPTY = {
   title: "", slug: "", description: "", cover_url: "",
-  gallery: [], location: "", event_date: "", register_url: "",
+  gallery: [], location: "", location_type: "in_person",
+  event_date: "", start_time: "", end_time: "",
+  is_free: true, price: "", currency: "GBP",
+  register_url: "",
   status: "published", sort_order: 0,
 };
 
@@ -35,7 +38,15 @@ export default function AdminEvents() {
 
   const save = async () => {
     if (!draft.title.trim()) { toast.error("Title required"); return; }
-    const payload = { ...draft, event_date: draft.event_date || null, register_url: (draft.register_url || "").trim() || null };
+    const payload = {
+      ...draft,
+      event_date: draft.event_date || null,
+      start_time: draft.start_time || null,
+      end_time: draft.end_time || null,
+      register_url: (draft.register_url || "").trim() || null,
+      price: draft.is_free ? null : (draft.price === "" || draft.price == null ? null : Number(draft.price)),
+      currency: draft.currency || "GBP",
+    };
     try {
       if (editingId) { await adminEvents.update(editingId, payload); toast.success("Updated."); }
       else { await adminEvents.create(payload); toast.success("Added."); }
@@ -49,6 +60,12 @@ export default function AdminEvents() {
       ...EMPTY, ...ev,
       gallery: Array.isArray(ev.gallery) ? ev.gallery : [],
       event_date: ev.event_date ? ev.event_date.slice(0, 10) : "",
+      location_type: ev.location_type || "in_person",
+      is_free: ev.is_free ?? true,
+      price: ev.price ?? "",
+      currency: ev.currency || "GBP",
+      start_time: ev.start_time || "",
+      end_time: ev.end_time || "",
     });
     window.scrollTo(0, 0);
   };
@@ -119,12 +136,68 @@ export default function AdminEvents() {
                   className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
                   data-testid="event-date" />
               </Field>
-              <Field label="Location">
+              <Field label="Venue / address (or platform)">
                 <input value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })}
                   className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
                   data-testid="event-location" />
               </Field>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Start time">
+                <input type="time" value={draft.start_time} onChange={(e) => setDraft({ ...draft, start_time: e.target.value })}
+                  className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                  data-testid="event-start-time" />
+              </Field>
+              <Field label="End time (optional)">
+                <input type="time" value={draft.end_time} onChange={(e) => setDraft({ ...draft, end_time: e.target.value })}
+                  className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                  data-testid="event-end-time" />
+              </Field>
+            </div>
+
+            <Field label="Location type">
+              <select value={draft.location_type} onChange={(e) => setDraft({ ...draft, location_type: e.target.value })}
+                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                data-testid="event-location-type">
+                <option value="in_person">In-person</option>
+                <option value="online">Online</option>
+              </select>
+            </Field>
+
+            <Field label="Admission">
+              <select value={draft.is_free ? "free" : "paid"} onChange={(e) => setDraft({ ...draft, is_free: e.target.value === "free" })}
+                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                data-testid="event-admission">
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+              </select>
+            </Field>
+
+            {!draft.is_free && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Price">
+                  <input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                    data-testid="event-price" />
+                </Field>
+                <Field label="Currency">
+                  <select value={draft.currency} onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+                    className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                    data-testid="event-currency">
+                    <option value="GBP">GBP (£)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="CAD">CAD ($)</option>
+                    <option value="AUD">AUD ($)</option>
+                    <option value="ZAR">ZAR (R)</option>
+                    <option value="GHS">GHS (₵)</option>
+                  </select>
+                </Field>
+              </div>
+            )}
 
             <Field label="Registration link (Systeme.io short link or any URL)">
               <input value={draft.register_url} onChange={(e) => setDraft({ ...draft, register_url: e.target.value })}
