@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { ImageMarquee } from "@/components/site/Marquee";
 import { FALLBACK_EVENTS } from "@/lib/data";
@@ -66,6 +66,19 @@ export default function Events() {
                 </div>
                 {ev.description && (
                   <p className="mx-auto mt-7 max-w-2xl text-lg">{ev.description}</p>
+                )}
+                {ev.register_url && (
+                  <div className="mt-8">
+                    <a
+                      href={ev.register_url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="btn-lime"
+                      data-testid={`event-register-${ev.slug || idx}`}
+                    >
+                      Register <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </div>
                 )}
               </div>
 
