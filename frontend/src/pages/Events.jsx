@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapPin, ArrowUpRight } from "lucide-react";
+import { MapPin, ArrowUpRight, Clock, Globe, Tag } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { ImageMarquee } from "@/components/site/Marquee";
 import { FALLBACK_EVENTS } from "@/lib/data";
@@ -12,6 +12,34 @@ function formatDate(d) {
       day: "numeric", month: "long", year: "numeric",
     });
   } catch { return ""; }
+}
+
+function formatTime(t) {
+  if (!t) return "";
+  const parts = String(t).split(":");
+  const h = Number(parts[0]);
+  if (Number.isNaN(h)) return t;
+  const m = Number(parts[1] || 0);
+  const ap = h >= 12 ? "PM" : "AM";
+  const hr = ((h + 11) % 12) + 1;
+  return `${hr}:${String(m).padStart(2, "0")} ${ap}`;
+}
+
+function timeLabel(ev) {
+  const s = formatTime(ev.start_time), e = formatTime(ev.end_time);
+  if (s && e) return `${s} – ${e}`;
+  return s || "";
+}
+
+const CURRENCY_SYMBOLS = { GBP: "£", USD: "$", EUR: "€", NGN: "₦", CAD: "$", AUD: "$", ZAR: "R", GHS: "₵" };
+
+function priceLabel(ev) {
+  if (ev.is_free) return "Free";
+  if (ev.price == null || ev.price === "") return "";
+  const sym = CURRENCY_SYMBOLS[ev.currency] || (ev.currency ? ev.currency + " " : "");
+  const amt = Number(ev.price);
+  if (Number.isNaN(amt)) return "";
+  return `${sym}${Number.isInteger(amt) ? amt : amt.toFixed(2)}`;
 }
 
 export default function Events() {
@@ -58,9 +86,21 @@ export default function Events() {
                 <h2>{ev.title}</h2>
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted">
                   {ev.event_date && <span>{formatDate(ev.event_date)}</span>}
-                  {ev.location && (
+                  {timeLabel(ev) && (
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" /> {ev.location}
+                      <Clock className="h-3.5 w-3.5" /> {timeLabel(ev)}
+                    </span>
+                  )}
+                  {(ev.location_type === "online" || ev.location) && (
+                    <span className="inline-flex items-center gap-1">
+                      {ev.location_type === "online"
+                        ? <><Globe className="h-3.5 w-3.5" /> {ev.location || "Online"}</>
+                        : <><MapPin className="h-3.5 w-3.5" /> {ev.location}</>}
+                    </span>
+                  )}
+                  {priceLabel(ev) && (
+                    <span className="inline-flex items-center gap-1">
+                      <Tag className="h-3.5 w-3.5" /> {priceLabel(ev)}
                     </span>
                   )}
                 </div>
