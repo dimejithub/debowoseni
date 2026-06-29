@@ -189,6 +189,7 @@ class EventIn(BaseModel):
     gallery: list[str] = []
     location: Optional[str] = None
     event_date: Optional[str] = None
+    register_url: Optional[str] = None
     status: str = Field(default="published", pattern="^(draft|published)$")
     sort_order: int = 0
 
@@ -201,6 +202,7 @@ class EventUpdate(BaseModel):
     gallery: Optional[list[str]] = None
     location: Optional[str] = None
     event_date: Optional[str] = None
+    register_url: Optional[str] = None
     status: Optional[str] = Field(default=None, pattern="^(draft|published)$")
     sort_order: Optional[int] = None
 
