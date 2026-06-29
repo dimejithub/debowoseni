@@ -7,7 +7,7 @@ import { adminEvents, adminUpload } from "@/lib/api";
 
 const EMPTY = {
   title: "", slug: "", description: "", cover_url: "",
-  gallery: [], location: "", event_date: "",
+  gallery: [], location: "", event_date: "", register_url: "",
   status: "published", sort_order: 0,
 };
 
@@ -35,7 +35,7 @@ export default function AdminEvents() {
 
   const save = async () => {
     if (!draft.title.trim()) { toast.error("Title required"); return; }
-    const payload = { ...draft, event_date: draft.event_date || null };
+    const payload = { ...draft, event_date: draft.event_date || null, register_url: (draft.register_url || "").trim() || null };
     try {
       if (editingId) { await adminEvents.update(editingId, payload); toast.success("Updated."); }
       else { await adminEvents.create(payload); toast.success("Added."); }
@@ -125,6 +125,13 @@ export default function AdminEvents() {
                   data-testid="event-location" />
               </Field>
             </div>
+
+            <Field label="Registration link (Systeme.io short link or any URL)">
+              <input value={draft.register_url} onChange={(e) => setDraft({ ...draft, register_url: e.target.value })}
+                placeholder="https://..."
+                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                data-testid="event-register-url" />
+            </Field>
 
             <Field label="Cover image">
               {draft.cover_url && (
