@@ -11,7 +11,11 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  const state = { target: "generic", busy: false, lastPrompt: "", lastHost: "" };
+  const state = {
+    target: "generic", busy: false,
+    lastPrompt: "", lastHost: "",
+    lastAnalysis: null, lastVia: "",
+  };
 
   const els = {
     form: $("#urlform"),
@@ -496,6 +500,8 @@
       }
 
       setStatus("Distilling the design system & structure…", 88);
+      state.lastAnalysis = analysis;
+      state.lastVia = via;
       const prompt = buildPrompt(analysis, state.target);
       state.lastPrompt = prompt;
       state.lastHost = analysis.host;
@@ -540,11 +546,11 @@
     $$(".chip", els.chips).forEach((c) => c.classList.remove("is-active"));
     btn.classList.add("is-active");
     state.target = btn.dataset.target;
-    // Live re-render if we already have an analysis-driven prompt.
-    if (state.lastPrompt && els.url.value) {
-      // Rebuild quickly from the current URL without re-fetching would need cache;
-      // simplest correct behaviour: re-run so the new target framing applies.
-      run(els.url.value);
+    // Re-target instantly from the cached analysis — no re-fetch needed.
+    if (state.lastAnalysis) {
+      const prompt = buildPrompt(state.lastAnalysis, state.target);
+      state.lastPrompt = prompt;
+      renderResult(state.lastAnalysis, prompt, state.lastVia);
     }
   });
 
