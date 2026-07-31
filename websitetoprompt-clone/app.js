@@ -30,6 +30,9 @@
     statusFill: $("#statusFill"),
     result: $("#result"),
     resultMeta: $("#resultMeta"),
+    resultInsights: $("#resultInsights"),
+    palette: $("#palette"),
+    stats: $("#stats"),
     promptOut: $("#promptOut"),
     copyBtn: $("#copyBtn"),
     downloadBtn: $("#downloadBtn"),
@@ -529,9 +532,34 @@
       `<b>${a.host}</b> → ${TARGETS[state.target].label} prompt` +
       (facts.length ? ` · ${facts.join(" · ")}` : "") +
       ` · <span style="opacity:.6">source: ${via}</span>`;
+    // Detected-palette swatches
+    const swatches = (a.colors || []).filter((c) => /^#|^rgb/.test(c)).slice(0, 6);
+    if (swatches.length) {
+      els.palette.innerHTML = swatches
+        .map((c) => `<span class="swatch"><i style="background:${cssColor(c)}"></i>${c}</span>`)
+        .join("");
+    } else {
+      els.palette.innerHTML = '<span class="swatch" style="padding-left:10px">palette inferred</span>';
+    }
+
+    // Live prompt stats — chars, words, ~tokens (≈4 chars/token heuristic)
+    const chars = prompt.length;
+    const words = (prompt.match(/\S+/g) || []).length;
+    const tokens = Math.round(chars / 4);
+    els.stats.innerHTML =
+      `<span><b>${words.toLocaleString()}</b> words</span>` +
+      `<span><b>${chars.toLocaleString()}</b> chars</span>` +
+      `<span>~<b>${tokens.toLocaleString()}</b> tokens</span>`;
+    els.resultInsights.hidden = false;
+
     els.promptOut.textContent = prompt;
     els.result.hidden = false;
     els.result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // Guard against untrusted colour strings landing in inline style.
+  function cssColor(c) {
+    return /^#[0-9a-f]{3,8}$/i.test(c) || /^rgba?\([\d.,\s%]+\)$/i.test(c) ? c : "transparent";
   }
 
   // --------------------------------------------------------------- UI wiring
