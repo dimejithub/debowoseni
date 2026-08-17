@@ -1,0 +1,46 @@
+name: Run email automations
+
+# Render's free and starter web services have no scheduler, so the drip
+# sequences are driven from here. Every hour this pings the backend, which
+# sends whatever sequence steps have come due. It doubles as a keep-warm
+# ping, so the admin panel is rarely cold when Debo opens it.
+#
+# Two repository secrets are required:
+#   BACKEND_URL      e.g. https://debowoseni-api.onrender.com  (no trailing slash)
+#   AUTOMATION_TOKEN must match the AUTOMATION_TOKEN env var on the backend
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly, off the hour — GitHub's :00 queue is congested
+  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send any due sequence emails
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          AUTOMATION_TOKEN: ${{ secrets.AUTOMATION_TOKEN }}
+        run: |
+          if [ -z "$BACKEND_URL" ] || [ -z "$AUTOMATION_TOKEN" ]; then
+            echo "BACKEND_URL or AUTOMATION_TOKEN secret is not set — skipping."
+            exit 0
+          fi
+
+          # --max-time is generous because a cold Render instance can take
+          # ~30s to wake before it even starts processing.
+          response=$(curl -sS -w '\n%{http_code}' --max-time 120 \
+            -X POST "$BACKEND_URL/api/tasks/run-sequences" \
+            -H "X-Task-Token: $AUTOMATION_TOKEN")
+
+          body=$(echo "$response" | sed '$d')
+          code=$(echo "$response" | tail -n1)
+
+          echo "HTTP $code"
+          echo "$body"
+
+          if [ "$code" != "200" ]; then
+            echo "::error::Automation run failed with HTTP $code"
+            exit 1
+          fi

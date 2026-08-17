@@ -24,6 +24,16 @@ import AdminBooks from "@/pages/AdminBooks";
 import AdminPublications from "@/pages/AdminPublications";
 import AdminEvents from "@/pages/AdminEvents";
 import AdminSubscribers from "@/pages/AdminSubscribers";
+import AdminRegistrations from "@/pages/AdminRegistrations";
+import AdminCampaigns from "@/pages/AdminCampaigns";
+import AdminCampaignEditor from "@/pages/AdminCampaignEditor";
+import AdminPeople from "@/pages/AdminPeople";
+import AdminPerson from "@/pages/AdminPerson";
+import AdminSequences from "@/pages/AdminSequences";
+import AdminSequenceEditor from "@/pages/AdminSequenceEditor";
+import Programmes from "@/pages/Programmes";
+import Community from "@/pages/Community";
+import Unsubscribe from "@/pages/Unsubscribe";
 import { AuthProvider } from "@/lib/auth";
 
 // Old /journal URLs (pre-rename) redirect to /articles.
@@ -55,7 +65,11 @@ function App() {
             <Route path="/expressions/academic-research-insight" element={<ExpressionAcademic />} />
             <Route path="/expressions/marriage-101" element={<ExpressionMarriage />} />
             <Route path="/expressions/the-enquiry" element={<TheEnquiry />} />
+            {/* Replaces the Systeme funnel that lived on lte.debowoseni.com */}
+            <Route path="/programmes" element={<Programmes />} />
+            <Route path="/community" element={<Community />} />
           </Route>
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/posts" element={<AdminPosts />} />
@@ -66,6 +80,14 @@ function App() {
           <Route path="/admin/publications" element={<AdminPublications />} />
           <Route path="/admin/events" element={<AdminEvents />} />
           <Route path="/admin/subscribers" element={<AdminSubscribers />} />
+          <Route path="/admin/registrations" element={<AdminRegistrations />} />
+          <Route path="/admin/emails" element={<AdminCampaigns />} />
+          <Route path="/admin/emails/new" element={<AdminCampaignEditor />} />
+          <Route path="/admin/emails/:id" element={<AdminCampaignEditor />} />
+          <Route path="/admin/people" element={<AdminPeople />} />
+          <Route path="/admin/people/:email" element={<AdminPerson />} />
+          <Route path="/admin/automations" element={<AdminSequences />} />
+          <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

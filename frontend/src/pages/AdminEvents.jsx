@@ -10,7 +10,7 @@ const EMPTY = {
   gallery: [], location: "", location_type: "in_person",
   event_date: "", start_time: "", end_time: "",
   is_free: true, price: "", currency: "GBP",
-  register_url: "",
+  register_url: "", registration_open: false, capacity: "",
   status: "published", sort_order: 0,
 };
 
@@ -43,7 +43,16 @@ export default function AdminEvents() {
       event_date: draft.event_date || null,
       start_time: draft.start_time || null,
       end_time: draft.end_time || null,
-      register_url: (draft.register_url || "").trim() || null,
+      // On-site sign-ups and an external link are mutually exclusive, so only
+      // one of them is ever persisted.
+      register_url: draft.registration_open
+        ? null
+        : (draft.register_url || "").trim() || null,
+      registration_open: Boolean(draft.registration_open),
+      capacity:
+        draft.registration_open && draft.capacity !== "" && draft.capacity != null
+          ? Number(draft.capacity)
+          : null,
       price: draft.is_free ? null : (draft.price === "" || draft.price == null ? null : Number(draft.price)),
       currency: draft.currency || "GBP",
     };
@@ -66,6 +75,8 @@ export default function AdminEvents() {
       currency: ev.currency || "GBP",
       start_time: ev.start_time || "",
       end_time: ev.end_time || "",
+      registration_open: ev.registration_open ?? false,
+      capacity: ev.capacity ?? "",
     });
     window.scrollTo(0, 0);
   };
@@ -199,12 +210,33 @@ export default function AdminEvents() {
               </div>
             )}
 
-            <Field label="Registration link (Systeme.io short link or any URL)">
-              <input value={draft.register_url} onChange={(e) => setDraft({ ...draft, register_url: e.target.value })}
-                placeholder="https://..."
+            <Field label="Registration">
+              <select
+                value={draft.registration_open ? "site" : "link"}
+                onChange={(e) => setDraft({ ...draft, registration_open: e.target.value === "site" })}
                 className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
-                data-testid="event-register-url" />
+                data-testid="event-registration-mode">
+                <option value="site">Take sign-ups on this site</option>
+                <option value="link">Send people to an external link</option>
+              </select>
             </Field>
+
+            {draft.registration_open ? (
+              <Field label="Capacity (optional — extra sign-ups go to a waitlist)">
+                <input type="number" min="1" step="1" value={draft.capacity}
+                  onChange={(e) => setDraft({ ...draft, capacity: e.target.value })}
+                  placeholder="e.g. 10"
+                  className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                  data-testid="event-capacity" />
+              </Field>
+            ) : (
+              <Field label="Registration link (any external URL)">
+                <input value={draft.register_url} onChange={(e) => setDraft({ ...draft, register_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                  data-testid="event-register-url" />
+              </Field>
+            )}
 
             <Field label="Cover image">
               {draft.cover_url && (

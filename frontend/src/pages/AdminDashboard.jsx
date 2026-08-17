@@ -1,26 +1,82 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, LogOut, FileText, Quote, BookOpen, GraduationCap, Calendar, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Calendar,
+  Contact,
+  FileText,
+  GraduationCap,
+  LogOut,
+  Mail,
+  Quote,
+  Send,
+  Users,
+  Workflow,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { getHealth } from "@/lib/api";
+import { adminStats, getHealth } from "@/lib/api";
 
 const CARDS = [
   { to: "/admin/posts", title: "Journal posts", desc: "Categories, drafts, publishes.", Icon: FileText, testId: "card-posts" },
   { to: "/admin/testimonials", title: "Testimonials", desc: "Quotes shown on the home page.", Icon: Quote, testId: "card-testimonials" },
   { to: "/admin/books", title: "Books", desc: "Featured book + bookshelf.", Icon: BookOpen, testId: "card-books" },
   { to: "/admin/publications", title: "Publications", desc: "Academic papers + Scholar links.", Icon: GraduationCap, testId: "card-publications" },
-  { to: "/admin/events", title: "Events", desc: "Past & live events with image galleries.", Icon: Calendar, testId: "card-events" },
-  { to: "/admin/subscribers", title: "Subscribers", desc: "Quiz + newsletter emails. Export CSV for Systeme.", Icon: Mail, testId: "card-subscribers" },
+  { to: "/admin/events", title: "Events", desc: "Events, galleries and registration settings.", Icon: Calendar, testId: "card-events" },
+  { to: "/admin/registrations", title: "Registrations", desc: "Who signed up, who attended.", Icon: Users, testId: "card-registrations" },
+  { to: "/admin/people", title: "People", desc: "Every contact, with their full history.", Icon: Contact, testId: "card-people" },
+  { to: "/admin/emails", title: "Emails", desc: "Write and send to the list.", Icon: Send, testId: "card-emails" },
+  { to: "/admin/automations", title: "Automations", desc: "Triggered email sequences.", Icon: Workflow, testId: "card-automations" },
+  { to: "/admin/subscribers", title: "Subscribers", desc: "The whole mailing list, exportable.", Icon: Mail, testId: "card-subscribers" },
 ];
+
+/**
+ * The frontend (Cloudflare) and the backend (Render) deploy independently, so
+ * the dashboard can briefly receive a stats payload from an older backend that
+ * has no community/enrolment/automation keys. Reading through those blind would
+ * blank the whole admin panel, so every access goes through this.
+ */
+const num = (value, fallback = "—") => (typeof value === "number" ? value : fallback);
+
+/** Tiny inline sparkline — 30 days of sign-ups, no charting library needed. */
+function Sparkline({ points }) {
+  if (!points || points.length < 2) return null;
+  const max = Math.max(...points.map((p) => p.count), 1);
+  const w = 240;
+  const h = 40;
+  const step = w / (points.length - 1);
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - (p.count / max) * h).toFixed(1)}`)
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="mt-4 h-10 w-full" preserveAspectRatio="none" aria-hidden>
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-lime" />
+    </svg>
+  );
+}
+
+function Stat({ label, value, sub, children }) {
+  return (
+    <div className="rounded-[20px] border border-line bg-surface p-6">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted">{label}</p>
+      <p className="mt-3 font-display text-4xl text-ink">{value}</p>
+      {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
+      {children}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [health, setHealth] = useState(null);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     if (loading || !user) return;
     getHealth().then(setHealth).catch(() => setHealth(null));
+    adminStats().then(setStats).catch(() => setStats(null));
   }, [loading, user]);
 
   if (!loading && !user) return <Navigate to="/admin/login" replace />;
@@ -56,8 +112,32 @@ export default function AdminDashboard() {
             <p className="font-semibold text-lime">Some Supabase tables are not initialised.</p>
             <p className="mt-2 text-muted">
               Missing: <code className="text-ink">{missingTables.join(", ")}</code>. Paste{" "}
-              <code className="rounded bg-bg px-2 py-0.5 text-ink">/app/backend/supabase_schema_phase2.sql</code>{" "}
+              <code className="rounded bg-bg px-2 py-0.5 text-ink">backend/supabase_schema_phase3.sql</code>{" "}
               into the Supabase SQL editor and Run.
+            </p>
+          </div>
+        )}
+
+        {stats?.mail_configured && stats.automation_scheduler_configured === false && (
+          <div className="mb-6 rounded-[16px] border border-line bg-surface p-5 text-sm" data-testid="scheduler-warning">
+            <p className="font-semibold text-lime">Automations are not being driven.</p>
+            <p className="mt-2 text-muted">
+              Sequences will enrol people but never send. Set{" "}
+              <code className="rounded bg-bg px-2 py-0.5 text-ink">AUTOMATION_TOKEN</code> on the
+              backend and add the matching <code className="rounded bg-bg px-2 py-0.5 text-ink">AUTOMATION_TOKEN</code>{" "}
+              and <code className="rounded bg-bg px-2 py-0.5 text-ink">BACKEND_URL</code> repository
+              secrets so the hourly GitHub Action can run them.
+            </p>
+          </div>
+        )}
+
+        {stats && !stats.mail_configured && (
+          <div className="mb-6 rounded-[16px] border border-line bg-surface p-5 text-sm" data-testid="mail-warning">
+            <p className="font-semibold text-lime">Email sending is not configured.</p>
+            <p className="mt-2 text-muted">
+              Registration confirmations and broadcasts are being logged instead of sent. Set{" "}
+              <code className="rounded bg-bg px-2 py-0.5 text-ink">RESEND_API_KEY</code> on the
+              backend and verify the sending domain in Resend.
             </p>
           </div>
         )}
@@ -65,10 +145,92 @@ export default function AdminDashboard() {
         <div className="mb-10">
           <h1>CMS</h1>
           <p className="mt-3 max-w-2xl text-muted">
-            Manage every piece of content on debowoseni.com — journal posts, testimonials,
-            books, publications, and events.
+            Everything on debowoseni.com — content, events, registrations and the mailing list.
           </p>
         </div>
+
+        {/* Metrics */}
+        <div className="mb-12 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4" data-testid="admin-stats">
+          <Stat
+            label="Mailing list"
+            value={num(stats?.subscribers?.active)}
+            sub={stats ? `+${stats.subscribers?.last_30_days ?? 0} in the last 30 days` : ""}
+          >
+            <Sparkline points={stats?.subscribers?.growth} />
+          </Stat>
+          <Stat
+            label="Registrations"
+            value={num(stats?.registrations?.total)}
+            sub={
+              stats
+                ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted`
+                : ""
+            }
+          />
+          <Stat
+            label="Emails sent"
+            value={num(stats?.campaigns?.sent)}
+            sub={stats ? `${stats.campaigns?.total ?? 0} campaigns created` : ""}
+          />
+          <Stat
+            label="Community"
+            value={num(stats?.community?.members)}
+            sub={stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : ""}
+          />
+        </div>
+
+        <div className="mb-12 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <Stat
+            label="Automations running"
+            value={num(stats?.automations?.sequences)}
+            sub={stats ? `${stats.automations?.enrolled ?? 0} people part-way through` : ""}
+          />
+          <Stat
+            label="Programmes in progress"
+            value={num(stats?.enrolments?.active)}
+            sub={stats ? `${stats.enrolments?.completed ?? 0} completed` : ""}
+          />
+          <Stat
+            label="Enquiries"
+            value={num(stats?.contact_messages)}
+            sub="via the contact form"
+          />
+          <Stat
+            label="Published content"
+            value={
+              stats?.content
+                ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
+                : "—"
+            }
+            sub={
+              stats?.content
+                ? `${stats.content.posts ?? 0} posts · ${stats.content.events ?? 0} events · ${stats.content.books ?? 0} books`
+                : ""
+            }
+          />
+        </div>
+
+        {stats?.subscribers?.by_source?.length > 0 && (
+          <div className="mb-12 rounded-[20px] border border-line bg-surface p-7" data-testid="stats-by-source">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted">Where subscribers come from</p>
+            <div className="mt-5 space-y-3">
+              {stats.subscribers.by_source.slice(0, 6).map(({ source, count }) => {
+                const pct = Math.round((count / Math.max(stats.subscribers.total, 1)) * 100);
+                return (
+                  <div key={source}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-ink/85">{source}</span>
+                      <span className="text-muted">{count}</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-bg">
+                      <div className="h-full rounded-full bg-lime" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {CARDS.map(({ to, title, desc, Icon, testId }) => (

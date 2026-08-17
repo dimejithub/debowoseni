@@ -43,7 +43,7 @@ export default function AdminSubscribers() {
     a.download = `subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("CSV exported.", { description: "Ready to import into Systeme.io." });
+    toast.success("CSV exported.");
   };
 
   return (
@@ -63,8 +63,9 @@ export default function AdminSubscribers() {
           <div>
             <h1>Subscribers</h1>
             <p className="mt-3 max-w-2xl text-muted">
-              Emails captured by the Enquiry quizzes and the newsletter form. Export as
-              CSV to import into Systeme.io.
+              Every email captured by the Enquiry quizzes, the newsletter form, event
+              registrations and the community. Export as CSV for a backup or an
+              external tool — sending happens in Emails and Automations.
             </p>
           </div>
           <button

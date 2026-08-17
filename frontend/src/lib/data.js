@@ -199,11 +199,12 @@ export const LOGO = {
     "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/70utsxwx_4.svg",
 };
 
-export const SYSTEME_BOOKING_URL =
-  process.env.REACT_APP_SYSTEME_BOOKING_URL || "https://lte.debowoseni.com/";
+// The offer, the pricing and the checkout all live on this site. Kept as
+// constants so every CTA changes in one place.
+export const LTE_PROGRAMMES_URL = "/programmes";
 
-// LTE upsell landing page (pricing lives there, never on this site).
-export const LTE_PROGRAMMES_URL = "https://lte.debowoseni.com/programmes";
+// Masterclass and event seats are real registrations taken on /events.
+export const EVENTS_URL = "/events";
 
 export const CONTACT_EMAIL =
   process.env.REACT_APP_CONTACT_EMAIL || "hello@debowoseni.com";
