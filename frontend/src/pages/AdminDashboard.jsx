@@ -158,10 +158,16 @@ function Sparkline({ points }) {
  * wash so the eye lands there first. `to` makes the whole tile a link into the
  * fuller view of that stat, with a hover affordance and a corner arrow.
  */
+function trackSpotlight(e) {
+  const r = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+  e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+}
+
 function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
   const shown = useCountUp(value);
   const inner = (
-    <>
+    <div className="relative z-[1] flex flex-1 flex-col">
       <div className="flex items-start justify-between">
         <p className="text-[0.68rem] font-medium uppercase tracking-[0.18em] text-muted">{label}</p>
         <span className="flex items-center gap-1.5">
@@ -178,20 +184,27 @@ function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
       </p>
       {sub && <p className="mt-2 text-xs leading-relaxed text-muted">{sub}</p>}
       {children}
-    </>
+    </div>
   );
 
   const cls = `tile-rise group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
     primary
-      ? "border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
+      ? "tile-breathe border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
       : "border-line bg-surface hover:border-lime/40"
   }`;
   const style = { "--rise-delay": `${rise}ms` };
+  const glow = <span className="spotlight-glow" aria-hidden />;
 
   return to ? (
-    <Link to={to} className={cls} style={style}>{inner}</Link>
+    <Link to={to} className={cls} style={style} onMouseMove={trackSpotlight}>
+      {glow}
+      {inner}
+    </Link>
   ) : (
-    <div className={cls} style={style}>{inner}</div>
+    <div className={cls} style={style} onMouseMove={trackSpotlight}>
+      {glow}
+      {inner}
+    </div>
   );
 }
 
@@ -243,7 +256,9 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container-page py-10 md:py-12">
+      <main className="container-page relative py-10 md:py-12">
+        <div className="dash-aurora inset-x-0 top-0 h-[420px]" aria-hidden />
+        <div className="relative z-10">
         {missingTables.length > 0 && (
           <div className="mb-6 flex gap-4 rounded-[16px] border border-amber-400/30 bg-amber-400/5 p-5 text-sm" data-testid="schema-warning">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-amber-300">!</span>
@@ -294,7 +309,14 @@ export default function AdminDashboard() {
 
         {/* Overview */}
         <section className="mb-12">
-          <Eyebrow>Overview</Eyebrow>
+          <div className="mb-5 flex items-center gap-2.5">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted">Overview</p>
+            <span className="relative flex h-1.5 w-1.5" title="Live data">
+              <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-lime" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime" />
+            </span>
+            <span className="text-[0.62rem] font-medium uppercase tracking-[0.18em] text-lime/80">Live</span>
+          </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="admin-stats">
             <div className="col-span-2 lg:col-span-2 lg:row-span-1">
               <Stat
@@ -427,14 +449,16 @@ export default function AdminDashboard() {
                 <Link
                   key={to}
                   to={to}
-                  className="tile-rise card-lift group flex items-start gap-4 rounded-[18px] border border-line bg-surface p-5"
+                  className="tile-rise card-lift group relative flex items-start gap-4 overflow-hidden rounded-[18px] border border-line bg-surface p-5"
                   style={{ "--rise-delay": `${i * 55}ms` }}
                   data-testid={testId}
+                  onMouseMove={trackSpotlight}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg transition-all duration-300 group-hover:border-lime/50 group-hover:scale-105">
+                  <span className="spotlight-glow" aria-hidden />
+                  <span className="relative z-[1] flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg transition-all duration-300 group-hover:border-lime/50 group-hover:scale-105">
                     <Icon className="h-[18px] w-[18px] text-lime" />
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="relative z-[1] min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-lg leading-tight">{title}</h3>
                       <ArrowUpRight className="h-4 w-4 shrink-0 text-muted/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
@@ -446,6 +470,7 @@ export default function AdminDashboard() {
             </div>
           </section>
         ))}
+        </div>
       </main>
     </div>
   );
