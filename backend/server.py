@@ -42,6 +42,7 @@ from PIL import Image, ImageOps
 
 import automations
 import mailer
+import newsletter
 
 # Shared secret for the scheduled task endpoint that drives email sequences.
 AUTOMATION_TOKEN = os.environ.get("AUTOMATION_TOKEN", "").strip()
@@ -361,6 +362,14 @@ class SequenceStepUpdate(BaseModel):
     body: Optional[str] = None
 
 
+class NewsletterSettingsUpdate(BaseModel):
+    frequency: Optional[str] = Field(default=None, pattern="^(off|weekly|biweekly|monthly)$")
+    send_weekday: Optional[int] = Field(default=None, ge=0, le=6)
+    send_hour: Optional[int] = Field(default=None, ge=0, le=23)
+    min_posts: Optional[int] = Field(default=None, ge=1)
+    intro: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Public routes
 # ---------------------------------------------------------------------------
@@ -386,6 +395,7 @@ def health():
         "sequences",
         "sequence_steps",
         "sequence_enrolments",
+        "newsletter_settings",
     ):
         try:
             sb_admin.table(t).select("id").limit(1).execute()
@@ -1462,7 +1472,80 @@ def run_sequences_task(x_task_token: Optional[str] = Header(default=None)):
         raise HTTPException(503, "AUTOMATION_TOKEN is not configured.")
     if x_task_token != AUTOMATION_TOKEN:
         raise HTTPException(401, "Bad task token")
-    return automations.run_due_steps(sb_admin)
+    # The same hourly tick drives both the drip sequences and the scheduled
+    # journal digest. The newsletter is a no-op on all but the one hour a week
+    # (or fortnight/month) it is configured to send.
+    sequences = automations.run_due_steps(sb_admin)
+    digest = newsletter.run_if_due(sb_admin, deliver_campaign)
+    return {"sequences": sequences, "newsletter": digest}
+
+
+# ---------------------------------------------------------------------------
+# Admin — NEWSLETTER (the scheduled journal digest)
+# ---------------------------------------------------------------------------
+@api.get("/admin/newsletter")
+def admin_get_newsletter(user=Depends(require_user)):
+    """Current schedule, plus a preview of what the next issue would contain."""
+    settings = newsletter.load_settings(sb_admin)
+    now = newsletter.datetime.now(newsletter.timezone.utc)
+    since = newsletter._window_start(settings, now)
+    posts = newsletter.new_posts(sb_admin, since)
+    preview = newsletter.build_issue(settings, posts, mailer.SITE_URL) if posts else None
+    try:
+        mailable = (
+            sb_admin.table("subscribers").select("id", count="exact").eq("status", "subscribed").execute()
+        ).count or 0
+    except Exception:  # noqa: BLE001
+        mailable = 0
+    return {
+        "settings": settings,
+        "new_posts": len(posts),
+        "recipients": mailable,
+        "preview": preview,
+        "next_due": newsletter.is_due(settings, now),
+    }
+
+
+@api.put("/admin/newsletter")
+def admin_update_newsletter(payload: NewsletterSettingsUpdate, user=Depends(require_user)):
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    data["updated_at"] = now_iso()
+    try:
+        res = (
+            sb_admin.table("newsletter_settings").update(data).eq("id", 1).execute()
+        ).data
+        return (res or [{}])[0]
+    except Exception as exc:
+        logger.warning("Newsletter settings update failed: %s", exc)
+        raise HTTPException(500, "Could not save newsletter settings.") from exc
+
+
+@api.post("/admin/newsletter/send-now")
+def admin_send_newsletter_now(background: BackgroundTasks, user=Depends(require_user)):
+    """Compile and send an issue immediately, regardless of the schedule.
+
+    Bypasses the cadence check but still refuses to send an empty digest.
+    """
+    settings = newsletter.load_settings(sb_admin)
+    now = newsletter.datetime.now(newsletter.timezone.utc)
+    posts = newsletter.new_posts(sb_admin, newsletter._window_start(settings, now))
+    if not posts:
+        raise HTTPException(400, "No new journal posts since the last issue — nothing to send.")
+
+    issue = newsletter.build_issue(settings, posts, mailer.SITE_URL)
+    campaign = _admin_insert(
+        "campaigns",
+        {
+            "subject": issue["subject"],
+            "preheader": issue["preheader"],
+            "body": issue["body"],
+            "segment": "all",
+            "status": "sending",
+        },
+    )
+    sb_admin.table("newsletter_settings").update({"last_sent_at": now.isoformat()}).eq("id", 1).execute()
+    background.add_task(deliver_campaign, campaign["id"])
+    return {"ok": True, "campaign_id": campaign["id"], "posts": len(posts)}
 
 
 # ---------------------------------------------------------------------------
