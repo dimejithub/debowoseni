@@ -27,7 +27,12 @@ import AdminSubscribers from "@/pages/AdminSubscribers";
 import AdminRegistrations from "@/pages/AdminRegistrations";
 import AdminCampaigns from "@/pages/AdminCampaigns";
 import AdminCampaignEditor from "@/pages/AdminCampaignEditor";
+import AdminPeople from "@/pages/AdminPeople";
+import AdminPerson from "@/pages/AdminPerson";
+import AdminSequences from "@/pages/AdminSequences";
+import AdminSequenceEditor from "@/pages/AdminSequenceEditor";
 import Programmes from "@/pages/Programmes";
+import Community from "@/pages/Community";
 import Unsubscribe from "@/pages/Unsubscribe";
 import { AuthProvider } from "@/lib/auth";
 
@@ -62,6 +67,7 @@ function App() {
             <Route path="/expressions/the-enquiry" element={<TheEnquiry />} />
             {/* Replaces the Systeme funnel that lived on lte.debowoseni.com */}
             <Route path="/programmes" element={<Programmes />} />
+            <Route path="/community" element={<Community />} />
           </Route>
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -78,6 +84,10 @@ function App() {
           <Route path="/admin/emails" element={<AdminCampaigns />} />
           <Route path="/admin/emails/new" element={<AdminCampaignEditor />} />
           <Route path="/admin/emails/:id" element={<AdminCampaignEditor />} />
+          <Route path="/admin/people" element={<AdminPeople />} />
+          <Route path="/admin/people/:email" element={<AdminPerson />} />
+          <Route path="/admin/automations" element={<AdminSequences />} />
+          <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

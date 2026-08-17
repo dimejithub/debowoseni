@@ -148,6 +148,16 @@ export async function registerForEvent(slug, payload) {
   return r.data;
 }
 
+export async function getCommunityInfo(groupKey = "lte") {
+  const r = await publicApi.get(`/community/${groupKey}`);
+  return r.data;
+}
+
+export async function joinCommunity(payload) {
+  const r = await publicApi.post("/community/join", payload);
+  return r.data;
+}
+
 export async function adminListSubscribers() {
   const headers = await authHeaders();
   const r = await axios.get(`${API}/admin/subscribers`, { headers });
@@ -237,6 +247,90 @@ export async function adminTestCampaign(id, email) {
 export async function adminSendCampaign(id) {
   const headers = await authHeaders();
   const r = await axios.post(`${API}/admin/campaigns/${id}/send`, {}, { headers });
+  return r.data;
+}
+
+// ---- Admin — automations (sequences) ----
+export const adminSequences = adminCrud("sequences");
+
+export async function adminGetSequence(id) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/sequences/${id}`, { headers });
+  return r.data;
+}
+
+export async function adminCreateStep(sequenceId, payload) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/sequences/${sequenceId}/steps`, payload, { headers });
+  return r.data;
+}
+
+export async function adminUpdateStep(stepId, payload) {
+  const headers = await authHeaders();
+  const r = await axios.put(`${API}/admin/sequences/steps/${stepId}`, payload, { headers });
+  return r.data;
+}
+
+export async function adminDeleteStep(stepId) {
+  const headers = await authHeaders();
+  const r = await axios.delete(`${API}/admin/sequences/steps/${stepId}`, { headers });
+  return r.data;
+}
+
+export async function adminRunSequences(id) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/sequences/${id}/run`, {}, { headers });
+  return r.data;
+}
+
+// ---- Admin — community ----
+export async function adminListCommunity() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/community`, { headers });
+  return r.data.members || [];
+}
+
+export async function adminUpdateCommunityMember(id, payload) {
+  const headers = await authHeaders();
+  const r = await axios.put(`${API}/admin/community/${id}`, payload, { headers });
+  return r.data;
+}
+
+// ---- Admin — programme enrolments ----
+export async function adminListEnrolments() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/enrolments`, { headers });
+  return r.data.enrolments || [];
+}
+
+export async function adminCreateEnrolment(payload) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/enrolments`, payload, { headers });
+  return r.data;
+}
+
+export async function adminUpdateEnrolment(id, payload) {
+  const headers = await authHeaders();
+  const r = await axios.put(`${API}/admin/enrolments/${id}`, payload, { headers });
+  return r.data;
+}
+
+export async function adminDeleteEnrolment(id) {
+  const headers = await authHeaders();
+  const r = await axios.delete(`${API}/admin/enrolments/${id}`, { headers });
+  return r.data;
+}
+
+// ---- Admin — people (CRM) ----
+export async function adminListPeople() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/people`, { headers });
+  return r.data.people || [];
+}
+
+export async function adminGetPerson(email) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/people/${encodeURIComponent(email)}`, { headers });
   return r.data;
 }
 

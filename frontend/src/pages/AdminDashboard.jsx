@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
+  Contact,
   FileText,
   GraduationCap,
   LogOut,
@@ -11,6 +12,7 @@ import {
   Quote,
   Send,
   Users,
+  Workflow,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -23,7 +25,9 @@ const CARDS = [
   { to: "/admin/publications", title: "Publications", desc: "Academic papers + Scholar links.", Icon: GraduationCap, testId: "card-publications" },
   { to: "/admin/events", title: "Events", desc: "Events, galleries and registration settings.", Icon: Calendar, testId: "card-events" },
   { to: "/admin/registrations", title: "Registrations", desc: "Who signed up, who attended.", Icon: Users, testId: "card-registrations" },
+  { to: "/admin/people", title: "People", desc: "Every contact, with their full history.", Icon: Contact, testId: "card-people" },
   { to: "/admin/emails", title: "Emails", desc: "Write and send to the list.", Icon: Send, testId: "card-emails" },
+  { to: "/admin/automations", title: "Automations", desc: "Triggered email sequences.", Icon: Workflow, testId: "card-automations" },
   { to: "/admin/subscribers", title: "Subscribers", desc: "The whole mailing list, exportable.", Icon: Mail, testId: "card-subscribers" },
 ];
 
@@ -106,6 +110,19 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {stats && stats.mail_configured && !stats.automation_scheduler_configured && (
+          <div className="mb-6 rounded-[16px] border border-line bg-surface p-5 text-sm" data-testid="scheduler-warning">
+            <p className="font-semibold text-lime">Automations are not being driven.</p>
+            <p className="mt-2 text-muted">
+              Sequences will enrol people but never send. Set{" "}
+              <code className="rounded bg-bg px-2 py-0.5 text-ink">AUTOMATION_TOKEN</code> on the
+              backend and add the matching <code className="rounded bg-bg px-2 py-0.5 text-ink">AUTOMATION_TOKEN</code>{" "}
+              and <code className="rounded bg-bg px-2 py-0.5 text-ink">BACKEND_URL</code> repository
+              secrets so the hourly GitHub Action can run them.
+            </p>
+          </div>
+        )}
+
         {stats && !stats.mail_configured && (
           <div className="mb-6 rounded-[16px] border border-line bg-surface p-5 text-sm" data-testid="mail-warning">
             <p className="font-semibold text-lime">Email sending is not configured.</p>
@@ -146,6 +163,29 @@ export default function AdminDashboard() {
             label="Emails sent"
             value={stats ? stats.campaigns.sent : "—"}
             sub={stats ? `${stats.campaigns.total} campaigns created` : ""}
+          />
+          <Stat
+            label="Community"
+            value={stats ? stats.community.members : "—"}
+            sub={stats ? `${stats.enrolments.total} programme enrolments` : ""}
+          />
+        </div>
+
+        <div className="mb-12 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <Stat
+            label="Automations running"
+            value={stats ? stats.automations.sequences : "—"}
+            sub={stats ? `${stats.automations.enrolled} people part-way through` : ""}
+          />
+          <Stat
+            label="Programmes in progress"
+            value={stats ? stats.enrolments.active : "—"}
+            sub={stats ? `${stats.enrolments.completed} completed` : ""}
+          />
+          <Stat
+            label="Enquiries"
+            value={stats ? stats.contact_messages : "—"}
+            sub="via the contact form"
           />
           <Stat
             label="Published content"

@@ -24,6 +24,7 @@ from fastapi import (
     FastAPI,
     File,
     Form,
+    Header,
     HTTPException,
     UploadFile,
     status,
@@ -34,7 +35,11 @@ from starlette.middleware.cors import CORSMiddleware
 from supabase import Client, create_client
 from PIL import Image, ImageOps
 
+import automations
 import mailer
+
+# Shared secret for the scheduled task endpoint that drives email sequences.
+AUTOMATION_TOKEN = os.environ.get("AUTOMATION_TOKEN", "").strip()
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -274,6 +279,83 @@ class UnsubscribeIn(BaseModel):
     token: str
 
 
+class CommunityJoinIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    email: EmailStr
+    group_key: str = "lte"
+
+
+class CommunityMemberUpdate(BaseModel):
+    status: Optional[str] = Field(default=None, pattern="^(joined|left|removed)$")
+    notes: Optional[str] = None
+
+
+class EnrolmentIn(BaseModel):
+    email: EmailStr
+    name: Optional[str] = None
+    programme: str = Field(min_length=1, max_length=80)
+    programme_label: Optional[str] = None
+    stage: str = Field(
+        default="enquired", pattern="^(enquired|booked|paid|in_progress|completed|cancelled)$"
+    )
+    amount: Optional[float] = None
+    currency: str = "EUR"
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class EnrolmentUpdate(BaseModel):
+    programme: Optional[str] = None
+    programme_label: Optional[str] = None
+    stage: Optional[str] = Field(
+        default=None, pattern="^(enquired|booked|paid|in_progress|completed|cancelled)$"
+    )
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class SequenceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: Optional[str] = None
+    trigger_type: str = Field(
+        default="tag_added",
+        pattern="^(tag_added|subscriber_created|event_registered|event_attended|community_joined|manual)$",
+    )
+    trigger_value: Optional[str] = None
+    status: str = Field(default="active", pattern="^(active|paused)$")
+
+
+class SequenceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    trigger_type: Optional[str] = Field(
+        default=None,
+        pattern="^(tag_added|subscriber_created|event_registered|event_attended|community_joined|manual)$",
+    )
+    trigger_value: Optional[str] = None
+    status: Optional[str] = Field(default=None, pattern="^(active|paused)$")
+
+
+class SequenceStepIn(BaseModel):
+    position: int = 1
+    delay_days: int = 0
+    subject: str = Field(min_length=1, max_length=300)
+    preheader: Optional[str] = None
+    body: str = ""
+
+
+class SequenceStepUpdate(BaseModel):
+    position: Optional[int] = None
+    delay_days: Optional[int] = None
+    subject: Optional[str] = None
+    preheader: Optional[str] = None
+    body: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Public routes
 # ---------------------------------------------------------------------------
@@ -294,6 +376,11 @@ def health():
         "event_registrations",
         "campaigns",
         "campaign_sends",
+        "community_members",
+        "programme_enrolments",
+        "sequences",
+        "sequence_steps",
+        "sequence_enrolments",
     ):
         try:
             sb_admin.table(t).select("id").limit(1).execute()
@@ -435,10 +522,21 @@ def upsert_subscriber(
 
     try:
         res = sb_admin.table("subscribers").upsert(row, on_conflict="email").execute()
-        return (res.data or [None])[0]
+        saved = (res.data or [None])[0]
     except Exception as exc:  # noqa: BLE001
         logger.warning("Subscriber upsert failed: %s", exc)
         return None
+
+    # Fire automations. New subscribers trigger the welcome path; every tag
+    # applied triggers its own, so a quiz result can start its own nurture.
+    if saved:
+        sub_id = saved.get("id")
+        if not existing:
+            automations.fire(sb_admin, "subscriber_created", email, None, sub_id)
+        for tag in tags or []:
+            automations.fire(sb_admin, "tag_added", email, tag, sub_id)
+
+    return saved
 
 
 @api.post("/newsletter")
@@ -574,8 +672,97 @@ def register_for_event(slug: str, payload: RegistrationIn, background: Backgroun
         else None
     )
     background.add_task(registration_email, event, saved[0], unsub)
+    background.add_task(
+        automations.fire,
+        sb_admin,
+        "event_registered",
+        email,
+        slug,
+        subscriber.get("id") if subscriber else None,
+    )
 
     return {"ok": True, "status": reg_status}
+
+
+# ---------------------------------------------------------------------------
+# Public — COMMUNITY
+# ---------------------------------------------------------------------------
+COMMUNITY_GROUPS = {
+    "lte": {
+        "label": "The LTE Community",
+        "invite_url": os.environ.get("COMMUNITY_LTE_INVITE_URL", ""),
+        "channel": "whatsapp",
+    },
+}
+
+
+@api.get("/community/{group_key}")
+def community_info(group_key: str):
+    """Public metadata for a community group — used to show a live member count."""
+    group = COMMUNITY_GROUPS.get(group_key)
+    if not group:
+        raise HTTPException(404, "Unknown community")
+    try:
+        res = (
+            sb_admin.table("community_members")
+            .select("id", count="exact")
+            .eq("group_key", group_key)
+            .eq("status", "joined")
+            .execute()
+        )
+        members = res.count or 0
+    except Exception:  # noqa: BLE001
+        members = 0
+    return {"group_key": group_key, "label": group["label"], "member_count": members}
+
+
+@api.post("/community/join")
+def community_join(payload: CommunityJoinIn, background: BackgroundTasks):
+    """Record the join, then hand back the invite link.
+
+    The site owns the membership record; the conversation happens in WhatsApp.
+    """
+    group = COMMUNITY_GROUPS.get(payload.group_key)
+    if not group:
+        raise HTTPException(404, "Unknown community")
+
+    email = payload.email.strip().lower()
+    subscriber = upsert_subscriber(
+        email,
+        payload.name,
+        source=f"community:{payload.group_key}",
+        tags=["community", f"community:{payload.group_key}"],
+    )
+
+    try:
+        sb_admin.table("community_members").upsert(
+            {
+                "email": email,
+                "name": payload.name.strip(),
+                "subscriber_id": subscriber.get("id") if subscriber else None,
+                "group_key": payload.group_key,
+                "channel": group["channel"],
+                "status": "joined",
+                "source": "website",
+                "left_at": None,
+                "updated_at": now_iso(),
+            },
+            on_conflict="email,group_key",
+        ).execute()
+    except Exception as exc:
+        logger.warning("Community join failed: %s", exc)
+        raise HTTPException(500, "Could not record your join right now.") from exc
+
+    background.add_task(
+        automations.fire,
+        sb_admin,
+        "community_joined",
+        email,
+        payload.group_key,
+        subscriber.get("id") if subscriber else None,
+    )
+
+    return {"ok": True, "invite_url": group["invite_url"], "label": group["label"]}
 
 
 # ---------------------------------------------------------------------------
@@ -1032,6 +1219,361 @@ def admin_send_campaign(item_id: str, background: BackgroundTasks, user=Depends(
 
 
 # ---------------------------------------------------------------------------
+# Admin — SEQUENCES (automations)
+# ---------------------------------------------------------------------------
+@api.get("/admin/sequences")
+def admin_list_sequences(user=Depends(require_user)):
+    seqs = _admin_list("sequences")
+    # Attach step and enrolment counts so the list page is useful on its own.
+    for s in seqs:
+        s["step_count"] = _count("sequence_steps", sequence_id=s["id"])
+        s["active_count"] = _count("sequence_enrolments", sequence_id=s["id"], status="active")
+        s["completed_count"] = _count(
+            "sequence_enrolments", sequence_id=s["id"], status="completed"
+        )
+    return {"sequences": seqs}
+
+
+@api.get("/admin/sequences/{item_id}")
+def admin_get_sequence(item_id: str, user=Depends(require_user)):
+    sequence = _admin_get("sequences", item_id)
+    try:
+        sequence["steps"] = (
+            sb_admin.table("sequence_steps")
+            .select("*")
+            .eq("sequence_id", item_id)
+            .order("position", desc=False)
+            .execute()
+        ).data or []
+    except Exception:  # noqa: BLE001
+        sequence["steps"] = []
+    sequence["active_count"] = _count("sequence_enrolments", sequence_id=item_id, status="active")
+    return sequence
+
+
+@api.post("/admin/sequences")
+def admin_create_sequence(payload: SequenceIn, user=Depends(require_user)):
+    return _admin_insert("sequences", payload.model_dump())
+
+
+@api.put("/admin/sequences/{item_id}")
+def admin_update_sequence(item_id: str, payload: SequenceUpdate, user=Depends(require_user)):
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    return _admin_update("sequences", item_id, data)
+
+
+@api.delete("/admin/sequences/{item_id}")
+def admin_delete_sequence(item_id: str, user=Depends(require_user)):
+    return _admin_delete("sequences", item_id)
+
+
+@api.post("/admin/sequences/{item_id}/steps")
+def admin_create_step(item_id: str, payload: SequenceStepIn, user=Depends(require_user)):
+    data = payload.model_dump()
+    data["sequence_id"] = item_id
+    return _admin_insert("sequence_steps", data)
+
+
+@api.put("/admin/sequences/steps/{step_id}")
+def admin_update_step(step_id: str, payload: SequenceStepUpdate, user=Depends(require_user)):
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    return _admin_update("sequence_steps", step_id, data)
+
+
+@api.delete("/admin/sequences/steps/{step_id}")
+def admin_delete_step(step_id: str, user=Depends(require_user)):
+    return _admin_delete("sequence_steps", step_id)
+
+
+@api.post("/admin/sequences/{item_id}/run")
+def admin_run_sequences(item_id: str, user=Depends(require_user)):
+    """Manual 'send anything due now' — useful for testing without waiting."""
+    return automations.run_due_steps(sb_admin)
+
+
+# ---------------------------------------------------------------------------
+# Scheduled task endpoint
+#
+# Render's free and starter web services have no cron, so an external
+# scheduler (see .github/workflows/run-automations.yml) calls this on a
+# timer. It doubles as a keep-warm ping for the backend.
+# ---------------------------------------------------------------------------
+@api.post("/tasks/run-sequences")
+def run_sequences_task(x_task_token: Optional[str] = Header(default=None)):
+    if not AUTOMATION_TOKEN:
+        raise HTTPException(503, "AUTOMATION_TOKEN is not configured.")
+    if x_task_token != AUTOMATION_TOKEN:
+        raise HTTPException(401, "Bad task token")
+    return automations.run_due_steps(sb_admin)
+
+
+# ---------------------------------------------------------------------------
+# Admin — COMMUNITY
+# ---------------------------------------------------------------------------
+@api.get("/admin/community")
+def admin_list_community(user=Depends(require_user)):
+    try:
+        rows = (
+            sb_admin.table("community_members")
+            .select("*")
+            .order("joined_at", desc=True)
+            .execute()
+        ).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Community list failed: %s", exc)
+        rows = []
+    return {"members": rows}
+
+
+@api.put("/admin/community/{item_id}")
+def admin_update_community(
+    item_id: str, payload: CommunityMemberUpdate, user=Depends(require_user)
+):
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if data.get("status") == "joined":
+        data["left_at"] = None
+    elif data.get("status") in ("left", "removed"):
+        data["left_at"] = now_iso()
+    data["updated_at"] = now_iso()
+    return _admin_update("community_members", item_id, data)
+
+
+@api.delete("/admin/community/{item_id}")
+def admin_delete_community(item_id: str, user=Depends(require_user)):
+    return _admin_delete("community_members", item_id)
+
+
+# ---------------------------------------------------------------------------
+# Admin — PROGRAMME ENROLMENTS
+# ---------------------------------------------------------------------------
+@api.get("/admin/enrolments")
+def admin_list_enrolments(user=Depends(require_user)):
+    try:
+        rows = (
+            sb_admin.table("programme_enrolments")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        ).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Enrolment list failed: %s", exc)
+        rows = []
+    return {"enrolments": rows}
+
+
+@api.post("/admin/enrolments")
+def admin_create_enrolment(payload: EnrolmentIn, user=Depends(require_user)):
+    data = payload.model_dump()
+    data["email"] = data["email"].strip().lower()
+    # Keep the person on the mailing list in step with their programme record.
+    subscriber = upsert_subscriber(
+        data["email"], data.get("name"), source="programme", tags=[f"programme:{data['programme']}"]
+    )
+    if subscriber:
+        data["subscriber_id"] = subscriber.get("id")
+    return _admin_insert("programme_enrolments", data)
+
+
+@api.put("/admin/enrolments/{item_id}")
+def admin_update_enrolment(item_id: str, payload: EnrolmentUpdate, user=Depends(require_user)):
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    data["updated_at"] = now_iso()
+    return _admin_update("programme_enrolments", item_id, data)
+
+
+@api.delete("/admin/enrolments/{item_id}")
+def admin_delete_enrolment(item_id: str, user=Depends(require_user)):
+    return _admin_delete("programme_enrolments", item_id)
+
+
+# ---------------------------------------------------------------------------
+# Admin — PEOPLE (the CRM)
+# ---------------------------------------------------------------------------
+def _rows(table: str, **filters) -> list[dict]:
+    try:
+        q = sb_admin.table(table).select("*")
+        for col, val in filters.items():
+            q = q.eq(col, val)
+        return (q.execute()).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Read of %s failed: %s", table, exc)
+        return []
+
+
+@api.get("/admin/people")
+def admin_list_people(user=Depends(require_user)):
+    """One row per person, with the counts that make the list scannable.
+
+    Email is the join key — it is the only identifier every capture point has.
+    """
+    subscribers = _rows("subscribers")
+    people: dict[str, dict] = {}
+    for s in subscribers:
+        email = (s.get("email") or "").lower()
+        if not email:
+            continue
+        people[email] = {
+            "email": email,
+            "name": s.get("name"),
+            "status": s.get("status"),
+            "source": s.get("source"),
+            "tags": s.get("tags") or [],
+            "created_at": s.get("created_at"),
+            "last_emailed_at": s.get("last_emailed_at"),
+            "registrations": 0,
+            "attended": 0,
+            "enrolments": 0,
+            "in_community": False,
+        }
+
+    def bucket(email: str) -> Optional[dict]:
+        """People who never subscribed still deserve a row."""
+        email = (email or "").lower()
+        if not email:
+            return None
+        if email not in people:
+            people[email] = {
+                "email": email,
+                "name": None,
+                "status": "not_subscribed",
+                "source": None,
+                "tags": [],
+                "created_at": None,
+                "last_emailed_at": None,
+                "registrations": 0,
+                "attended": 0,
+                "enrolments": 0,
+                "in_community": False,
+            }
+        return people[email]
+
+    for r in _rows("event_registrations"):
+        p = bucket(r.get("email"))
+        if p:
+            p["registrations"] += 1
+            if r.get("status") == "attended":
+                p["attended"] += 1
+            p["name"] = p["name"] or r.get("name")
+
+    for e in _rows("programme_enrolments"):
+        p = bucket(e.get("email"))
+        if p:
+            p["enrolments"] += 1
+            p["name"] = p["name"] or e.get("name")
+
+    for c in _rows("community_members", status="joined"):
+        p = bucket(c.get("email"))
+        if p:
+            p["in_community"] = True
+            p["name"] = p["name"] or c.get("name")
+
+    ordered = sorted(people.values(), key=lambda p: p.get("created_at") or "", reverse=True)
+    return {"people": ordered}
+
+
+@api.get("/admin/people/{email}")
+def admin_get_person(email: str, user=Depends(require_user)):
+    """Everything known about one person, as a single merged timeline."""
+    email = email.strip().lower()
+
+    subs = _rows("subscribers", email=email)
+    subscriber = subs[0] if subs else None
+
+    registrations = _rows("event_registrations", email=email)
+    enrolments = _rows("programme_enrolments", email=email)
+    community = _rows("community_members", email=email)
+    messages = _rows("contact_messages", email=email)
+    broadcasts = _rows("campaign_sends", email=email)
+    automated = _rows("sequence_sends", email=email)
+
+    # Resolve the names the timeline needs, in two queries rather than N.
+    events = {e["id"]: e for e in _rows("events")}
+    campaigns = {c["id"]: c for c in _rows("campaigns")}
+
+    timeline: list[dict] = []
+
+    def add(at: Optional[str], kind: str, title: str, detail: str = "") -> None:
+        if at:
+            timeline.append({"at": at, "kind": kind, "title": title, "detail": detail})
+
+    if subscriber:
+        add(
+            subscriber.get("created_at"),
+            "subscribed",
+            "Joined the mailing list",
+            f"via {subscriber.get('source') or 'website'}",
+        )
+        if subscriber.get("unsubscribed_at"):
+            add(subscriber["unsubscribed_at"], "unsubscribed", "Unsubscribed")
+
+    for r in registrations:
+        ev = events.get(r.get("event_id")) or {}
+        add(
+            r.get("created_at"),
+            "registered",
+            f"Registered for {ev.get('title') or 'an event'}",
+            r.get("status") or "",
+        )
+
+    for e in enrolments:
+        add(
+            e.get("created_at"),
+            "enrolled",
+            f"Enrolled — {e.get('programme_label') or e.get('programme')}",
+            f"{e.get('stage')}"
+            + (f" · {e.get('currency')} {e.get('amount')}" if e.get("amount") else ""),
+        )
+
+    for c in community:
+        add(c.get("joined_at"), "community", f"Joined the {c.get('group_key')} community")
+        if c.get("left_at"):
+            add(c["left_at"], "community_left", f"Left the {c.get('group_key')} community")
+
+    for m in messages:
+        add(m.get("created_at"), "message", "Sent a message", (m.get("message") or "")[:200])
+
+    for b in broadcasts:
+        c = campaigns.get(b.get("campaign_id")) or {}
+        add(
+            b.get("sent_at") or b.get("updated_at"),
+            "email",
+            f"Received “{c.get('subject') or 'a broadcast'}”",
+            b.get("status") or "",
+        )
+
+    for a in automated:
+        add(
+            a.get("sent_at"),
+            "email_auto",
+            f"Automated email — “{a.get('subject') or ''}”",
+            a.get("status") or "",
+        )
+
+    timeline.sort(key=lambda t: t["at"], reverse=True)
+
+    return {
+        "email": email,
+        "subscriber": subscriber,
+        "name": (
+            (subscriber or {}).get("name")
+            or next((r.get("name") for r in registrations if r.get("name")), None)
+            or next((e.get("name") for e in enrolments if e.get("name")), None)
+        ),
+        "registrations": registrations,
+        "enrolments": enrolments,
+        "community": community,
+        "messages": messages,
+        "timeline": timeline,
+        "counts": {
+            "registrations": len(registrations),
+            "attended": sum(1 for r in registrations if r.get("status") == "attended"),
+            "enrolments": len(enrolments),
+            "emails": len(broadcasts) + len(automated),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Admin — STATS
 # ---------------------------------------------------------------------------
 def _count(table: str, **filters) -> int:
@@ -1101,8 +1643,21 @@ def admin_stats(user=Depends(require_user)):
             "total": _count("campaigns"),
             "sent": _count("campaigns", status="sent"),
         },
+        "community": {
+            "members": _count("community_members", status="joined"),
+        },
+        "enrolments": {
+            "total": _count("programme_enrolments"),
+            "active": _count("programme_enrolments", stage="in_progress"),
+            "completed": _count("programme_enrolments", stage="completed"),
+        },
+        "automations": {
+            "sequences": _count("sequences", status="active"),
+            "enrolled": _count("sequence_enrolments", status="active"),
+        },
         "contact_messages": _count("contact_messages"),
         "mail_configured": mailer.enabled,
+        "automation_scheduler_configured": bool(AUTOMATION_TOKEN),
     }
 
 

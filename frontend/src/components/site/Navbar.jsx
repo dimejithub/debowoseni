@@ -32,6 +32,7 @@ const NAV_LINKS = [
     ],
   },
   { to: "/events", label: "Events" },
+  { to: "/community", label: "Community" },
 ];
 
 export function Navbar() {
