@@ -72,6 +72,22 @@ alter table public.subscribers drop constraint if exists subscribers_status_chec
 alter table public.subscribers add constraint subscribers_status_check
   check (status in ('subscribed','unsubscribed','bounced','complained'));
 
+-- Guarantee distinct tokens before the unique index is built.
+--
+-- Adding a column with a volatile default to a table that already has rows can
+-- materialise the *same* value across every existing row, which would make the
+-- unique index below fail outright. This re-rolls any token that is null or
+-- shared, so the index always builds. Re-running it is a no-op.
+update public.subscribers
+   set unsubscribe_token = gen_random_uuid()
+ where unsubscribe_token is null
+    or unsubscribe_token in (
+         select unsubscribe_token
+           from public.subscribers
+          group by unsubscribe_token
+         having count(*) > 1
+       );
+
 create unique index if not exists subscribers_unsub_token_idx
   on public.subscribers (unsubscribe_token);
 create index if not exists subscribers_tags_idx on public.subscribers using gin (tags);
