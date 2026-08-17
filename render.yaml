@@ -1,0 +1,70 @@
+# Render blueprint for the debowoseni.com backend.
+#
+# The FastAPI service was previously hosted on the Emergent platform and this
+# repo carried no deployment config, so there was nothing to point Render at.
+# With this file committed, Render can create the service from the repo:
+#
+#   Render dashboard -> New -> Blueprint -> pick this repository.
+#
+# Only the frontend lives on Cloudflare Pages. This service handles admin
+# writes, form submissions, email sending and the automation runner. Public
+# reads go straight to Supabase and do not depend on it being awake.
+services:
+  - type: web
+    name: debowoseni-api
+    runtime: python
+    plan: free # Starter ($7/mo) removes cold starts on the admin panel.
+    region: frankfurt # Closest to the UK audience and the eu-west-1 mail setup.
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+      # --- Required. The service refuses to boot without these three, since
+      # server.py reads them at import time. Copy from Supabase -> Settings ->
+      # API. The service key is secret and must never reach the frontend.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+
+      # --- Admin seeding. On first boot the service creates this user if it
+      # does not exist. Set ADMIN_PASSWORD to the rotated password.
+      - key: ADMIN_EMAIL
+        value: admin@debowoseni.com
+      - key: ADMIN_PASSWORD
+        sync: false
+
+      # --- Email. Without RESEND_API_KEY the mailer runs in dry-run mode:
+      # sends are logged rather than delivered, and the dashboard says so.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        value: Debo Owoseni <hello@debowoseni.com>
+      - key: MAIL_REPLY_TO
+        value: hello@debowoseni.com
+      - key: PUBLIC_SITE_URL
+        value: https://debowoseni.com
+
+      # --- Automations. Must match the AUTOMATION_TOKEN repository secret, or
+      # the hourly GitHub Action cannot authenticate and sequences never send.
+      - key: AUTOMATION_TOKEN
+        sync: false
+
+      # --- Optional. Opens and clicks stay at zero without the webhook secret;
+      # /community records joins but emails the invite link without the URL.
+      - key: RESEND_WEBHOOK_SECRET
+        sync: false
+      - key: COMMUNITY_LTE_INVITE_URL
+        sync: false
+
+      # --- Browsers enforce this. Add the Pages preview domain too if you want
+      # the admin panel to work from a branch preview.
+      - key: CORS_ORIGINS
+        value: https://debowoseni.com,https://www.debowoseni.com
