@@ -116,9 +116,7 @@ export function Footer() {
 
         <div className="mt-16 flex flex-col items-start justify-between gap-3 border-t border-line pt-8 text-sm text-muted md:flex-row md:items-center">
           <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
-          <p className="text-xs">
-            Built with Care by Dimedia
-          </p>
+          <Credit />
         </div>
       </div>
 
@@ -133,6 +131,33 @@ export function Footer() {
         </p>
       </div>
     </footer>
+  );
+}
+
+// Studio credit. Set JN_LABS_URL to link it out; until then it renders as a
+// clean, non-clickable credit line rather than a dead link.
+const JN_LABS_URL = "https://jnlabs.co.uk";
+
+function Credit() {
+  const inner = (
+    <>
+      <span className="text-muted">Crafted by</span>
+      <span className="inline-flex items-center gap-1.5 font-medium uppercase tracking-[0.16em] text-ink/90 transition-colors group-hover:text-lime">
+        <span className="h-1.5 w-1.5 rounded-full bg-lime transition-transform group-hover:scale-125" />
+        JN&nbsp;Labs
+      </span>
+      {JN_LABS_URL && (
+        <ArrowUpRight className="h-3 w-3 text-muted/60 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
+      )}
+    </>
+  );
+  const cls = "group inline-flex items-center gap-2 text-xs";
+  return JN_LABS_URL ? (
+    <a href={JN_LABS_URL} target="_blank" rel="noreferrer noopener" className={cls} data-testid="footer-credit">
+      {inner}
+    </a>
+  ) : (
+    <p className={cls} data-testid="footer-credit">{inner}</p>
   );
 }
 

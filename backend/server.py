@@ -15,7 +15,9 @@ import json
 import logging
 import os
 import re
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -394,31 +396,78 @@ def root():
     return {"ok": True, "service": "debowoseni.com"}
 
 
+HEALTH_TABLES = (
+    "posts",
+    "testimonials",
+    "books",
+    "publications",
+    "events",
+    "event_registrations",
+    "campaigns",
+    "campaign_sends",
+    "community_members",
+    "programme_enrolments",
+    "sequences",
+    "sequence_steps",
+    "sequence_enrolments",
+    "newsletter_settings",
+)
+
+
+def _is_schema_cache_error(exc: Exception) -> bool:
+    """PostgREST returns PGRST205 when its schema cache lags a fresh migration.
+    The table exists; the cache just hasn't caught up. This is not a real fault."""
+    s = str(exc)
+    return "PGRST205" in s or "schema cache" in s.lower()
+
+
+def _reload_schema_cache() -> None:
+    """Nudge PostgREST to reload. Needs the pgrst_reload() SQL function
+    (backend/supabase_fix_schema_reload.sql). A no-op if that isn't installed yet."""
+    try:
+        sb_admin.rpc("pgrst_reload").execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("pgrst_reload rpc unavailable: %s", exc)
+
+
+def _probe_table(t: str) -> tuple[str, bool, Exception | None]:
+    try:
+        sb_admin.table(t).select("id").limit(1).execute()
+        return t, True, None
+    except Exception as exc:  # noqa: BLE001
+        return t, False, exc
+
+
 @api.get("/health")
 def health():
     out: dict[str, Any] = {"ok": True, "tables": {}, "bucket_ready": False, "error": None}
-    for t in (
-        "posts",
-        "testimonials",
-        "books",
-        "publications",
-        "events",
-        "event_registrations",
-        "campaigns",
-        "campaign_sends",
-        "community_members",
-        "programme_enrolments",
-        "sequences",
-        "sequence_steps",
-        "sequence_enrolments",
-        "newsletter_settings",
-    ):
-        try:
-            sb_admin.table(t).select("id").limit(1).execute()
-            out["tables"][t] = True
-        except Exception as exc:
-            out["tables"][t] = False
-            out["error"] = out["error"] or f"{t}: {exc}"
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        results = list(ex.map(_probe_table, HEALTH_TABLES))
+
+    failures = {t: exc for t, ok, exc in results if not ok}
+    for t, ok, _ in results:
+        out["tables"][t] = ok
+
+    # If any failure is just the PostgREST schema cache lagging a migration,
+    # ask it to reload and re-probe once so the dashboard stops false-alarming.
+    stale = [t for t, exc in failures.items() if _is_schema_cache_error(exc)]
+    if stale:
+        _reload_schema_cache()
+        time.sleep(0.8)
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            retried = list(ex.map(_probe_table, stale))
+        for t, ok, exc in retried:
+            out["tables"][t] = ok
+            if ok:
+                failures.pop(t, None)
+            else:
+                failures[t] = exc
+
+    if failures:
+        first = next(iter(failures.items()))
+        out["error"] = f"{first[0]}: {first[1]}"
+
     try:
         buckets = sb_admin.storage.list_buckets()
         out["bucket_ready"] = any(getattr(b, "name", None) == "blog-images" for b in buckets)
@@ -1863,15 +1912,41 @@ def _count(table: str, **filters) -> int:
         return 0
 
 
+def _fetch_rows(table: str, columns: str) -> list[dict]:
+    try:
+        return (sb_admin.table(table).select(columns).execute()).data or []
+    except Exception:  # noqa: BLE001
+        return []
+
+
 @api.get("/admin/stats")
 def admin_stats(user=Depends(require_user)):
-    """Everything the dashboard shows, in one round trip."""
-    try:
-        subscribers = (
-            sb_admin.table("subscribers").select("created_at,status,source").execute()
-        ).data or []
-    except Exception:  # noqa: BLE001
-        subscribers = []
+    """Everything the dashboard shows. The counts are independent, so they run
+    concurrently — one slow round trip instead of ~18 serial ones."""
+    # Kick off every read at once; each _count / fetch is its own HTTP round trip.
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        f_subscribers = ex.submit(_fetch_rows, "subscribers", "created_at,status,source")
+        f_regs = ex.submit(_fetch_rows, "event_registrations", "status,event_id,created_at")
+        f = {
+            "posts": ex.submit(_count, "posts", status="published"),
+            "events": ex.submit(_count, "events", status="published"),
+            "books": ex.submit(_count, "books", status="published"),
+            "campaigns_total": ex.submit(_count, "campaigns"),
+            "campaigns_sent": ex.submit(_count, "campaigns", status="sent"),
+            "community": ex.submit(_count, "community_members", status="joined"),
+            "enrol_total": ex.submit(_count, "programme_enrolments"),
+            "enrol_active": ex.submit(_count, "programme_enrolments", stage="in_progress"),
+            "enrol_done": ex.submit(_count, "programme_enrolments", stage="completed"),
+            "seq_active": ex.submit(_count, "sequences", status="active"),
+            "seq_enrolled": ex.submit(_count, "sequence_enrolments", status="active"),
+            "opened": ex.submit(_count, "campaign_sends", status="opened"),
+            "clicked": ex.submit(_count, "campaign_sends", status="clicked"),
+            "bounced": ex.submit(_count, "campaign_sends", status="bounced"),
+            "contact": ex.submit(_count, "contact_messages"),
+        }
+        subscribers = f_subscribers.result()
+        regs = f_regs.result()
+        c = {k: fut.result() for k, fut in f.items()}
 
     # Growth over the last 30 days, bucketed by day for the sparkline.
     from collections import Counter
@@ -1887,13 +1962,6 @@ def admin_stats(user=Depends(require_user)):
     growth = [{"date": d.isoformat(), "count": per_day.get(d.isoformat(), 0)} for d in window]
 
     by_source = Counter(s.get("source") or "unknown" for s in subscribers)
-
-    try:
-        regs = (
-            sb_admin.table("event_registrations").select("status,event_id,created_at").execute()
-        ).data or []
-    except Exception:  # noqa: BLE001
-        regs = []
 
     return {
         "subscribers": {
@@ -1911,34 +1979,33 @@ def admin_stats(user=Depends(require_user)):
             "attended": sum(1 for r in regs if r.get("status") == "attended"),
         },
         "content": {
-            "posts": _count("posts", status="published"),
-            "events": _count("events", status="published"),
-            "books": _count("books", status="published"),
+            "posts": c["posts"],
+            "events": c["events"],
+            "books": c["books"],
         },
         "campaigns": {
-            "total": _count("campaigns"),
-            "sent": _count("campaigns", status="sent"),
+            "total": c["campaigns_total"],
+            "sent": c["campaigns_sent"],
         },
         "community": {
-            "members": _count("community_members", status="joined"),
+            "members": c["community"],
         },
         "enrolments": {
-            "total": _count("programme_enrolments"),
-            "active": _count("programme_enrolments", stage="in_progress"),
-            "completed": _count("programme_enrolments", stage="completed"),
+            "total": c["enrol_total"],
+            "active": c["enrol_active"],
+            "completed": c["enrol_done"],
         },
         "automations": {
-            "sequences": _count("sequences", status="active"),
-            "enrolled": _count("sequence_enrolments", status="active"),
+            "sequences": c["seq_active"],
+            "enrolled": c["seq_enrolled"],
         },
         "engagement": {
-            "opened": _count("campaign_sends", status="opened")
-            + _count("campaign_sends", status="clicked"),
-            "clicked": _count("campaign_sends", status="clicked"),
-            "bounced": _count("campaign_sends", status="bounced"),
+            "opened": c["opened"] + c["clicked"],
+            "clicked": c["clicked"],
+            "bounced": c["bounced"],
             "tracking_configured": bool(RESEND_WEBHOOK_SECRET),
         },
-        "contact_messages": _count("contact_messages"),
+        "contact_messages": c["contact"],
         "mail_configured": mailer.enabled,
         "automation_scheduler_configured": bool(AUTOMATION_TOKEN),
     }

@@ -1,9 +1,14 @@
 name: Run email automations
 
 # Render's free and starter web services have no scheduler, so the drip
-# sequences are driven from here. Every hour this pings the backend, which
-# sends whatever sequence steps have come due. It doubles as a keep-warm
-# ping, so the admin panel is rarely cold when Debo opens it.
+# sequences are driven from here. This pings the backend every 10 minutes,
+# which sends whatever sequence steps have come due. The endpoint is
+# idempotent (each recipient is de-duped per step; the newsletter stamps its
+# send time before delivering), so a frequent run never double-sends. Running
+# this often also keeps the Render free instance warm, so the admin panel is
+# rarely cold when Debo opens it. NOTE: GitHub's scheduler can lag several
+# minutes under load, so this narrows — but does not eliminate — cold starts.
+# The definitive cure is Render's Starter plan ($7/mo, no spin-down).
 #
 # Two repository secrets are required:
 #   BACKEND_URL      e.g. https://debowoseni-api.onrender.com  (no trailing slash)
@@ -11,7 +16,7 @@ name: Run email automations
 
 on:
   schedule:
-    - cron: "17 * * * *" # hourly, off the hour — GitHub's :00 queue is congested
+    - cron: "*/10 * * * *" # every 10 min — keeps Render warm and drives drips promptly
   workflow_dispatch: # lets you trigger a run by hand from the Actions tab
 
 jobs:

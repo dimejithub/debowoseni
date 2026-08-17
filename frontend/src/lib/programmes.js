@@ -152,12 +152,19 @@ export const PRICING = {
       note: "Free 30-minute call first — we scope the three sessions together.",
     },
     "tier-2": {
+      // In-person Leicester bootcamp (€178). Public Stripe Payment Link — safe
+      // to ship as a default; override with REACT_APP_STRIPE_TIER_2_URL if it changes.
       price: process.env.REACT_APP_TIER_2_PRICE || "178",
-      checkoutUrl: process.env.REACT_APP_STRIPE_TIER_2_URL || "",
+      checkoutUrl:
+        process.env.REACT_APP_STRIPE_TIER_2_URL ||
+        "https://buy.stripe.com/9B65kE2LS45iegMevPgYU00",
     },
     "tier-3": {
+      // Online Zoom bootcamp (€119).
       price: process.env.REACT_APP_TIER_3_PRICE || "119",
-      checkoutUrl: process.env.REACT_APP_STRIPE_TIER_3_URL || "",
+      checkoutUrl:
+        process.env.REACT_APP_STRIPE_TIER_3_URL ||
+        "https://buy.stripe.com/aFa14obio6dq7So1J3gYU01",
     },
   },
 };
