@@ -175,13 +175,44 @@ export default function AdminCampaignEditor() {
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
           <div>
             {sent && (
-              <div className="mb-8 rounded-[16px] border border-lime/40 bg-surface p-5 text-sm">
+              <div className="mb-8 rounded-[16px] border border-lime/40 bg-surface p-6 text-sm">
                 <p className="text-lime">This email has been sent and can no longer be edited.</p>
                 <p className="mt-2 text-muted">
-                  {campaign.sent_count} delivered
+                  {campaign.sent_count} sent
                   {campaign.failed_count > 0 && `, ${campaign.failed_count} failed`} of{" "}
                   {campaign.recipient_count} recipients.
                 </p>
+
+                {campaign.engagement && (
+                  <div className="mt-5 grid grid-cols-2 gap-4 border-t border-line pt-5 md:grid-cols-5">
+                    {[
+                      ["Delivered", campaign.engagement.delivered],
+                      ["Opened", campaign.engagement.opened],
+                      ["Clicked", campaign.engagement.clicked],
+                      ["Bounced", campaign.engagement.bounced],
+                      ["Complaints", campaign.engagement.complained],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted">{label}</p>
+                        <p className="mt-1 font-display text-2xl text-ink">{value ?? 0}</p>
+                        {label === "Opened" && campaign.sent_count > 0 && (
+                          <p className="text-xs text-muted">
+                            {Math.round(((value || 0) / campaign.sent_count) * 100)}%
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {campaign.engagement &&
+                  campaign.engagement.delivered === 0 &&
+                  campaign.sent_count > 0 && (
+                    <p className="mt-4 text-xs text-muted">
+                      No delivery data yet. Opens and clicks only appear once the Resend
+                      webhook is pointed at <code>/api/webhooks/resend</code>.
+                    </p>
+                  )}
               </div>
             )}
 

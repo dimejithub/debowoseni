@@ -31,6 +31,14 @@ const CARDS = [
   { to: "/admin/subscribers", title: "Subscribers", desc: "The whole mailing list, exportable.", Icon: Mail, testId: "card-subscribers" },
 ];
 
+/**
+ * The frontend (Cloudflare) and the backend (Render) deploy independently, so
+ * the dashboard can briefly receive a stats payload from an older backend that
+ * has no community/enrolment/automation keys. Reading through those blind would
+ * blank the whole admin panel, so every access goes through this.
+ */
+const num = (value, fallback = "—") => (typeof value === "number" ? value : fallback);
+
 /** Tiny inline sparkline — 30 days of sign-ups, no charting library needed. */
 function Sparkline({ points }) {
   if (!points || points.length < 2) return null;
@@ -110,7 +118,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {stats && stats.mail_configured && !stats.automation_scheduler_configured && (
+        {stats?.mail_configured && stats.automation_scheduler_configured === false && (
           <div className="mb-6 rounded-[16px] border border-line bg-surface p-5 text-sm" data-testid="scheduler-warning">
             <p className="font-semibold text-lime">Automations are not being driven.</p>
             <p className="mt-2 text-muted">
@@ -145,60 +153,64 @@ export default function AdminDashboard() {
         <div className="mb-12 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4" data-testid="admin-stats">
           <Stat
             label="Mailing list"
-            value={stats ? stats.subscribers.active : "—"}
-            sub={stats ? `+${stats.subscribers.last_30_days} in the last 30 days` : ""}
+            value={num(stats?.subscribers?.active)}
+            sub={stats ? `+${stats.subscribers?.last_30_days ?? 0} in the last 30 days` : ""}
           >
-            {stats && <Sparkline points={stats.subscribers.growth} />}
+            <Sparkline points={stats?.subscribers?.growth} />
           </Stat>
           <Stat
             label="Registrations"
-            value={stats ? stats.registrations.total : "—"}
+            value={num(stats?.registrations?.total)}
             sub={
               stats
-                ? `${stats.registrations.attended} attended · ${stats.registrations.waitlisted} waitlisted`
+                ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted`
                 : ""
             }
           />
           <Stat
             label="Emails sent"
-            value={stats ? stats.campaigns.sent : "—"}
-            sub={stats ? `${stats.campaigns.total} campaigns created` : ""}
+            value={num(stats?.campaigns?.sent)}
+            sub={stats ? `${stats.campaigns?.total ?? 0} campaigns created` : ""}
           />
           <Stat
             label="Community"
-            value={stats ? stats.community.members : "—"}
-            sub={stats ? `${stats.enrolments.total} programme enrolments` : ""}
+            value={num(stats?.community?.members)}
+            sub={stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : ""}
           />
         </div>
 
         <div className="mb-12 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Stat
             label="Automations running"
-            value={stats ? stats.automations.sequences : "—"}
-            sub={stats ? `${stats.automations.enrolled} people part-way through` : ""}
+            value={num(stats?.automations?.sequences)}
+            sub={stats ? `${stats.automations?.enrolled ?? 0} people part-way through` : ""}
           />
           <Stat
             label="Programmes in progress"
-            value={stats ? stats.enrolments.active : "—"}
-            sub={stats ? `${stats.enrolments.completed} completed` : ""}
+            value={num(stats?.enrolments?.active)}
+            sub={stats ? `${stats.enrolments?.completed ?? 0} completed` : ""}
           />
           <Stat
             label="Enquiries"
-            value={stats ? stats.contact_messages : "—"}
+            value={num(stats?.contact_messages)}
             sub="via the contact form"
           />
           <Stat
             label="Published content"
-            value={stats ? stats.content.posts + stats.content.events + stats.content.books : "—"}
+            value={
+              stats?.content
+                ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
+                : "—"
+            }
             sub={
-              stats
-                ? `${stats.content.posts} posts · ${stats.content.events} events · ${stats.content.books} books`
+              stats?.content
+                ? `${stats.content.posts ?? 0} posts · ${stats.content.events ?? 0} events · ${stats.content.books ?? 0} books`
                 : ""
             }
           />
         </div>
 
-        {stats && stats.subscribers.by_source.length > 0 && (
+        {stats?.subscribers?.by_source?.length > 0 && (
           <div className="mb-12 rounded-[20px] border border-line bg-surface p-7" data-testid="stats-by-source">
             <p className="text-xs uppercase tracking-[0.2em] text-muted">Where subscribers come from</p>
             <div className="mt-5 space-y-3">

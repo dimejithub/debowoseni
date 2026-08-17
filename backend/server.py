@@ -7,7 +7,11 @@ this backend; mutations are admin-only with a Supabase JWT.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import io
+import json
 import logging
 import os
 import re
@@ -26,6 +30,7 @@ from fastapi import (
     Form,
     Header,
     HTTPException,
+    Request,
     UploadFile,
     status,
 )
@@ -685,6 +690,145 @@ def register_for_event(slug: str, payload: RegistrationIn, background: Backgroun
 
 
 # ---------------------------------------------------------------------------
+# Resend webhook — delivery, open and click tracking
+#
+# Point this at https://<backend>/api/webhooks/resend in the Resend dashboard
+# (Webhooks → Add endpoint) and select the email.* events. Resend signs each
+# request with a Svix-style HMAC; RESEND_WEBHOOK_SECRET enables verification.
+# ---------------------------------------------------------------------------
+RESEND_WEBHOOK_SECRET = os.environ.get("RESEND_WEBHOOK_SECRET", "").strip()
+
+# Resend event type → the status we record. Ordered by how far through the
+# funnel each one is, so a later delivery event never overwrites an open.
+_EMAIL_STATUS_RANK = {
+    "queued": 0,
+    "sent": 1,
+    "delivered": 2,
+    "opened": 3,
+    "clicked": 4,
+    "bounced": 5,
+    "complained": 6,
+    "failed": 5,
+}
+
+_RESEND_EVENT_STATUS = {
+    "email.sent": "sent",
+    "email.delivered": "delivered",
+    "email.opened": "opened",
+    "email.clicked": "clicked",
+    "email.bounced": "bounced",
+    "email.complained": "complained",
+    "email.delivery_delayed": None,  # transient; nothing worth recording
+}
+
+
+def _verify_resend_signature(raw: bytes, sig_header: Optional[str], timestamp: Optional[str],
+                             msg_id: Optional[str]) -> bool:
+    """Svix HMAC check. Returns True when the secret is not configured."""
+    if not RESEND_WEBHOOK_SECRET:
+        return True
+    if not sig_header or not timestamp or not msg_id:
+        return False
+    try:
+        secret = RESEND_WEBHOOK_SECRET
+        if secret.startswith("whsec_"):
+            secret = secret[len("whsec_") :]
+        key = base64.b64decode(secret)
+        signed = f"{msg_id}.{timestamp}.".encode() + raw
+        expected = base64.b64encode(hmac.new(key, signed, hashlib.sha256).digest()).decode()
+        # The header carries one or more space-separated "v1,<sig>" pairs.
+        for part in sig_header.split():
+            _, _, candidate = part.partition(",")
+            if candidate and hmac.compare_digest(candidate, expected):
+                return True
+        return False
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Resend signature check failed: %s", exc)
+        return False
+
+
+@api.post("/webhooks/resend")
+async def resend_webhook(
+    request: Request,
+    svix_id: Optional[str] = Header(default=None),
+    svix_timestamp: Optional[str] = Header(default=None),
+    svix_signature: Optional[str] = Header(default=None),
+):
+    raw = await request.body()
+    if not _verify_resend_signature(raw, svix_signature, svix_timestamp, svix_id):
+        raise HTTPException(401, "Bad signature")
+
+    try:
+        payload = json.loads(raw or b"{}")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(400, "Malformed payload") from exc
+
+    event_type = payload.get("type") or ""
+    if event_type not in _RESEND_EVENT_STATUS:
+        return {"ok": True, "ignored": event_type}
+
+    new_status = _RESEND_EVENT_STATUS[event_type]
+    if not new_status:
+        return {"ok": True, "ignored": event_type}
+
+    data = payload.get("data") or {}
+    provider_id = data.get("email_id") or data.get("id")
+    recipients = data.get("to") or []
+    if isinstance(recipients, str):
+        recipients = [recipients]
+
+    stamp = now_iso()
+    update: dict[str, Any] = {"status": new_status, "updated_at": stamp}
+    if new_status == "opened":
+        update["opened_at"] = stamp
+    elif new_status == "clicked":
+        update["clicked_at"] = stamp
+
+    # Match on the provider id where we have it; fall back to the address, which
+    # is all a legacy send would give us.
+    try:
+        q = sb_admin.table("campaign_sends").select("*")
+        rows = (
+            (q.eq("provider_id", provider_id).execute()).data
+            if provider_id
+            else (q.in_("email", [r.lower() for r in recipients]).execute()).data
+        ) or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Webhook lookup failed: %s", exc)
+        rows = []
+
+    updated = 0
+    for row in rows:
+        # Never regress: a delivery notice arriving after an open must not
+        # downgrade the record back to "delivered".
+        if _EMAIL_STATUS_RANK.get(new_status, 0) < _EMAIL_STATUS_RANK.get(row.get("status"), 0):
+            continue
+        try:
+            sb_admin.table("campaign_sends").update(update).eq("id", row["id"]).execute()
+            updated += 1
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Webhook update failed: %s", exc)
+
+    # A hard bounce or a spam complaint takes the address off the list. This is
+    # the single most important thing for protecting the sending domain.
+    if new_status in ("bounced", "complained"):
+        for address in recipients or [r.get("email") for r in rows]:
+            if not address:
+                continue
+            try:
+                sb_admin.table("subscribers").update(
+                    {
+                        "status": "bounced" if new_status == "bounced" else "complained",
+                        "unsubscribed_at": stamp,
+                    }
+                ).eq("email", address.lower()).execute()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Suppressing %s failed: %s", address, exc)
+
+    return {"ok": True, "type": event_type, "updated": updated}
+
+
+# ---------------------------------------------------------------------------
 # Public — COMMUNITY
 # ---------------------------------------------------------------------------
 COMMUNITY_GROUPS = {
@@ -1058,6 +1202,17 @@ def admin_get_campaign(item_id: str, user=Depends(require_user)):
     except Exception:  # noqa: BLE001
         sends = []
     campaign["sends"] = sends
+    # Engagement is derived from the Resend webhook. Statuses are cumulative in
+    # meaning — someone who clicked also opened — so count at-or-past each mark.
+    campaign["engagement"] = {
+        "delivered": sum(
+            1 for s in sends if _EMAIL_STATUS_RANK.get(s.get("status"), 0) >= 2
+        ),
+        "opened": sum(1 for s in sends if _EMAIL_STATUS_RANK.get(s.get("status"), 0) in (3, 4)),
+        "clicked": sum(1 for s in sends if s.get("status") == "clicked"),
+        "bounced": sum(1 for s in sends if s.get("status") == "bounced"),
+        "complained": sum(1 for s in sends if s.get("status") == "complained"),
+    }
     return campaign
 
 
@@ -1174,9 +1329,12 @@ def deliver_campaign(campaign_id: str) -> None:
             sb_admin.table("campaign_sends").upsert(
                 rows, on_conflict="campaign_id,email"
             ).execute()
-            sb_admin.table("subscribers").update({"last_emailed_at": now_iso()}).in_(
-                "id", [s["id"] for s in chunk if s.get("id")]
-            ).execute()
+            # An empty .in_() list is not a valid filter, so guard it.
+            ids = [s["id"] for s in chunk if s.get("id")]
+            if ids:
+                sb_admin.table("subscribers").update(
+                    {"last_emailed_at": now_iso()}
+                ).in_("id", ids).execute()
         except Exception as exc:  # noqa: BLE001
             logger.warning("Recording sends failed: %s", exc)
 
@@ -1287,8 +1445,8 @@ def admin_delete_step(step_id: str, user=Depends(require_user)):
 
 @api.post("/admin/sequences/{item_id}/run")
 def admin_run_sequences(item_id: str, user=Depends(require_user)):
-    """Manual 'send anything due now' — useful for testing without waiting."""
-    return automations.run_due_steps(sb_admin)
+    """Manual 'send anything due now' for one sequence — test without waiting."""
+    return automations.run_due_steps(sb_admin, sequence_id=item_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1654,6 +1812,13 @@ def admin_stats(user=Depends(require_user)):
         "automations": {
             "sequences": _count("sequences", status="active"),
             "enrolled": _count("sequence_enrolments", status="active"),
+        },
+        "engagement": {
+            "opened": _count("campaign_sends", status="opened")
+            + _count("campaign_sends", status="clicked"),
+            "clicked": _count("campaign_sends", status="clicked"),
+            "bounced": _count("campaign_sends", status="bounced"),
+            "tracking_configured": bool(RESEND_WEBHOOK_SECRET),
         },
         "contact_messages": _count("contact_messages"),
         "mail_configured": mailer.enabled,

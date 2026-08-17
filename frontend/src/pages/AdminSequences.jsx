@@ -4,20 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Pause, Play, Plus, Trash2, Workflow } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { adminSequences } from "@/lib/api";
-
-export const TRIGGERS = [
-  { value: "subscriber_created", label: "Someone joins the mailing list", needsValue: false },
-  { value: "tag_added", label: "A tag is added", needsValue: true, hint: "e.g. quiz:tier-2" },
-  { value: "event_registered", label: "Someone registers for an event", needsValue: true, hint: "event slug — blank means any event" },
-  { value: "community_joined", label: "Someone joins the community", needsValue: true, hint: "group key, e.g. lte — blank means any" },
-  { value: "manual", label: "Manual only", needsValue: false },
-];
-
-export function triggerLabel(seq) {
-  const t = TRIGGERS.find((x) => x.value === seq.trigger_type);
-  const base = t?.label || seq.trigger_type;
-  return seq.trigger_value ? `${base} — ${seq.trigger_value}` : base;
-}
+import { TRIGGERS, triggerLabel } from "@/lib/sequences";
 
 export default function AdminSequences() {
   const { user, loading } = useAuth();

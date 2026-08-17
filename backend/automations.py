@@ -168,18 +168,25 @@ def _finish(sb, enrolment_id: str, status: str = "completed") -> None:
         logger.warning("Closing enrolment %s failed: %s", enrolment_id, exc)
 
 
-def run_due_steps(sb) -> dict[str, Any]:
-    """Send every sequence step that has come due. Returns a small report."""
+def run_due_steps(sb, sequence_id: Optional[str] = None) -> dict[str, Any]:
+    """Send every sequence step that has come due. Returns a small report.
+
+    Pass sequence_id to restrict the run to one sequence — that is what the
+    per-sequence "send anything due now" button in the admin uses, so testing
+    one automation cannot fire everybody else's.
+    """
     now = _now()
     try:
-        due = (
+        q = (
             sb.table("sequence_enrolments")
             .select("*")
             .eq("status", "active")
             .lte("next_send_at", _iso(now))
-            .order("next_send_at", desc=False)
-            .limit(MAX_SENDS_PER_RUN)
-            .execute()
+        )
+        if sequence_id:
+            q = q.eq("sequence_id", sequence_id)
+        due = (
+            q.order("next_send_at", desc=False).limit(MAX_SENDS_PER_RUN).execute()
         ).data or []
     except Exception as exc:  # noqa: BLE001
         logger.warning("Due lookup failed: %s", exc)

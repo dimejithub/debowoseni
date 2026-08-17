@@ -44,15 +44,38 @@ its REST API, so the SQL editor is the route.
 
 ### 2. Create the Resend API key — you must do this yourself
 
+The account's login address (a Gmail address is fine) has nothing to do with
+what mail is sent *from*. The sending identity comes entirely from the verified
+domain, so step 2 below is the one that matters.
+
 1. Sign up at [resend.com](https://resend.com) (free tier: 3,000 emails/month,
    100/day — enough to start).
-2. **Domains → Add Domain → `debowoseni.com`.** Resend gives you three DNS
-   records: SPF, DKIM and DMARC. Add all three at your DNS provider and wait
-   for the status to go green. **Do not skip this** — sending from an
-   unverified domain is what puts mail in spam.
+2. **Domains → Add Domain → `debowoseni.com`.** Resend gives you DNS records
+   for SPF, DKIM and DMARC. Add them at your DNS provider and wait for the
+   status to go green. **Do not skip this** — until it is verified you can only
+   send from `onboarding@resend.dev`, and `MAIL_FROM` will be rejected.
 3. **API Keys → Create API Key**, permission "Sending access". Copy it once —
    it is only shown at creation.
-4. Paste it into Render as `RESEND_API_KEY`.
+4. Paste it into Render as `RESEND_API_KEY`. It is a secret: it belongs in
+   Render's environment settings and nowhere else — not in this repo, not in
+   chat, not in a commit.
+
+### 2b. Point the Resend webhook at the backend (optional but worth it)
+
+This is what fills in opens, clicks and bounces.
+
+1. Resend → **Webhooks → Add Endpoint**.
+2. URL: `https://<your-render-service>.onrender.com/api/webhooks/resend`
+3. Subscribe to the `email.*` events (sent, delivered, opened, clicked,
+   bounced, complained).
+4. Copy the signing secret (`whsec_...`) into Render as
+   `RESEND_WEBHOOK_SECRET`.
+
+Without the secret set, the endpoint still works but accepts unsigned requests —
+fine for a quick test, worth setting properly before you rely on the numbers.
+
+Bounces and spam complaints arriving through this webhook automatically take
+the address off the list. That is the single most valuable thing it does.
 
 ### 3. Set the backend environment (Render)
 
@@ -63,6 +86,7 @@ MAIL_REPLY_TO=hello@debowoseni.com
 PUBLIC_SITE_URL=https://debowoseni.com
 AUTOMATION_TOKEN=<any long random string you invent>
 COMMUNITY_LTE_INVITE_URL=https://chat.whatsapp.com/...
+RESEND_WEBHOOK_SECRET=whsec_...          # optional, see 2b
 ```
 
 Without `RESEND_API_KEY` nothing breaks — the site runs in dry-run mode,
@@ -190,10 +214,10 @@ the one mistake that is genuinely hard to undo — it damages the reputation of
 
 ## Known gaps
 
-**Open and click tracking.** `campaign_sends` has `opened_at` and `clicked_at`
-columns and the statuses to match, but nothing writes to them — that needs a
-Resend webhook endpoint. Sent/failed counts are live and accurate today.
-
 **Sequence content.** The mechanism is complete; the emails from the old Systeme
 campaigns have to be re-entered by hand, because those pages were unreachable
 from the build environment.
+
+**Engagement history starts now.** Opens and clicks are only recorded from the
+moment the webhook is connected — there is no backfill for anything sent before
+that, and none of the Systeme history comes across.

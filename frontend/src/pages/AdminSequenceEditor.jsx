@@ -10,7 +10,7 @@ import {
   adminRunSequences,
   adminUpdateStep,
 } from "@/lib/api";
-import { triggerLabel } from "@/pages/AdminSequences";
+import { triggerLabel } from "@/lib/sequences";
 
 const BLANK_STEP = { delay_days: 0, subject: "", preheader: "", body: "" };
 
