@@ -21,8 +21,13 @@ load_dotenv(Path("/app/frontend/.env"))
 BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 SUPABASE_URL = os.environ["REACT_APP_SUPABASE_URL"].rstrip("/")
 SUPABASE_ANON_KEY = os.environ["REACT_APP_SUPABASE_ANON_KEY"]
-ADMIN_EMAIL = "admin@debowoseni.com"
-ADMIN_PASSWORD = "KUz6h4PpCt46QK0Tqhis"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@debowoseni.com")
+
+# Never hardcode this. It used to be a literal in this file, which put the live
+# CMS password into git history — rotate it in Supabase if that has not been
+# done. Export ADMIN_PASSWORD (or put it in the .env this module loads) to run
+# the admin half of the suite.
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +43,8 @@ def api_client():
 @pytest.fixture(scope="session")
 def access_token():
     """Sign in to Supabase via password grant to obtain an access_token."""
+    if not ADMIN_PASSWORD:
+        pytest.skip("ADMIN_PASSWORD is not set; skipping admin tests.")
     r = requests.post(
         f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
         headers={
