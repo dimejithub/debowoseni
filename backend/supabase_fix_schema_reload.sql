@@ -38,7 +38,7 @@ begin
 end;
 $$;
 
-drop event trigger if exists pgrst_reload_watcher on ddl_command_end;
+drop event trigger if exists pgrst_reload_watcher;
 create event trigger pgrst_reload_watcher
   on ddl_command_end
   execute function public.pgrst_reload_on_ddl();

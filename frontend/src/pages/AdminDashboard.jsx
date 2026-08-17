@@ -18,9 +18,59 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { adminStats, getHealth } from "@/lib/api";
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Rolls a number up to its target the first time a real value arrives, so each
+ * metric reads as "counting in" rather than snapping — the live-dashboard feel.
+ * Non-numbers (the "—" fallback) pass straight through, and reduced-motion users
+ * get the final value immediately.
+ */
+function useCountUp(value, duration = 1000) {
+  const [display, setDisplay] = useState(typeof value === "number" ? 0 : value);
+  const fromRef = useRef(0);
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof value !== "number") {
+      setDisplay(value);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setDisplay(value);
+      fromRef.current = value;
+      return;
+    }
+    const from = fromRef.current;
+    const delta = value - from;
+    if (delta === 0) {
+      setDisplay(value);
+      return;
+    }
+    let start = null;
+    const easeOutExpo = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+    const tick = (ts) => {
+      if (start === null) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      setDisplay(Math.round(from + delta * easeOutExpo(p)));
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = value;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [value, duration]);
+
+  return typeof display === "number" ? display.toLocaleString() : display;
+}
 
 // Nav cards, grouped so the panel reads as two jobs — publishing the site, and
 // running the audience — rather than one long undifferentiated list.
@@ -71,6 +121,13 @@ function Sparkline({ points }) {
   const line = xy.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const area = `${line} L${w},${h} L0,${h} Z`;
   const [lastX, lastY] = xy[xy.length - 1];
+  // Path length drives the draw-in dash animation, so it starts fully hidden
+  // and unspools left-to-right regardless of the actual curve.
+  const len = xy.reduce((acc, [x, y], i) => {
+    if (i === 0) return 0;
+    const [px, py] = xy[i - 1];
+    return acc + Math.hypot(x - px, y - py);
+  }, 0);
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="mt-5 h-11 w-full overflow-visible" preserveAspectRatio="none" aria-hidden>
       <defs>
@@ -79,9 +136,19 @@ function Sparkline({ points }) {
           <stop offset="100%" stopColor="var(--lime)" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill="url(#spark)" />
-      <path d={line} fill="none" stroke="var(--lime)" strokeWidth="1.75" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={lastX} cy={lastY} r="2.6" fill="var(--lime)" vectorEffect="non-scaling-stroke" />
+      <path className="spark-area" d={area} fill="url(#spark)" />
+      <path
+        className="spark-line"
+        style={{ "--spark-len": len.toFixed(1) }}
+        d={line}
+        fill="none"
+        stroke="var(--lime)"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+      <circle className="spark-pulse" cx={lastX} cy={lastY} r="2.6" fill="var(--lime)" vectorEffect="non-scaling-stroke" />
+      <circle className="spark-dot" cx={lastX} cy={lastY} r="2.6" fill="var(--lime)" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -91,7 +158,8 @@ function Sparkline({ points }) {
  * wash so the eye lands there first. `to` makes the whole tile a link into the
  * fuller view of that stat, with a hover affordance and a corner arrow.
  */
-function Stat({ label, value, sub, Icon, primary, to, children }) {
+function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
+  const shown = useCountUp(value);
   const inner = (
     <>
       <div className="flex items-start justify-between">
@@ -106,23 +174,24 @@ function Stat({ label, value, sub, Icon, primary, to, children }) {
         </span>
       </div>
       <p className="mt-4 font-display text-[2.6rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums]">
-        {value}
+        {shown}
       </p>
       {sub && <p className="mt-2 text-xs leading-relaxed text-muted">{sub}</p>}
       {children}
     </>
   );
 
-  const cls = `group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
+  const cls = `tile-rise group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
     primary
       ? "border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
       : "border-line bg-surface hover:border-lime/40"
   }`;
+  const style = { "--rise-delay": `${rise}ms` };
 
   return to ? (
-    <Link to={to} className={cls}>{inner}</Link>
+    <Link to={to} className={cls} style={style}>{inner}</Link>
   ) : (
-    <div className={cls}>{inner}</div>
+    <div className={cls} style={style}>{inner}</div>
   );
 }
 
@@ -230,59 +299,67 @@ export default function AdminDashboard() {
             <div className="col-span-2 lg:col-span-2 lg:row-span-1">
               <Stat
                 label="Mailing list"
-            to="/admin/subscribers"
+                to="/admin/subscribers"
                 value={num(stats?.subscribers?.active)}
                 sub={stats ? `+${stats.subscribers?.last_30_days ?? 0} in the last 30 days` : "loading…"}
                 Icon={Mail}
                 primary
+                rise={0}
               >
                 <Sparkline points={stats?.subscribers?.growth} />
               </Stat>
             </div>
             <Stat
               label="Registrations"
-            to="/admin/registrations"
+              to="/admin/registrations"
               value={num(stats?.registrations?.total)}
               sub={stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : ""}
               Icon={Users}
+              rise={70}
             />
             <Stat
               label="Community"
-            to="/admin/people"
+              to="/admin/people"
               value={num(stats?.community?.members)}
               sub={stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : ""}
               Icon={MessageCircle}
+              rise={140}
             />
             <Stat
               label="Emails sent"
-            to="/admin/emails"
+              to="/admin/emails"
               value={num(stats?.campaigns?.sent)}
               sub={stats ? `${stats.campaigns?.total ?? 0} campaigns created` : ""}
               Icon={Send}
+              rise={210}
             />
             <Stat
               label="Automations"
-            to="/admin/automations"
+              to="/admin/automations"
               value={num(stats?.automations?.sequences)}
               sub={stats ? `${stats.automations?.enrolled ?? 0} people part-way through` : ""}
               Icon={Workflow}
+              rise={280}
             />
             <Stat
               label="Programmes"
-            to="/admin/people"
+              to="/admin/people"
               value={num(stats?.enrolments?.active)}
               sub={stats ? `${stats.enrolments?.completed ?? 0} completed` : ""}
               Icon={GraduationCap}
+              rise={350}
             />
             <Stat
               label="Enquiries"
-            to="/admin/enquiries"
+              to="/admin/enquiries"
               value={num(stats?.contact_messages)}
               sub="via the contact form"
               Icon={Inbox}
+              rise={420}
             />
             <Stat
               label="Published"
+              rise={490}
               value={
                 stats?.content
                   ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
@@ -317,7 +394,7 @@ export default function AdminDashboard() {
             <Eyebrow>Where subscribers come from</Eyebrow>
             <div className="rounded-[20px] border border-line bg-surface p-7" data-testid="stats-by-source">
               <div className="space-y-4">
-                {stats.subscribers.by_source.slice(0, 6).map(({ source, count }) => {
+                {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={source}>
@@ -329,8 +406,8 @@ export default function AdminDashboard() {
                       </div>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-lime/70 to-lime transition-[width] duration-700"
-                          style={{ width: `${Math.max(pct, 2)}%` }}
+                          className="bar-grow h-full rounded-full bg-gradient-to-r from-lime/70 to-lime"
+                          style={{ width: `${Math.max(pct, 2)}%`, "--bar-delay": `${i * 90}ms` }}
                         />
                       </div>
                     </div>
@@ -346,14 +423,15 @@ export default function AdminDashboard() {
           <section key={group.label} className="mb-10">
             <Eyebrow>{group.label}</Eyebrow>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {group.cards.map(({ to, title, desc, Icon, testId }) => (
+              {group.cards.map(({ to, title, desc, Icon, testId }, i) => (
                 <Link
                   key={to}
                   to={to}
-                  className="card-lift group flex items-start gap-4 rounded-[18px] border border-line bg-surface p-5"
+                  className="tile-rise card-lift group flex items-start gap-4 rounded-[18px] border border-line bg-surface p-5"
+                  style={{ "--rise-delay": `${i * 55}ms` }}
                   data-testid={testId}
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg transition-colors group-hover:border-lime/50">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg transition-all duration-300 group-hover:border-lime/50 group-hover:scale-105">
                     <Icon className="h-[18px] w-[18px] text-lime" />
                   </span>
                   <div className="min-w-0 flex-1">
