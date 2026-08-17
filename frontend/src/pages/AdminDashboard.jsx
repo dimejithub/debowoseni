@@ -40,6 +40,7 @@ const CARD_GROUPS = [
     cards: [
       { to: "/admin/people", title: "People", desc: "Every contact, with their full history.", Icon: Contact, testId: "card-people" },
       { to: "/admin/registrations", title: "Registrations", desc: "Who signed up, who attended.", Icon: Users, testId: "card-registrations" },
+      { to: "/admin/enquiries", title: "Enquiries", desc: "Messages from the contact form.", Icon: Inbox, testId: "card-enquiries" },
       { to: "/admin/emails", title: "Emails", desc: "Write and send to the list.", Icon: Send, testId: "card-emails" },
       { to: "/admin/newsletter", title: "Newsletter", desc: "Auto digest of new journal posts.", Icon: Newspaper, testId: "card-newsletter" },
       { to: "/admin/automations", title: "Automations", desc: "Triggered email sequences.", Icon: Workflow, testId: "card-automations" },
@@ -87,30 +88,41 @@ function Sparkline({ points }) {
 
 /**
  * A metric tile. `primary` gives the headline stat (the mailing list) a lime
- * wash so the eye lands there first; `accent` colours the value for anything
- * that wants attention.
+ * wash so the eye lands there first. `to` makes the whole tile a link into the
+ * fuller view of that stat, with a hover affordance and a corner arrow.
  */
-function Stat({ label, value, sub, Icon, primary, children }) {
-  return (
-    <div
-      className={`group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
-        primary
-          ? "border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface"
-          : "border-line bg-surface hover:border-lime/40"
-      }`}
-    >
+function Stat({ label, value, sub, Icon, primary, to, children }) {
+  const inner = (
+    <>
       <div className="flex items-start justify-between">
         <p className="text-[0.68rem] font-medium uppercase tracking-[0.18em] text-muted">{label}</p>
-        {Icon && (
-          <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-lime" : "text-muted/60 transition-colors group-hover:text-lime"}`} />
-        )}
+        <span className="flex items-center gap-1.5">
+          {to && (
+            <ArrowUpRight className="h-3.5 w-3.5 text-muted/40 opacity-0 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime group-hover:opacity-100" />
+          )}
+          {Icon && (
+            <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-lime" : "text-muted/60 transition-colors group-hover:text-lime"}`} />
+          )}
+        </span>
       </div>
       <p className="mt-4 font-display text-[2.6rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums]">
         {value}
       </p>
       {sub && <p className="mt-2 text-xs leading-relaxed text-muted">{sub}</p>}
       {children}
-    </div>
+    </>
+  );
+
+  const cls = `group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
+    primary
+      ? "border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
+      : "border-line bg-surface hover:border-lime/40"
+  }`;
+
+  return to ? (
+    <Link to={to} className={cls}>{inner}</Link>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }
 
@@ -218,6 +230,7 @@ export default function AdminDashboard() {
             <div className="col-span-2 lg:col-span-2 lg:row-span-1">
               <Stat
                 label="Mailing list"
+            to="/admin/subscribers"
                 value={num(stats?.subscribers?.active)}
                 sub={stats ? `+${stats.subscribers?.last_30_days ?? 0} in the last 30 days` : "loading…"}
                 Icon={Mail}
@@ -228,36 +241,42 @@ export default function AdminDashboard() {
             </div>
             <Stat
               label="Registrations"
+            to="/admin/registrations"
               value={num(stats?.registrations?.total)}
               sub={stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : ""}
               Icon={Users}
             />
             <Stat
               label="Community"
+            to="/admin/people"
               value={num(stats?.community?.members)}
               sub={stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : ""}
               Icon={MessageCircle}
             />
             <Stat
               label="Emails sent"
+            to="/admin/emails"
               value={num(stats?.campaigns?.sent)}
               sub={stats ? `${stats.campaigns?.total ?? 0} campaigns created` : ""}
               Icon={Send}
             />
             <Stat
               label="Automations"
+            to="/admin/automations"
               value={num(stats?.automations?.sequences)}
               sub={stats ? `${stats.automations?.enrolled ?? 0} people part-way through` : ""}
               Icon={Workflow}
             />
             <Stat
               label="Programmes"
+            to="/admin/people"
               value={num(stats?.enrolments?.active)}
               sub={stats ? `${stats.enrolments?.completed ?? 0} completed` : ""}
               Icon={GraduationCap}
             />
             <Stat
               label="Enquiries"
+            to="/admin/enquiries"
               value={num(stats?.contact_messages)}
               sub="via the contact form"
               Icon={Inbox}
@@ -270,9 +289,23 @@ export default function AdminDashboard() {
                   : "—"
               }
               sub={
-                stats?.content
-                  ? `${stats.content.posts ?? 0} posts · ${stats.content.events ?? 0} events · ${stats.content.books ?? 0} books`
-                  : ""
+                stats?.content ? (
+                  <span className="flex flex-wrap gap-x-1.5 gap-y-1">
+                    <Link to="/admin/posts" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.posts ?? 0} posts
+                    </Link>
+                    <span className="text-muted/40">·</span>
+                    <Link to="/admin/events" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.events ?? 0} events
+                    </Link>
+                    <span className="text-muted/40">·</span>
+                    <Link to="/admin/books" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.books ?? 0} books
+                    </Link>
+                  </span>
+                ) : (
+                  ""
+                )
               }
               Icon={Sparkles}
             />

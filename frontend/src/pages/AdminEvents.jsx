@@ -246,15 +246,19 @@ export default function AdminEvents() {
               )}
               <label className="btn-ghost cursor-pointer text-xs inline-flex">
                 <ImageIcon className="h-3.5 w-3.5" /> Upload cover
-                <input type="file" accept="image/*" className="hidden" onChange={uploadCover} data-testid="event-cover-upload" />
+                <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={uploadCover} data-testid="event-cover-upload" />
               </label>
             </Field>
 
             <Field label={`Gallery (${(draft.gallery || []).length})`}>
               <label className="btn-ghost cursor-pointer text-xs inline-flex">
                 <Plus className="h-3.5 w-3.5" /> Add images
-                <input type="file" accept="image/*" multiple className="hidden" onChange={addToGallery} data-testid="event-gallery-upload" />
+                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={addToGallery} data-testid="event-gallery-upload" />
               </label>
+              <p className="mt-2 text-xs text-muted">
+                Upload photos straight from your phone — they're resized and compressed for
+                the web automatically. iPhone (HEIC) photos are fine. Up to 25&nbsp;MB each.
+              </p>
               {draft.gallery && draft.gallery.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   {draft.gallery.map((src, i) => (

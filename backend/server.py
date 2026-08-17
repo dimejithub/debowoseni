@@ -40,6 +40,22 @@ from starlette.middleware.cors import CORSMiddleware
 from supabase import Client, create_client
 from PIL import Image, ImageOps
 
+# Teach Pillow to open HEIC/HEIF — the format iPhones shoot in by default.
+# Without this an iPhone photo fails to decode and gets stored untouched, and
+# browsers cannot display HEIC, so the image silently never appears. Guarded so
+# the app still boots if the optional dependency is missing.
+try:
+    from pillow_heif import register_heif_opener
+
+    register_heif_opener()
+    _HEIF_READY = True
+except Exception:  # noqa: BLE001
+    _HEIF_READY = False
+
+# Refuse absurdly large pixel dimensions (a decompression-bomb guard) so one
+# pathological image cannot exhaust the small hosting instance's memory.
+Image.MAX_IMAGE_PIXELS = 80_000_000  # ~80 megapixels
+
 import automations
 import mailer
 import newsletter
@@ -934,6 +950,25 @@ def admin_list_subscribers(user=Depends(require_user)):
         .order("created_at", desc=True).execute()
     )
     return {"subscribers": res.data or []}
+
+
+@api.get("/admin/enquiries")
+def admin_list_enquiries(user=Depends(require_user)):
+    """Contact-form messages, newest first — the actual text behind the count."""
+    try:
+        res = (
+            sb_admin.table("contact_messages").select("*")
+            .order("created_at", desc=True).execute()
+        )
+        return {"enquiries": res.data or []}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Enquiry list failed: %s", exc)
+        return {"enquiries": []}
+
+
+@api.delete("/admin/enquiries/{item_id}")
+def admin_delete_enquiry(item_id: str, user=Depends(require_user)):
+    return _admin_delete("contact_messages", item_id)
 
 
 @api.get("/admin/posts")
@@ -1916,6 +1951,29 @@ def admin_stats(user=Depends(require_user)):
 MAX_IMAGE_DIM = 1600
 WEBP_QUALITY = 80
 
+# Hard ceiling on the raw upload, checked while reading so a huge file never
+# fully lands in memory. Generous — ordinary phone photos are 3–12 MB, and even
+# a 48-megapixel HEIC clears this — but it stops a stray video or a 100 MB file
+# from taking the instance down.
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+
+
+async def read_capped(upload: UploadFile) -> bytes:
+    """Read an upload in chunks, aborting if it exceeds MAX_UPLOAD_BYTES."""
+    buf = bytearray()
+    while True:
+        chunk = await upload.read(1024 * 1024)
+        if not chunk:
+            break
+        buf.extend(chunk)
+        if len(buf) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                413,
+                f"That image is over {MAX_UPLOAD_BYTES // (1024 * 1024)} MB. "
+                "Please choose a smaller file — an ordinary phone photo is fine.",
+            )
+    return bytes(buf)
+
 
 def optimize_image(contents: bytes, content_type: Optional[str]):
     """Resize + re-encode a raster image to WebP.
@@ -1949,7 +2007,7 @@ async def admin_upload(
     user=Depends(require_user),
 ):
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", file.filename or "image")
-    contents = await file.read()
+    contents = await read_capped(file)
 
     opt_bytes, opt_ext, opt_ct = optimize_image(contents, file.content_type)
     if opt_ext:
