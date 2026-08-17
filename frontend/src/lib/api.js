@@ -283,6 +283,19 @@ export async function adminRunSequences(id) {
   return r.data;
 }
 
+// ---- Admin — enquiries (contact-form messages) ----
+export async function adminListEnquiries() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/enquiries`, { headers });
+  return r.data.enquiries || [];
+}
+
+export async function adminDeleteEnquiry(id) {
+  const headers = await authHeaders();
+  const r = await axios.delete(`${API}/admin/enquiries/${id}`, { headers });
+  return r.data;
+}
+
 // ---- Admin — newsletter (scheduled digest) ----
 export async function adminGetNewsletter() {
   const headers = await authHeaders();

@@ -952,6 +952,25 @@ def admin_list_subscribers(user=Depends(require_user)):
     return {"subscribers": res.data or []}
 
 
+@api.get("/admin/enquiries")
+def admin_list_enquiries(user=Depends(require_user)):
+    """Contact-form messages, newest first — the actual text behind the count."""
+    try:
+        res = (
+            sb_admin.table("contact_messages").select("*")
+            .order("created_at", desc=True).execute()
+        )
+        return {"enquiries": res.data or []}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Enquiry list failed: %s", exc)
+        return {"enquiries": []}
+
+
+@api.delete("/admin/enquiries/{item_id}")
+def admin_delete_enquiry(item_id: str, user=Depends(require_user)):
+    return _admin_delete("contact_messages", item_id)
+
+
 @api.get("/admin/posts")
 def admin_list_posts(user=Depends(require_user)):
     res = sb_admin.table("posts").select("*").order("created_at", desc=True).execute()

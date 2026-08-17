@@ -32,6 +32,7 @@ import AdminPerson from "@/pages/AdminPerson";
 import AdminSequences from "@/pages/AdminSequences";
 import AdminSequenceEditor from "@/pages/AdminSequenceEditor";
 import AdminNewsletter from "@/pages/AdminNewsletter";
+import AdminEnquiries from "@/pages/AdminEnquiries";
 import Programmes from "@/pages/Programmes";
 import Community from "@/pages/Community";
 import Unsubscribe from "@/pages/Unsubscribe";
@@ -90,6 +91,7 @@ function App() {
           <Route path="/admin/automations" element={<AdminSequences />} />
           <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
           <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+          <Route path="/admin/enquiries" element={<AdminEnquiries />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
