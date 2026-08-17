@@ -12,54 +12,139 @@ async function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ---- Public ----
+// ---- Public reads ----
+//
+// Published content is read straight from Supabase, which is always warm.
+// The FastAPI backend sleeps on Render's free tier, so routing public reads
+// through it cost every first visitor a ~15s cold start for data the anon key
+// is already allowed to read (see the "public read" RLS policies).
+//
+// The backend stays as a fallback for the case where Supabase env vars are
+// missing from a build, so a misconfigured deploy degrades instead of breaking.
+async function readTable(build, fallback) {
+  try {
+    const { data, error } = await build();
+    if (error) throw error;
+    if (data) return data;
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Supabase read failed, falling back to API:", err?.message || err);
+    }
+  }
+  return fallback();
+}
+
 export async function getHealth() {
   const r = await publicApi.get("/health");
   return r.data;
 }
 
 export async function getPublishedPosts(limit = 50) {
-  const r = await publicApi.get(`/posts?limit=${limit}`);
-  return r.data.posts || [];
+  return readTable(
+    () =>
+      supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(Math.min(Math.max(limit, 1), 100)),
+    async () => (await publicApi.get(`/posts?limit=${limit}`)).data.posts || []
+  );
 }
 
 export async function getPostBySlug(slug) {
-  const r = await publicApi.get(`/posts/${slug}`);
-  return r.data;
+  const rows = await readTable(
+    () => supabase.from("posts").select("*").eq("slug", slug).eq("status", "published").limit(1),
+    async () => [(await publicApi.get(`/posts/${slug}`)).data]
+  );
+  if (!rows || !rows.length) throw new Error("Post not found");
+  return rows[0];
 }
 
 export async function getPublishedTestimonials() {
-  const r = await publicApi.get("/testimonials");
-  return r.data.testimonials || [];
+  return readTable(
+    () =>
+      supabase
+        .from("testimonials")
+        .select("*")
+        .eq("status", "published")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false }),
+    async () => (await publicApi.get("/testimonials")).data.testimonials || []
+  );
 }
 
 export async function getPublishedBooks() {
-  const r = await publicApi.get("/books");
-  return r.data.books || [];
+  return readTable(
+    () =>
+      supabase
+        .from("books")
+        .select("*")
+        .eq("status", "published")
+        .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false }),
+    async () => (await publicApi.get("/books")).data.books || []
+  );
 }
 
 export async function getPublicationsList() {
-  const r = await publicApi.get("/publications");
-  return r.data.publications || [];
+  return readTable(
+    () =>
+      supabase
+        .from("publications")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("year", { ascending: false }),
+    async () => (await publicApi.get("/publications")).data.publications || []
+  );
 }
 
 export async function getPublishedEvents() {
-  const r = await publicApi.get("/events");
-  return r.data.events || [];
+  return readTable(
+    () =>
+      supabase
+        .from("events")
+        .select("*")
+        .eq("status", "published")
+        .order("sort_order", { ascending: true })
+        .order("event_date", { ascending: false }),
+    async () => (await publicApi.get("/events")).data.events || []
+  );
 }
 
 export async function getEventBySlug(slug) {
-  const r = await publicApi.get(`/events/${slug}`);
-  return r.data;
+  const rows = await readTable(
+    () => supabase.from("events").select("*").eq("slug", slug).eq("status", "published").limit(1),
+    async () => [(await publicApi.get(`/events/${slug}`)).data]
+  );
+  if (!rows || !rows.length) throw new Error("Event not found");
+  return rows[0];
 }
 
+// ---- Public writes (these must go through the backend) ----
 export async function submitContact(payload) {
   const r = await publicApi.post("/contact", payload);
   return r.data;
 }
 
-export async function subscribeNewsletter(email) {
-  const r = await publicApi.post("/newsletter", { email });
+export async function subscribeNewsletter(email, opts = {}) {
+  const r = await publicApi.post("/newsletter", {
+    email,
+    name: opts.name,
+    source: opts.source,
+    tags: opts.tags || [],
+  });
+  return r.data;
+}
+
+export async function unsubscribeByToken(token) {
+  const r = await publicApi.post("/newsletter/unsubscribe", { token });
+  return r.data;
+}
+
+export async function registerForEvent(slug, payload) {
+  const r = await publicApi.post(`/events/${slug}/register`, payload);
   return r.data;
 }
 
@@ -99,6 +184,61 @@ export const adminTestimonials = adminCrud("testimonials");
 export const adminBooks = adminCrud("books");
 export const adminPublications = adminCrud("publications");
 export const adminEvents = adminCrud("events");
+export const adminCampaigns = adminCrud("campaigns");
+
+// ---- Admin — dashboard stats ----
+export async function adminStats() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/stats`, { headers });
+  return r.data;
+}
+
+// ---- Admin — event registrations ----
+export async function adminListRegistrations(eventId) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/registrations`, {
+    headers,
+    params: eventId ? { event_id: eventId } : {},
+  });
+  return r.data.registrations || [];
+}
+
+export async function adminUpdateRegistration(id, payload) {
+  const headers = await authHeaders();
+  const r = await axios.put(`${API}/admin/registrations/${id}`, payload, { headers });
+  return r.data;
+}
+
+export async function adminDeleteRegistration(id) {
+  const headers = await authHeaders();
+  const r = await axios.delete(`${API}/admin/registrations/${id}`, { headers });
+  return r.data;
+}
+
+// ---- Admin — campaigns ----
+export async function adminGetCampaign(id) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/campaigns/${id}`, { headers });
+  return r.data;
+}
+
+export async function adminPreviewCampaign(id) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/campaigns/${id}/preview`, { headers });
+  return r.data;
+}
+
+export async function adminTestCampaign(id, email) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/campaigns/${id}/test`, { email }, { headers });
+  return r.data;
+}
+
+export async function adminSendCampaign(id) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/campaigns/${id}/send`, {}, { headers });
+  return r.data;
+}
 
 // ---- Admin posts (specialised — has separate getById endpoint) ----
 export async function adminListPosts() {

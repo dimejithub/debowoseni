@@ -134,7 +134,12 @@ export function EnquiryQuiz({ mode = "global", currentKey = null }) {
     if (!email) return;
     setPending(true);
     try {
-      await subscribeNewsletter(email);
+      // Tag the capture with the quiz result so the mailing list can be
+      // segmented by what each person actually needs (quiz:lte, quiz:tier-2…).
+      await subscribeNewsletter(email, {
+        source: `quiz:${mode}`,
+        tags: ["quiz", `quiz:${mode}`, ...(resultKey ? [`quiz:${resultKey}`] : [])],
+      });
       toast.success("You're on the list.", {
         description: "Your recommendation is below — insights will follow by email.",
       });
@@ -284,15 +289,13 @@ function ResultCta({ mode, resultKey, result, currentKey }) {
         <a href={`#${resultKey}`} className="btn-lime" data-testid="quiz-result-cta">
           See this pathway <ArrowRight className="h-4 w-4" />
         </a>
-        <a
-          href={`${LTE_PROGRAMMES_URL}#${resultKey}`}
-          target="_blank"
-          rel="noreferrer noopener"
+        <Link
+          to={`${LTE_PROGRAMMES_URL}#${resultKey}`}
           className="btn-ghost"
           data-testid="quiz-result-book"
         >
           Book on the programmes page <ArrowUpRight className="h-4 w-4" />
-        </a>
+        </Link>
       </>
     );
   }

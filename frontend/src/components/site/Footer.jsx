@@ -14,7 +14,7 @@ export function Footer() {
     if (!email) return;
     setPending(true);
     try {
-      await subscribeNewsletter(email);
+      await subscribeNewsletter(email, { source: "newsletter", tags: ["newsletter"] });
       toast.success("You're on the list.", {
         description: "Thoughts at the intersection of faith, knowledge and purpose.",
       });

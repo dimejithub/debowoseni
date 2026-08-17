@@ -199,11 +199,13 @@ export const LOGO = {
     "https://customer-assets.emergentagent.com/job_debo-platform/artifacts/70utsxwx_4.svg",
 };
 
-export const SYSTEME_BOOKING_URL =
-  process.env.REACT_APP_SYSTEME_BOOKING_URL || "https://lte.debowoseni.com/";
+// Both of these used to point at the Systeme.io funnel on lte.debowoseni.com.
+// The offer, the pricing and the checkout now live on this site — Systeme is
+// no longer in the path. Kept as constants so every CTA changes in one place.
+export const LTE_PROGRAMMES_URL = "/programmes";
 
-// LTE upsell landing page (pricing lives there, never on this site).
-export const LTE_PROGRAMMES_URL = "https://lte.debowoseni.com/programmes";
+// Free masterclass / event seats are now real registrations on /events.
+export const SYSTEME_BOOKING_URL = "/events";
 
 export const CONTACT_EMAIL =
   process.env.REACT_APP_CONTACT_EMAIL || "hello@debowoseni.com";

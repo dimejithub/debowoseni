@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MapPin, ArrowUpRight, Clock, Globe, Tag } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { ImageMarquee } from "@/components/site/Marquee";
+import { EventRegisterDialog } from "@/components/site/EventRegisterDialog";
 import { FALLBACK_EVENTS } from "@/lib/data";
 import { getPublishedEvents } from "@/lib/api";
 
@@ -107,7 +108,13 @@ export default function Events() {
                 {ev.description && (
                   <p className="mx-auto mt-7 max-w-2xl text-lg">{ev.description}</p>
                 )}
-                {ev.register_url && (
+                {/* In-house registration takes priority; register_url stays as an
+                    escape hatch for events ticketed somewhere else entirely. */}
+                {ev.registration_open ? (
+                  <div className="mt-8">
+                    <EventRegisterDialog event={ev} />
+                  </div>
+                ) : ev.register_url ? (
                   <div className="mt-8">
                     <a
                       href={ev.register_url}
@@ -119,7 +126,7 @@ export default function Events() {
                       Register <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </div>
-                )}
+                ) : null}
               </div>
 
               {ev.gallery && ev.gallery.length > 0 && (
