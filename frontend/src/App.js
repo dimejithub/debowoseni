@@ -31,6 +31,7 @@ import AdminPeople from "@/pages/AdminPeople";
 import AdminPerson from "@/pages/AdminPerson";
 import AdminSequences from "@/pages/AdminSequences";
 import AdminSequenceEditor from "@/pages/AdminSequenceEditor";
+import AdminNewsletter from "@/pages/AdminNewsletter";
 import Programmes from "@/pages/Programmes";
 import Community from "@/pages/Community";
 import Unsubscribe from "@/pages/Unsubscribe";
@@ -88,6 +89,7 @@ function App() {
           <Route path="/admin/people/:email" element={<AdminPerson />} />
           <Route path="/admin/automations" element={<AdminSequences />} />
           <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
+          <Route path="/admin/newsletter" element={<AdminNewsletter />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

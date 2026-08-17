@@ -283,6 +283,25 @@ export async function adminRunSequences(id) {
   return r.data;
 }
 
+// ---- Admin — newsletter (scheduled digest) ----
+export async function adminGetNewsletter() {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/newsletter`, { headers });
+  return r.data;
+}
+
+export async function adminUpdateNewsletter(payload) {
+  const headers = await authHeaders();
+  const r = await axios.put(`${API}/admin/newsletter`, payload, { headers });
+  return r.data;
+}
+
+export async function adminSendNewsletterNow() {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/newsletter/send-now`, {}, { headers });
+  return r.data;
+}
+
 // ---- Admin — community ----
 export async function adminListCommunity() {
   const headers = await authHeaders();
