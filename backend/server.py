@@ -363,7 +363,7 @@ class SequenceStepUpdate(BaseModel):
 
 
 class NewsletterSettingsUpdate(BaseModel):
-    frequency: Optional[str] = Field(default=None, pattern="^(off|weekly|biweekly|monthly)$")
+    frequency: Optional[str] = Field(default=None, pattern="^(off|weekly|biweekly|monthly|quarterly)$")
     send_weekday: Optional[int] = Field(default=None, ge=0, le=6)
     send_hour: Optional[int] = Field(default=None, ge=0, le=23)
     min_posts: Optional[int] = Field(default=None, ge=1)

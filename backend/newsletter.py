@@ -26,13 +26,20 @@ import mailer
 
 logger = logging.getLogger("debowoseni.newsletter")
 
-# Days between issues for each cadence. Monthly is 28 (four tidy weeks) so it
-# always lands on the same weekday rather than drifting across the month.
-INTERVAL_DAYS = {"weekly": 7, "biweekly": 14, "monthly": 28}
+# Days between issues for each cadence. Kept as whole weeks so an issue always
+# lands on the same weekday rather than drifting: monthly = 4 weeks,
+# quarterly = 13 weeks.
+INTERVAL_DAYS = {"weekly": 7, "biweekly": 14, "monthly": 28, "quarterly": 91}
 
-# How many posts an issue shows at most. Older unsent posts still get in next
-# time; this only caps the length of any single email.
-MAX_POSTS = 6
+# An issue lists at most this many posts in full. A long cadence over frequent
+# posting (e.g. quarterly with weekly output) can gather more than that — the
+# extra are summarised as a single "and more in the journal" link rather than
+# dropped, so nothing is lost and the email stays readable.
+SHOW_LIMIT = 8
+
+# Hard ceiling on how many posts we even fetch, so the true "new posts" count
+# behind the overflow line stays bounded on a very long, very prolific gap.
+FETCH_LIMIT = 60
 
 
 def _now() -> datetime:
@@ -99,6 +106,11 @@ def _window_start(settings: dict, now: datetime) -> datetime:
 
 
 def new_posts(sb, since: datetime) -> list[dict]:
+    """Every post published since `since`, newest first, up to FETCH_LIMIT.
+
+    Returns the full set (not just what an issue shows) so callers can gate on
+    the real count and render an accurate overflow line.
+    """
     try:
         return (
             sb.table("posts")
@@ -106,7 +118,7 @@ def new_posts(sb, since: datetime) -> list[dict]:
             .eq("status", "published")
             .gt("published_at", since.isoformat())
             .order("published_at", desc=True)
-            .limit(MAX_POSTS)
+            .limit(FETCH_LIMIT)
             .execute()
         ).data or []
     except Exception as exc:  # noqa: BLE001
@@ -117,10 +129,12 @@ def new_posts(sb, since: datetime) -> list[dict]:
 def build_issue(settings: dict, posts: list[dict], site_url: str) -> dict:
     """Render the digest markdown. Returns {subject, preheader, body}."""
     site = site_url.rstrip("/")
+    total = len(posts)
+    shown = posts[:SHOW_LIMIT]
+    overflow = total - len(shown)
     lead = posts[0]
-    n = len(posts)
 
-    subject = lead["title"] if n == 1 else f"{lead['title']} — and {n - 1} more from the journal"
+    subject = lead["title"] if total == 1 else f"{lead['title']} — and {total - 1} more from the journal"
     preheader = (lead.get("excerpt") or "New writing from Debo Owoseni.")[:140]
 
     lines: list[str] = []
@@ -130,15 +144,24 @@ def build_issue(settings: dict, posts: list[dict], site_url: str) -> dict:
     else:
         lines += ["Here is what is new from the journal since the last note.", ""]
 
-    for i, p in enumerate(posts):
+    for i, p in enumerate(shown):
         lines.append(f"## {p['title']}")
         if p.get("category"):
             lines.append(f"*{p['category']}*")
         if p.get("excerpt"):
             lines.append(p["excerpt"].strip())
         lines.append(f"[Read it]({site}/articles/{p['slug']})")
-        if i < n - 1:
+        if i < len(shown) - 1:
             lines += ["", "---", ""]
+
+    if overflow > 0:
+        lines += [
+            "",
+            "---",
+            "",
+            f"**Plus {overflow} more** published since the last issue — "
+            f"[read everything in the journal]({site}/articles).",
+        ]
 
     # A quiet standing close that points at the work, without hard-selling.
     lines += [

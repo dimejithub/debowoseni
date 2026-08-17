@@ -10,6 +10,7 @@ const FREQUENCIES = [
   { value: "weekly", label: "Weekly", hint: "One issue every week." },
   { value: "biweekly", label: "Fortnightly", hint: "One issue every two weeks." },
   { value: "monthly", label: "Monthly", hint: "One issue every four weeks." },
+  { value: "quarterly", label: "Quarterly", hint: "One issue every three months." },
 ];
 
 // Backend stores 0 = Monday … 6 = Sunday (Python's numbering).
@@ -127,7 +128,7 @@ export default function AdminNewsletter() {
               {/* Cadence */}
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted">How often</p>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {FREQUENCIES.map((f) => (
                     <button
                       key={f.value}

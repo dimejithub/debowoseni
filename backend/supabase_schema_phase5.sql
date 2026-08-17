@@ -13,7 +13,7 @@ create table if not exists public.newsletter_settings (
   id           smallint primary key default 1,
   -- off = never send. The others are the cadence between issues.
   frequency    text not null default 'off'
-               check (frequency in ('off','weekly','biweekly','monthly')),
+               check (frequency in ('off','weekly','biweekly','monthly','quarterly')),
   -- 0 = Monday … 6 = Sunday (Python's weekday numbering), and the UTC hour the
   -- issue may go out at or after.
   send_weekday int not null default 3,
@@ -30,6 +30,12 @@ create table if not exists public.newsletter_settings (
 
 insert into public.newsletter_settings (id) values (1)
 on conflict (id) do nothing;
+
+-- Re-run safety: if the table already existed from an earlier phase 5, widen
+-- the cadence check to include newer options (e.g. quarterly).
+alter table public.newsletter_settings drop constraint if exists newsletter_settings_frequency_check;
+alter table public.newsletter_settings add constraint newsletter_settings_frequency_check
+  check (frequency in ('off','weekly','biweekly','monthly','quarterly'));
 
 alter table public.newsletter_settings enable row level security;
 drop policy if exists "authed all newsletter_settings" on public.newsletter_settings;
