@@ -384,7 +384,19 @@ export async function adminDeletePost(id) {
   return r.data;
 }
 
+// Mirror of the backend's MAX_UPLOAD_BYTES, so an over-size file is caught
+// instantly with a friendly message instead of a slow round-trip that 413s.
+// The server still resizes and re-encodes everything under this to web-ready
+// WebP, so the uploader never has to shrink a photo by hand.
+export const MAX_UPLOAD_MB = 25;
+
 export async function adminUpload(file, folder = "posts") {
+  if (file && file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1);
+    throw new Error(
+      `That image is ${mb} MB — the limit is ${MAX_UPLOAD_MB} MB. Please pick a smaller one; an ordinary phone photo is fine.`
+    );
+  }
   const headers = await authHeaders();
   const form = new FormData();
   form.append("file", file);
