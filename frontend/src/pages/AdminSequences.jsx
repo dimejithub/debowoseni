@@ -88,8 +88,8 @@ export default function AdminSequences() {
           <div>
             <h1>Automations</h1>
             <p className="mt-3 max-w-2xl text-muted">
-              A trigger, then a series of emails on a delay. This is what used to be a
-              Systeme rule: someone takes the quiz, and the right nurture sequence starts
+              A trigger, then a series of emails on a delay. Someone takes the quiz,
+              registers for an event or joins the list, and the right sequence starts
               on its own.
             </p>
           </div>

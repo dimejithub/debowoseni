@@ -16,7 +16,7 @@ import {
 import { Reveal, Stagger, StaggerItem } from "@/components/site/Reveal";
 import { MagneticButton } from "@/components/site/MagneticButton";
 import { EnquiryQuiz } from "@/components/site/EnquiryQuiz";
-import { LTE_PROGRAMMES_URL, SYSTEME_BOOKING_URL } from "@/lib/data";
+import { LTE_PROGRAMMES_URL, EVENTS_URL } from "@/lib/data";
 import { TIERS } from "@/lib/programmes";
 
 /**
@@ -331,7 +331,7 @@ export default function ExpressionLTE() {
           <Reveal delay={0.16}>
             <div className="mt-8 flex justify-center">
               <Link
-                to={SYSTEME_BOOKING_URL}
+                to={EVENTS_URL}
                 className="btn-ghost"
                 data-testid="lte-masterclass-cta"
               >
