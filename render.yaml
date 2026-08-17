@@ -1,8 +1,7 @@
 # Render blueprint for the debowoseni.com backend.
 #
-# The FastAPI service was previously hosted on the Emergent platform and this
-# repo carried no deployment config, so there was nothing to point Render at.
-# With this file committed, Render can create the service from the repo:
+# This file is the deployment config for the self-hosted FastAPI service, so
+# Render can create it straight from the repo:
 #
 #   Render dashboard -> New -> Blueprint -> pick this repository.
 #
