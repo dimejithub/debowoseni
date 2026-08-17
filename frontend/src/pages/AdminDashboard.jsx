@@ -283,16 +283,29 @@ export default function AdminDashboard() {
             />
             <Stat
               label="Published"
-            to="/admin/posts"
               value={
                 stats?.content
                   ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
                   : "—"
               }
               sub={
-                stats?.content
-                  ? `${stats.content.posts ?? 0} posts · ${stats.content.events ?? 0} events · ${stats.content.books ?? 0} books`
-                  : ""
+                stats?.content ? (
+                  <span className="flex flex-wrap gap-x-1.5 gap-y-1">
+                    <Link to="/admin/posts" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.posts ?? 0} posts
+                    </Link>
+                    <span className="text-muted/40">·</span>
+                    <Link to="/admin/events" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.events ?? 0} events
+                    </Link>
+                    <span className="text-muted/40">·</span>
+                    <Link to="/admin/books" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
+                      {stats.content.books ?? 0} books
+                    </Link>
+                  </span>
+                ) : (
+                  ""
+                )
               }
               Icon={Sparkles}
             />
