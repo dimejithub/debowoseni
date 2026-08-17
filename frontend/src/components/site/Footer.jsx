@@ -136,7 +136,7 @@ export function Footer() {
 
 // Studio credit. Set JN_LABS_URL to link it out; until then it renders as a
 // clean, non-clickable credit line rather than a dead link.
-const JN_LABS_URL = "";
+const JN_LABS_URL = "https://jnlabs.co.uk";
 
 function Credit() {
   const inner = (
