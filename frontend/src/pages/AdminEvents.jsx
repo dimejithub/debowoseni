@@ -141,7 +141,7 @@ export default function AdminEvents() {
               <textarea rows={4} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 className="w-full resize-y rounded-[14px] border border-line bg-bg px-4 py-3 text-sm outline-none focus:border-lime" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Date">
                 <input type="date" value={draft.event_date} onChange={(e) => setDraft({ ...draft, event_date: e.target.value })}
                   className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
@@ -154,7 +154,7 @@ export default function AdminEvents() {
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Start time">
                 <input type="time" value={draft.start_time} onChange={(e) => setDraft({ ...draft, start_time: e.target.value })}
                   className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
@@ -186,7 +186,7 @@ export default function AdminEvents() {
             </Field>
 
             {!draft.is_free && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Price">
                   <input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })}
                     placeholder="0.00"
@@ -275,7 +275,7 @@ export default function AdminEvents() {
               )}
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Sort">
                 <input type="number" value={draft.sort_order}
                   onChange={(e) => setDraft({ ...draft, sort_order: parseInt(e.target.value || "0", 10) })}
