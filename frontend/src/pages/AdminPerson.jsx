@@ -273,7 +273,7 @@ export default function AdminPerson() {
                       ))}
                     </select>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <label className="text-xs uppercase tracking-[0.2em] text-muted">Amount</label>
                         <input
