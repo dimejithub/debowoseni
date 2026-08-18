@@ -430,9 +430,38 @@ def _reload_schema_cache() -> None:
         logger.warning("pgrst_reload rpc unavailable: %s", exc)
 
 
+def _retry(fn, attempts: int = 3, base_delay: float = 0.5):
+    """Run fn, retrying transient failures. On a cold Render backend the first
+    query after wake often times out or resets before the DB connection is ready;
+    a second attempt a moment later succeeds. Schema-cache lag is also nudged and
+    retried. Only a genuine, persistent fault propagates."""
+    last: Exception | None = None
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            if i < attempts - 1:
+                if _is_schema_cache_error(exc):
+                    _reload_schema_cache()
+                time.sleep(base_delay * (i + 1))
+    raise last  # type: ignore[misc]
+
+
+def _warm_up() -> None:
+    """One serial, retried probe to wake the DB connection BEFORE any parallel
+    fan-out. Without this, a cold backend's first concurrent wave of queries all
+    fire before the connection is ready and fail together — which is exactly why
+    the health check used to report the first batch of tables as 'missing'."""
+    try:
+        _retry(lambda: sb_admin.table("posts").select("id").limit(1).execute())
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("warm-up probe failed: %s", exc)
+
+
 def _probe_table(t: str) -> tuple[str, bool, Exception | None]:
     try:
-        sb_admin.table(t).select("id").limit(1).execute()
+        _retry(lambda: sb_admin.table(t).select("id").limit(1).execute())
         return t, True, None
     except Exception as exc:  # noqa: BLE001
         return t, False, exc
@@ -442,27 +471,15 @@ def _probe_table(t: str) -> tuple[str, bool, Exception | None]:
 def health():
     out: dict[str, Any] = {"ok": True, "tables": {}, "bucket_ready": False, "error": None}
 
-    with ThreadPoolExecutor(max_workers=8) as ex:
+    # Wake the connection serially first, then fan out — gently (fewer workers),
+    # with each probe retrying transient cold-start errors on its own.
+    _warm_up()
+    with ThreadPoolExecutor(max_workers=6) as ex:
         results = list(ex.map(_probe_table, HEALTH_TABLES))
 
     failures = {t: exc for t, ok, exc in results if not ok}
     for t, ok, _ in results:
         out["tables"][t] = ok
-
-    # If any failure is just the PostgREST schema cache lagging a migration,
-    # ask it to reload and re-probe once so the dashboard stops false-alarming.
-    stale = [t for t, exc in failures.items() if _is_schema_cache_error(exc)]
-    if stale:
-        _reload_schema_cache()
-        time.sleep(0.8)
-        with ThreadPoolExecutor(max_workers=8) as ex:
-            retried = list(ex.map(_probe_table, stale))
-        for t, ok, exc in retried:
-            out["tables"][t] = ok
-            if ok:
-                failures.pop(t, None)
-            else:
-                failures[t] = exc
 
     if failures:
         first = next(iter(failures.items()))
@@ -1902,11 +1919,15 @@ def admin_get_person(email: str, user=Depends(require_user)):
 # Admin — STATS
 # ---------------------------------------------------------------------------
 def _count(table: str, **filters) -> int:
-    try:
+    def run():
         q = sb_admin.table(table).select("id", count="exact")
         for col, val in filters.items():
             q = q.eq(col, val)
         return (q.execute()).count or 0
+
+    # Retry so a cold-start blip never silently reports a real count as 0.
+    try:
+        return _retry(run)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Count on %s failed: %s", table, exc)
         return 0
@@ -1914,7 +1935,7 @@ def _count(table: str, **filters) -> int:
 
 def _fetch_rows(table: str, columns: str) -> list[dict]:
     try:
-        return (sb_admin.table(table).select(columns).execute()).data or []
+        return _retry(lambda: (sb_admin.table(table).select(columns).execute()).data or [])
     except Exception:  # noqa: BLE001
         return []
 
@@ -1923,8 +1944,11 @@ def _fetch_rows(table: str, columns: str) -> list[dict]:
 def admin_stats(user=Depends(require_user)):
     """Everything the dashboard shows. The counts are independent, so they run
     concurrently — one slow round trip instead of ~18 serial ones."""
+    # Wake the DB connection first so the concurrent fan-out below doesn't hit a
+    # cold backend all at once (which would make some counts fail back to 0).
+    _warm_up()
     # Kick off every read at once; each _count / fetch is its own HTTP round trip.
-    with ThreadPoolExecutor(max_workers=12) as ex:
+    with ThreadPoolExecutor(max_workers=8) as ex:
         f_subscribers = ex.submit(_fetch_rows, "subscribers", "created_at,status,source")
         f_regs = ex.submit(_fetch_rows, "event_registrations", "status,event_id,created_at")
         f = {
