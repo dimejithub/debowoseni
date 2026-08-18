@@ -1,5 +1,11 @@
 # Email setup — debowoseni.com
 
+> **Status: live & confirmed working (Aug 2026).**
+> - **Receiving:** Cloudflare Email Routing — `hello@debowoseni.com` → `debowoseni.events@gmail.com` (destination verified). Catch-all = **Drop**.
+> - **Sending:** Gmail "Send mail as" `hello@debowoseni.com` via Resend SMTP (`smtp.resend.com:465`, user `resend`, password = a Resend "Gmail send-as" API key scoped to debowoseni.com). Verified — replies go out as `hello@`.
+> - No code change was involved; the site already sends From/Reply-To `hello@debowoseni.com`.
+
+
 How mail flows, and the one-time dashboard setup that isn't in code.
 
 ## What the code already does
