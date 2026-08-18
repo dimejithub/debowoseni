@@ -191,7 +191,7 @@ function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
     </div>
   );
 
-  const cls = `tile-rise group relative flex flex-col overflow-hidden rounded-[20px] border p-5 transition-colors duration-300 sm:p-6 ${
+  const cls = `tile-rise press group relative flex flex-col overflow-hidden rounded-[20px] border p-5 sm:p-6 ${
     primary
       ? "tile-breathe border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
       : "min-h-[8.75rem] border-line bg-surface hover:border-lime/40 sm:min-h-[9.5rem]"
@@ -486,7 +486,7 @@ export default function AdminDashboard() {
                 <Link
                   key={to}
                   to={to}
-                  className="tile-rise card-lift group relative flex items-start gap-4 overflow-hidden rounded-[18px] border border-line bg-surface p-5"
+                  className="tile-rise card-lift press group relative flex items-start gap-4 overflow-hidden rounded-[18px] border border-line bg-surface p-5"
                   style={{ "--rise-delay": `${i * 55}ms` }}
                   data-testid={testId}
                   onMouseMove={trackSpotlight}

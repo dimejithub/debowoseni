@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminEvents, adminUpload } from "@/lib/api";
 
 const EMPTY = {
@@ -20,6 +21,7 @@ export default function AdminEvents() {
   const [draft, setDraft] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(true);
+  const listRef = useReveal([items]);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -304,9 +306,15 @@ export default function AdminEvents() {
           ) : items.length === 0 ? (
             <p className="mt-6 text-muted">None yet.</p>
           ) : (
-            <ul className="mt-6 space-y-3" data-testid="event-list">
-              {items.map((ev) => (
-                <li key={ev.id} className="overflow-hidden rounded-[16px] border border-line bg-surface" data-testid={`event-row-${ev.id}`}>
+            <ul ref={listRef} className="mt-6 space-y-3" data-testid="event-list">
+              {items.map((ev, i) => (
+                <li
+                  key={ev.id}
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 60}ms` }}
+                  className="press card-lift overflow-hidden rounded-[16px] border border-line bg-surface"
+                  data-testid={`event-row-${ev.id}`}
+                >
                   {ev.cover_url && (<img src={ev.cover_url} alt="" className="aspect-[16/8] w-full object-cover" />)}
                   <div className="p-5">
                     <div className="mb-2 flex items-center gap-2">
@@ -319,7 +327,7 @@ export default function AdminEvents() {
                     <p className="text-xs text-muted">{(ev.gallery || []).length} image{(ev.gallery || []).length === 1 ? "" : "s"}</p>
                     <div className="mt-4 flex gap-2">
                       <button onClick={() => edit(ev)} className="btn-ghost text-xs">Edit</button>
-                      <button onClick={() => remove(ev.id)} className="inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-destructive hover:text-destructive">
+                      <button onClick={() => remove(ev.id)} className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-destructive hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" /> Delete
                       </button>
                     </div>
