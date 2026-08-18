@@ -23,6 +23,7 @@ import {
   Redo2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { GroupHeading } from "@/components/admin/GroupHeading";
 import {
   adminCreatePost,
   adminGetPost,
@@ -255,6 +256,7 @@ export default function AdminEditor() {
 
         {/* Sidebar */}
         <aside className="space-y-5 lg:col-span-4">
+          <GroupHeading first>Post settings</GroupHeading>
           <Card>
             <Label>Slug</Label>
             <input
@@ -289,7 +291,7 @@ export default function AdminEditor() {
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
-              className="mt-3 inline-flex items-center gap-2 rounded-full border border-line bg-bg px-4 py-2 text-xs hover:border-lime hover:text-lime"
+              className="press mt-3 inline-flex items-center gap-2 rounded-full border border-line bg-bg px-4 py-2 text-xs hover:border-lime hover:text-lime"
               data-testid="upload-cover"
             >
               <ImageIcon className="h-3.5 w-3.5" /> Upload cover

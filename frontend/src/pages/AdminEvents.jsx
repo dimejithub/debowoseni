@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
+import { GroupHeading } from "@/components/admin/GroupHeading";
 import { adminEvents, adminUpload } from "@/lib/api";
 
 const EMPTY = {
@@ -363,19 +364,5 @@ function Field({ label, children }) {
       <span className="text-xs uppercase tracking-[0.2em] text-muted">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
-  );
-}
-
-/** Section divider inside the event form — turns one long wall of inputs into
- *  labelled, scannable groups. `first` drops the top rule. */
-function GroupHeading({ children, first }) {
-  return (
-    <p
-      className={`text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-lime/70 ${
-        first ? "" : "mt-2 border-t border-line pt-5"
-      }`}
-    >
-      {children}
-    </p>
   );
 }
