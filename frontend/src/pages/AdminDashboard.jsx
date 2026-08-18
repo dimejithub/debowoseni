@@ -168,9 +168,13 @@ function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
   const shown = useCountUp(value);
   const inner = (
     <div className="relative z-[1] flex flex-1 flex-col">
-      <div className="flex items-start justify-between">
-        <p className="text-[0.68rem] font-medium uppercase tracking-[0.18em] text-muted">{label}</p>
-        <span className="flex items-center gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        {/* Reserve two lines so a wrapping label ("Emails sent") never shoves
+            its number out of line with the tile beside it. */}
+        <p className="flex min-h-[2rem] min-w-0 items-start text-[0.6rem] font-medium uppercase leading-[1.35] tracking-[0.1em] text-muted sm:text-[0.68rem] sm:tracking-[0.18em]">
+          {label}
+        </p>
+        <span className="flex shrink-0 items-center gap-1.5">
           {to && (
             <ArrowUpRight className="h-3.5 w-3.5 text-muted/40 opacity-0 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime group-hover:opacity-100" />
           )}
@@ -179,18 +183,18 @@ function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
           )}
         </span>
       </div>
-      <p className="mt-4 font-display text-[2.6rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums]">
+      <p className="mt-1 font-display text-[2.15rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums] sm:mt-2 sm:text-[2.6rem]">
         {shown}
       </p>
-      {sub && <p className="mt-2 text-xs leading-relaxed text-muted">{sub}</p>}
+      {sub && <p className="mt-2.5 text-[0.72rem] leading-relaxed text-muted sm:text-xs">{sub}</p>}
       {children}
     </div>
   );
 
-  const cls = `tile-rise group relative flex flex-col overflow-hidden rounded-[20px] border p-6 transition-colors duration-300 ${
+  const cls = `tile-rise group relative flex flex-col overflow-hidden rounded-[20px] border p-5 transition-colors duration-300 sm:p-6 ${
     primary
       ? "tile-breathe border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
-      : "border-line bg-surface hover:border-lime/40"
+      : "min-h-[8.75rem] border-line bg-surface hover:border-lime/40 sm:min-h-[9.5rem]"
   }`;
   const style = { "--rise-delay": `${rise}ms` };
   const glow = <span className="spotlight-glow" aria-hidden />;
