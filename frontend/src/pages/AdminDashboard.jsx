@@ -215,23 +215,56 @@ function Eyebrow({ children }) {
   );
 }
 
+// Last-known stats are cached in the browser so the dashboard paints its real
+// numbers instantly on the next visit — even while a cold Render backend is
+// still waking up — then quietly refreshes them. Nothing sensitive here, just
+// the same counts already shown on screen.
+const STATS_CACHE_KEY = "do-admin-stats-cache";
+function readCachedStats() {
+  try {
+    const raw = localStorage.getItem(STATS_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function AdminDashboard() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [health, setHealth] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState(readCachedStats);
 
   useEffect(() => {
     if (loading || !user) return;
     getHealth().then(setHealth).catch(() => setHealth(null));
-    adminStats().then(setStats).catch(() => setStats(null));
+    adminStats()
+      .then((s) => {
+        setStats(s);
+        try {
+          localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(s));
+        } catch {
+          /* private mode / quota — the dashboard just won't pre-fill next time */
+        }
+      })
+      .catch(() => {
+        /* keep whatever cached stats we already painted */
+      });
   }, [loading, user]);
 
   if (!loading && !user) return <Navigate to="/admin/login" replace />;
 
-  const missingTables = health?.tables
-    ? Object.entries(health.tables).filter(([, ok]) => !ok).map(([t]) => t)
-    : [];
+  // The schema banner is a genuine setup aid, but on a cold backend PostgREST's
+  // schema cache lags and briefly reports an existing table as missing — a false
+  // alarm. Only treat the schema as broken when NOTHING responds (a truly
+  // un-provisioned database); if even one table answers, the rest are just
+  // catching up, so we stay quiet.
+  const probed = health?.tables ? Object.values(health.tables) : [];
+  const anyReachable = probed.some(Boolean);
+  const missingTables =
+    probed.length > 0 && !anyReachable
+      ? Object.entries(health.tables).filter(([, ok]) => !ok).map(([t]) => t)
+      : [];
 
   const total = stats?.subscribers?.total || 1;
 
