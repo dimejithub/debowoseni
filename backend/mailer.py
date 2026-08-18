@@ -40,16 +40,29 @@ if not enabled:
 # ---------------------------------------------------------------------------
 # Body formatting
 # ---------------------------------------------------------------------------
-_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+# The lookbehind keeps an image `![alt](url)` from being read as a link.
+_LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)\s]+)\)")
 _BOLD_RE = re.compile(r"\*\*([^*]+)\*\*")
 _ITALIC_RE = re.compile(r"(?<!\*)\*([^*]+)\*(?!\*)")
+# A standalone image line: ![alt text](https://url). Handled as its own block
+# on the RAW text (before escaping) so the URL isn't double-escaped.
+_IMAGE_LINE_RE = re.compile(r"^!\[([^\]]*)\]\(([^)\s]+)\)$")
+
+
+def _img_tag(alt: str, url: str) -> str:
+    return (
+        f'<img src="{html_lib.escape(url, quote=True)}" '
+        f'alt="{html_lib.escape(alt)}" '
+        'style="display:block;width:100%;max-width:528px;height:auto;'
+        'border-radius:12px;margin:0 auto;" />'
+    )
 
 
 def _inline(text: str) -> str:
     """Escape, then re-apply the small subset of markdown the composer allows."""
     out = html_lib.escape(text)
     out = _LINK_RE.sub(
-        r'<a href="\2" style="color:#111;text-decoration:underline;">\1</a>', out
+        r'<a href="\2" style="color:#1c1c1c;text-decoration:underline;">\1</a>', out
     )
     out = _BOLD_RE.sub(r"<strong>\1</strong>", out)
     out = _ITALIC_RE.sub(r"<em>\1</em>", out)
@@ -91,6 +104,14 @@ def markdown_to_html(body: str) -> str:
 
         flush_bullets()
 
+        m_img = _IMAGE_LINE_RE.match(stripped)
+        if m_img:
+            blocks.append(
+                '<p style="margin:0 0 24px;text-align:center;">'
+                f"{_img_tag(m_img.group(1), m_img.group(2))}</p>"
+            )
+            continue
+
         if stripped in ("---", "***", "___"):
             blocks.append(
                 '<hr style="border:none;border-top:1px solid #e5e5e5;margin:28px 0;" />'
@@ -122,7 +143,8 @@ def markdown_to_html(body: str) -> str:
 
 def to_plain_text(body: str) -> str:
     """Plain-text alternative. A text part measurably helps inbox placement."""
-    out = _LINK_RE.sub(r"\1 (\2)", body or "")
+    out = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", r"[image: \2]", body or "")
+    out = _LINK_RE.sub(r"\1 (\2)", out)
     out = _BOLD_RE.sub(r"\1", out)
     out = _ITALIC_RE.sub(r"\1", out)
     out = re.sub(r"^#{1,3}\s+", "", out, flags=re.MULTILINE)
@@ -143,26 +165,59 @@ def render_layout(
         else ""
     )
     unsubscribe_block = (
-        f'<p style="margin:12px 0 0;">'
-        f'<a href="{unsubscribe_url}" style="color:#888;text-decoration:underline;">'
-        f"Unsubscribe</a></p>"
+        f'&nbsp;·&nbsp;<a href="{unsubscribe_url}" '
+        'style="color:#9a9a9a;text-decoration:underline;">Unsubscribe</a>'
         if unsubscribe_url
         else ""
     )
+    font = (
+        "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',"
+        "Helvetica,Arial,sans-serif;"
+    )
     return f"""<!doctype html>
-<html><body style="margin:0;padding:0;background:#f6f6f4;">
+<html><body style="margin:0;padding:0;background:#eceae6;">
 {preheader_block}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f4;padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eceae6;padding:32px 16px;{font}">
   <tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:40px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-      <tr><td>
-        <p style="margin:0 0 28px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#888;">Debo Owoseni</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <!-- Branded header -->
+      <tr><td style="background:#0d1211;padding:24px 36px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-size:19px;font-weight:700;letter-spacing:-0.02em;color:#ffffff;">
+            debo&nbsp;owoseni<span style="color:#bcea3e;">.</span>
+          </td>
+          <td align="right" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a938c;">
+            Transformation
+          </td>
+        </tr></table>
+      </td></tr>
+      <!-- Lime accent rule -->
+      <tr><td style="height:3px;background:#bcea3e;font-size:0;line-height:0;">&nbsp;</td></tr>
+      <!-- Body -->
+      <tr><td style="padding:40px 36px 8px;{font}">
         {content_html}
       </td></tr>
-      <tr><td style="padding-top:28px;border-top:1px solid #eee;color:#888;font-size:12px;line-height:1.6;">
-        <p style="margin:0;">You're receiving this because you signed up at
-          <a href="{SITE_URL}" style="color:#888;">debowoseni.com</a>.</p>
-        {unsubscribe_block}
+      <!-- Footer -->
+      <tr><td style="padding:24px 36px 34px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="border-top:1px solid #eeeeee;padding-top:22px;">
+            <p style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:1.5;color:#4a4a4a;">
+              A mission to catalyse transformation in one million lives by 2035.
+            </p>
+            <p style="margin:0 0 16px;font-size:13px;color:#777;">
+              <a href="{SITE_URL}/articles" style="color:#1c1c1c;text-decoration:none;font-weight:600;">Journal</a>
+              &nbsp;·&nbsp;
+              <a href="{SITE_URL}/books" style="color:#1c1c1c;text-decoration:none;font-weight:600;">Books</a>
+              &nbsp;·&nbsp;
+              <a href="{SITE_URL}/contact" style="color:#1c1c1c;text-decoration:none;font-weight:600;">Get in touch</a>
+            </p>
+            <p style="margin:0;color:#9a9a9a;font-size:12px;line-height:1.6;">
+              You're receiving this because you signed up at
+              <a href="{SITE_URL}" style="color:#9a9a9a;">debowoseni.com</a>.
+              {unsubscribe_block}
+            </p>
+          </td></tr>
+        </table>
       </td></tr>
     </table>
   </td></tr>

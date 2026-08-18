@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, Loader2, Save, Send, TestTube2 } from "lucide-react";
+import { ArrowLeft, Eye, ImagePlus, Loader2, Save, Send, TestTube2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import {
   adminCampaigns,
@@ -9,6 +9,7 @@ import {
   adminPreviewCampaign,
   adminSendCampaign,
   adminTestCampaign,
+  adminUpload,
 } from "@/lib/api";
 
 const SEGMENTS = [
@@ -34,6 +35,30 @@ export default function AdminCampaignEditor() {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(null);
   const [testEmail, setTestEmail] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const bodyRef = useRef(null);
+
+  // Upload an image and drop its markdown at the cursor, so it renders in the
+  // email body (the mailer turns `![alt](url)` into a centered, responsive image).
+  const insertImage = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { url } = await adminUpload(file, "email/images");
+      const snippet = `\n\n![${file.name.replace(/\.[^.]+$/, "")}](${url})\n\n`;
+      const el = bodyRef.current;
+      const at = el ? el.selectionStart : draft.body.length;
+      const next = draft.body.slice(0, at) + snippet + draft.body.slice(at);
+      setDraft((d) => ({ ...d, body: next }));
+      toast.success("Image added.", { description: "It shows in the body — hit Preview to see it." });
+    } catch (err) {
+      toast.error("Image upload failed", { description: err?.message || "" });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   useEffect(() => {
     if (loading || !user || isNew) return;
@@ -247,16 +272,29 @@ export default function AdminCampaignEditor() {
             </div>
 
             <div className="mt-6">
-              <label htmlFor="c-body" className="text-xs uppercase tracking-[0.2em] text-muted">
-                Your email
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="c-body" className="text-xs uppercase tracking-[0.2em] text-muted">
+                  Your email
+                </label>
+                <label
+                  className={`press inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-bg px-3 py-1.5 text-xs transition-colors hover:border-lime hover:text-lime ${
+                    sent || uploadingImage ? "pointer-events-none opacity-50" : ""
+                  }`}
+                  data-testid="campaign-add-image"
+                >
+                  {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                  {uploadingImage ? "Uploading…" : "Add image"}
+                  <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={insertImage} disabled={sent || uploadingImage} />
+                </label>
+              </div>
               <textarea
+                ref={bodyRef}
                 id="c-body"
                 rows={20}
                 value={draft.body}
                 onChange={field("body")}
                 disabled={sent}
-                className={`${inputClass} resize-y font-mono text-sm leading-relaxed`}
+                className={`mt-2 ${inputClass} resize-y font-mono text-sm leading-relaxed`}
                 placeholder={
                   "# A heading\n\nWrite normally. Blank lines separate paragraphs.\n\n" +
                   "**Bold**, *italic*, [a link](https://debowoseni.com)\n\n" +
@@ -266,7 +304,8 @@ export default function AdminCampaignEditor() {
               />
               <p className="mt-2 text-xs text-muted">
                 Formatting: <code># heading</code>, <code>**bold**</code>, <code>*italic*</code>,{" "}
-                <code>[link](url)</code>, <code>- bullet</code>, <code>---</code> for a divider.
+                <code>[link](url)</code>, <code>- bullet</code>, <code>---</code> for a divider, and{" "}
+                <code>![caption](url)</code> for an image (use <strong>Add image</strong> above to insert one).
               </p>
             </div>
           </div>
