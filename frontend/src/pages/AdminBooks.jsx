@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, ImageIcon, Plus, Save, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminBooks, adminUpload } from "@/lib/api";
 
 const EMPTY = {
@@ -13,6 +14,7 @@ const EMPTY = {
 export default function AdminBooks() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState([]);
+  const listRef = useReveal([items]);
   const [draft, setDraft] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -142,15 +144,28 @@ export default function AdminBooks() {
         </section>
 
         <section className="lg:col-span-7">
-          <h2 className="text-2xl">Current</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl">Current</h2>
+            {!busy && items.length > 0 && (
+              <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                {items.length} books
+              </span>
+            )}
+          </div>
           {busy ? (
             <div className="mt-6 grid grid-cols-2 gap-3">{[1,2,3,4].map(i => (<div key={i} className="h-40 animate-pulse rounded-[20px] border border-line bg-surface" />))}</div>
           ) : items.length === 0 ? (
-            <p className="mt-6 text-muted">None yet.</p>
+            <div className="mt-6 rounded-[20px] border border-dashed border-line bg-surface/50 px-8 py-16 text-center"><p className="text-muted">No books yet.</p></div>
           ) : (
-            <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="book-list">
-              {items.map((b) => (
-                <li key={b.id} className="overflow-hidden rounded-[16px] border border-line bg-surface" data-testid={`book-row-${b.id}`}>
+            <ul ref={listRef} className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="book-list">
+              {items.map((b, i) => (
+                <li
+                  key={b.id}
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                  className="press overflow-hidden rounded-[16px] border border-line bg-surface"
+                  data-testid={`book-row-${b.id}`}
+                >
                   {b.cover_url && (<img src={b.cover_url} alt="" className="aspect-[16/10] w-full object-cover" />)}
                   <div className="p-5">
                     <div className="mb-2 flex items-center justify-between gap-2">

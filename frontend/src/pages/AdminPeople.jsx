@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Download, MessageCircle, Search, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminListPeople } from "@/lib/api";
 
 const FILTERS = [
@@ -33,6 +34,7 @@ export default function AdminPeople() {
   const [people, setPeople] = useState(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const listRef = useReveal([people]);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -102,7 +104,14 @@ export default function AdminPeople() {
       <main className="container-page py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1>People</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>People</h1>
+              {people && visible.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {visible.length} people
+                </span>
+              )}
+            </div>
             <p className="mt-3 max-w-2xl text-muted">
               Everyone the site knows about, merged by email — subscribers, event
               registrants, community members and programme enrolments in one place.
@@ -166,9 +175,14 @@ export default function AdminPeople() {
                 {visible.length} {visible.length === 1 ? "person" : "people"}
               </p>
             </div>
-            <ul data-testid="people-list">
-              {visible.map((p) => (
-                <li key={p.email} className="border-b border-line/60 bg-bg last:border-b-0">
+            <ul ref={listRef} data-testid="people-list">
+              {visible.map((p, i) => (
+                <li
+                  key={p.email}
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                  className="press border-b border-line/60 bg-bg last:border-b-0"
+                >
                   <Link
                     to={`/admin/people/${encodeURIComponent(p.email)}`}
                     className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 hover:bg-surface"

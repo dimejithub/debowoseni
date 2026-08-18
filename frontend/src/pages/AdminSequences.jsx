@@ -3,12 +3,14 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Pause, Play, Plus, Trash2, Workflow } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminSequences } from "@/lib/api";
 import { TRIGGERS, triggerLabel } from "@/lib/sequences";
 
 export default function AdminSequences() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState(null);
+  const listRef = useReveal([items]);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState({ name: "", trigger_type: "subscriber_created", trigger_value: "" });
 
@@ -86,7 +88,14 @@ export default function AdminSequences() {
       <main className="container-page py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1>Automations</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>Automations</h1>
+              {items && items.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {items.length} automations
+                </span>
+              )}
+            </div>
             <p className="mt-3 max-w-2xl text-muted">
               A trigger, then a series of emails on a delay. Someone takes the quiz,
               registers for an event or joins the list, and the right sequence starts
@@ -166,11 +175,13 @@ export default function AdminSequences() {
             </p>
           </div>
         ) : (
-          <div className="mt-10 space-y-3" data-testid="sequences-list">
-            {items.map((s) => (
+          <div ref={listRef} className="mt-10 space-y-3" data-testid="sequences-list">
+            {items.map((s, i) => (
               <div
                 key={s.id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-6 py-5"
+                data-reveal
+                style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                className="press flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-6 py-5"
                 data-testid={`sequence-row-${s.id}`}
               >
                 <div className="min-w-0">

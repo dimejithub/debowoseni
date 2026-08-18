@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Mail } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminListSubscribers } from "@/lib/api";
 
 function formatDate(iso) {
@@ -18,6 +19,7 @@ function formatDate(iso) {
 export default function AdminSubscribers() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState(null);
+  const listRef = useReveal([items]);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -61,7 +63,14 @@ export default function AdminSubscribers() {
       <main className="container-page py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1>Subscribers</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>Subscribers</h1>
+              {items && items.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {items.length} subscriber{items.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
             <p className="mt-3 max-w-2xl text-muted">
               Every email captured by the Enquiry quizzes, the newsletter form, event
               registrations and the community. Export as CSV for a backup or an
@@ -96,11 +105,13 @@ export default function AdminSubscribers() {
                 {items.length} subscriber{items.length === 1 ? "" : "s"}
               </p>
             </div>
-            <ul data-testid="subscribers-list">
-              {items.map((s) => (
+            <ul ref={listRef} data-testid="subscribers-list">
+              {items.map((s, i) => (
                 <li
                   key={s.id}
-                  className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 bg-bg px-6 py-4 last:border-b-0"
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                  className="press flex flex-wrap items-center justify-between gap-2 border-b border-line/60 bg-bg px-6 py-4 last:border-b-0"
                   data-testid={`subscriber-row-${s.id}`}
                 >
                   <span className="flex items-center gap-3 text-sm text-ink">
