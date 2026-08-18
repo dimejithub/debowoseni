@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, Plus, Send, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminCampaigns } from "@/lib/api";
 
 function formatDate(iso) {
@@ -28,6 +29,7 @@ const STATUS_STYLES = {
 export default function AdminCampaigns() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState(null);
+  const listRef = useReveal([items]);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -70,7 +72,14 @@ export default function AdminCampaigns() {
       <main className="container-page py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1>Emails</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>Emails</h1>
+              {items && items.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {items.length} emails
+                </span>
+              )}
+            </div>
             <p className="mt-3 max-w-2xl text-muted">
               Write a broadcast, send yourself a test, then send it to a segment of the
               list. Every email carries a working unsubscribe link automatically.
@@ -96,11 +105,13 @@ export default function AdminCampaigns() {
             <p className="mt-4 text-muted">No emails yet. Write the first one.</p>
           </div>
         ) : (
-          <div className="mt-10 space-y-3" data-testid="campaigns-list">
-            {items.map((c) => (
+          <div ref={listRef} className="mt-10 space-y-3" data-testid="campaigns-list">
+            {items.map((c, i) => (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-6 py-5"
+                data-reveal
+                style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                className="press flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-6 py-5"
                 data-testid={`campaign-row-${c.id}`}
               >
                 <div className="min-w-0">

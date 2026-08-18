@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Download, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import {
   adminDeleteRegistration,
   adminListRegistrations,
@@ -35,6 +36,7 @@ function formatDate(iso) {
 export default function AdminRegistrations() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState(null);
+  const listRef = useReveal([items]);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
@@ -130,7 +132,14 @@ export default function AdminRegistrations() {
       <main className="container-page py-12">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1>Registrations</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>Registrations</h1>
+              {items && visible.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {visible.length} registration{visible.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
             <p className="mt-3 max-w-2xl text-muted">
               Everyone who has signed up for an event on the site. Mark people attended
               after the event — that record is what makes the follow-up email worth sending.
@@ -194,11 +203,13 @@ export default function AdminRegistrations() {
                 {visible.length} registration{visible.length === 1 ? "" : "s"}
               </p>
             </div>
-            <ul data-testid="registrations-list">
-              {visible.map((r) => (
+            <ul ref={listRef} data-testid="registrations-list">
+              {visible.map((r, i) => (
                 <li
                   key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-4 border-b border-line/60 bg-bg px-6 py-4 last:border-b-0"
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                  className="press flex flex-wrap items-center justify-between gap-4 border-b border-line/60 bg-bg px-6 py-4 last:border-b-0"
                   data-testid={`registration-row-${r.id}`}
                 >
                   <div className="min-w-0">

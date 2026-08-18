@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminPublications } from "@/lib/api";
 
 const EMPTY = { title: "", year: "", url: "", sort_order: 0 };
@@ -10,6 +11,7 @@ const EMPTY = { title: "", year: "", url: "", sort_order: 0 };
 export default function AdminPublications() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState([]);
+  const listRef = useReveal([items]);
   const [draft, setDraft] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -91,15 +93,28 @@ export default function AdminPublications() {
         </section>
 
         <section className="lg:col-span-7">
-          <h2 className="text-2xl">Current</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl">Current</h2>
+            {!busy && items.length > 0 && (
+              <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                {items.length} publications
+              </span>
+            )}
+          </div>
           {busy ? (
             <div className="mt-6 space-y-3">{[1,2,3].map(i => (<div key={i} className="h-16 animate-pulse rounded-[16px] border border-line bg-surface" />))}</div>
           ) : items.length === 0 ? (
-            <p className="mt-6 text-muted">None yet.</p>
+            <div className="mt-6 rounded-[20px] border border-dashed border-line bg-surface/50 px-8 py-16 text-center"><p className="text-muted">No publications yet.</p></div>
           ) : (
-            <ul className="mt-6 space-y-3" data-testid="publication-list">
-              {items.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4" data-testid={`publication-row-${p.id}`}>
+            <ul ref={listRef} className="mt-6 space-y-3" data-testid="publication-list">
+              {items.map((p, i) => (
+                <li
+                  key={p.id}
+                  data-reveal
+                  style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                  className="press flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4"
+                  data-testid={`publication-row-${p.id}`}
+                >
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-muted">{p.year}</p>
                     <p className="font-display text-lg leading-snug">{p.title}</p>

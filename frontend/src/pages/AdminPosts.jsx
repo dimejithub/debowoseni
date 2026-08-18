@@ -3,11 +3,13 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Edit3, Eye, EyeOff, LogOut, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminDeletePost, adminListPosts, adminUpdatePost } from "@/lib/api";
 
 export default function AdminPosts() {
   const { user, loading, signOut } = useAuth();
   const [posts, setPosts] = useState([]);
+  const listRef = useReveal([posts]);
   const [busy, setBusy] = useState(true);
   const navigate = useNavigate();
 
@@ -62,7 +64,14 @@ export default function AdminPosts() {
       <main className="container-page py-12">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1>Posts</h1>
+            <div className="flex items-baseline gap-3">
+              <h1>Posts</h1>
+              {!busy && posts.length > 0 && (
+                <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                  {posts.length} posts
+                </span>
+              )}
+            </div>
             <p className="text-muted">Drafts, publishes, and edits live here.</p>
           </div>
           <Link to="/admin/new" className="btn-lime" data-testid="admin-new-post">
@@ -81,11 +90,13 @@ export default function AdminPosts() {
             <Link to="/admin/new" className="btn-lime mt-6 inline-flex"><Plus className="h-4 w-4" /> New post</Link>
           </div>
         ) : (
-          <ul className="space-y-3" data-testid="admin-post-list">
-            {posts.map((p) => (
+          <ul ref={listRef} className="space-y-3" data-testid="admin-post-list">
+            {posts.map((p, i) => (
               <li
                 key={p.id}
-                className="flex flex-col items-start gap-4 rounded-[16px] border border-line bg-surface px-5 py-4 md:flex-row md:items-center md:justify-between"
+                data-reveal
+                style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }}
+                className="press flex flex-col items-start gap-4 rounded-[16px] border border-line bg-surface px-5 py-4 md:flex-row md:items-center md:justify-between"
                 data-testid={`admin-post-${p.id}`}
               >
                 <div className="min-w-0">

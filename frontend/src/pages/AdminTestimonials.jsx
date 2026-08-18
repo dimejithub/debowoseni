@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useReveal } from "@/lib/useReveal";
 import { adminTestimonials } from "@/lib/api";
 
 const EMPTY = { quote: "", attribution: "", role: "", avatar_url: "", status: "published", sort_order: 0 };
@@ -10,6 +11,7 @@ const EMPTY = { quote: "", attribution: "", role: "", avatar_url: "", status: "p
 export default function AdminTestimonials() {
   const { user, loading } = useAuth();
   const [items, setItems] = useState([]);
+  const listRef = useReveal([items]);
   const [draft, setDraft] = useState(EMPTY);
   const [busy, setBusy] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -114,15 +116,22 @@ export default function AdminTestimonials() {
         </section>
 
         <section className="lg:col-span-7">
-          <h2 className="text-2xl">Current</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl">Current</h2>
+            {!busy && items.length > 0 && (
+              <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                {items.length} testimonial{items.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
           {busy ? (
             <div className="mt-6 space-y-3">{[1,2,3].map(i => (<div key={i} className="h-28 animate-pulse rounded-[20px] border border-line bg-surface" />))}</div>
           ) : items.length === 0 ? (
-            <p className="mt-6 text-muted">None yet.</p>
+            <div className="mt-6 rounded-[20px] border border-dashed border-line bg-surface/50 px-8 py-16 text-center"><p className="text-muted">No testimonials yet.</p></div>
           ) : (
-            <ul className="mt-6 space-y-3" data-testid="testimonial-list">
-              {items.map((t) => (
-                <li key={t.id} className="rounded-[16px] border border-line bg-surface p-5" data-testid={`testimonial-row-${t.id}`}>
+            <ul ref={listRef} className="mt-6 space-y-3" data-testid="testimonial-list">
+              {items.map((t, i) => (
+                <li key={t.id} data-reveal style={{ "--reveal-delay": `${Math.min(i, 8) * 55}ms` }} className="press rounded-[16px] border border-line bg-surface p-5" data-testid={`testimonial-row-${t.id}`}>
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-display text-lg leading-snug">&ldquo;{t.quote}&rdquo;</p>
                     <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${
