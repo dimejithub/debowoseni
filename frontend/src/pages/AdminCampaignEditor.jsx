@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Eye, ImagePlus, Loader2, Save, Send, TestTube2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { GroupHeading } from "@/components/admin/GroupHeading";
 import {
   adminCampaigns,
   adminGetCampaign,
@@ -241,7 +242,9 @@ export default function AdminCampaignEditor() {
               </div>
             )}
 
-            <div>
+            <div className="rounded-[20px] border border-line bg-surface p-6">
+              <GroupHeading first>Compose</GroupHeading>
+              <div className="mt-5">
               <label htmlFor="c-subject" className="text-xs uppercase tracking-[0.2em] text-muted">
                 Subject line
               </label>
@@ -308,9 +311,11 @@ export default function AdminCampaignEditor() {
                 <code>![caption](url)</code> for an image (use <strong>Add image</strong> above to insert one).
               </p>
             </div>
+            </div>
           </div>
 
           <aside className="space-y-6">
+            <GroupHeading first>Delivery</GroupHeading>
             <div className="rounded-[20px] border border-line bg-surface p-6">
               <label htmlFor="c-segment" className="text-xs uppercase tracking-[0.2em] text-muted">
                 Send to
