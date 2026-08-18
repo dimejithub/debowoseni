@@ -130,6 +130,7 @@ export default function AdminEvents() {
         <section className="lg:col-span-5">
           <h2 className="text-2xl">{editingId ? "Edit event" : "New event"}</h2>
           <div className="mt-6 space-y-4 rounded-[20px] border border-line bg-surface p-6">
+            <GroupHeading first>Details</GroupHeading>
             <Field label="Title">
               <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })}
                 className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
@@ -143,6 +144,7 @@ export default function AdminEvents() {
               <textarea rows={4} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 className="w-full resize-y rounded-[14px] border border-line bg-bg px-4 py-3 text-sm outline-none focus:border-lime" />
             </Field>
+            <GroupHeading>When &amp; where</GroupHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Date">
                 <input type="date" value={draft.event_date} onChange={(e) => setDraft({ ...draft, event_date: e.target.value })}
@@ -178,6 +180,7 @@ export default function AdminEvents() {
               </select>
             </Field>
 
+            <GroupHeading>Tickets &amp; registration</GroupHeading>
             <Field label="Admission">
               <select value={draft.is_free ? "free" : "paid"} onChange={(e) => setDraft({ ...draft, is_free: e.target.value === "free" })}
                 className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
@@ -240,6 +243,7 @@ export default function AdminEvents() {
               </Field>
             )}
 
+            <GroupHeading>Media</GroupHeading>
             <Field label="Cover image">
               {draft.cover_url && (
                 <div className="mb-2 overflow-hidden rounded-[14px] border border-line">
@@ -277,6 +281,7 @@ export default function AdminEvents() {
               )}
             </Field>
 
+            <GroupHeading>Publishing</GroupHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Sort">
                 <input type="number" value={draft.sort_order}
@@ -290,9 +295,9 @@ export default function AdminEvents() {
                 </select>
               </Field>
             </div>
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-2 border-t border-line pt-5">
               <button onClick={save} className="btn-lime" data-testid="save-event">
-                {editingId ? <><Save className="h-4 w-4" /> Update</> : <><Plus className="h-4 w-4" /> Add</>}
+                {editingId ? <><Save className="h-4 w-4" /> Update event</> : <><Plus className="h-4 w-4" /> Add event</>}
               </button>
               {editingId && (<button onClick={() => { setEditingId(null); setDraft(EMPTY); }} className="btn-ghost">Cancel</button>)}
             </div>
@@ -300,11 +305,21 @@ export default function AdminEvents() {
         </section>
 
         <section className="lg:col-span-7">
-          <h2 className="text-2xl">Current</h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl">Current</h2>
+            {!busy && items.length > 0 && (
+              <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+                {items.length} event{items.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
           {busy ? (
             <div className="mt-6 space-y-3">{[1,2,3].map(i => (<div key={i} className="h-28 animate-pulse rounded-[20px] border border-line bg-surface" />))}</div>
           ) : items.length === 0 ? (
-            <p className="mt-6 text-muted">None yet.</p>
+            <div className="mt-6 rounded-[20px] border border-dashed border-line bg-surface/50 px-8 py-16 text-center">
+              <ImageIcon className="mx-auto h-8 w-8 text-muted/50" />
+              <p className="mt-4 text-muted">No events yet. Fill in the form to publish your first one.</p>
+            </div>
           ) : (
             <ul ref={listRef} className="mt-6 space-y-3" data-testid="event-list">
               {items.map((ev, i) => (
@@ -348,5 +363,19 @@ function Field({ label, children }) {
       <span className="text-xs uppercase tracking-[0.2em] text-muted">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
+  );
+}
+
+/** Section divider inside the event form — turns one long wall of inputs into
+ *  labelled, scannable groups. `first` drops the top rule. */
+function GroupHeading({ children, first }) {
+  return (
+    <p
+      className={`text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-lime/70 ${
+        first ? "" : "mt-2 border-t border-line pt-5"
+      }`}
+    >
+      {children}
+    </p>
   );
 }
