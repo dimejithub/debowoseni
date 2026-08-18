@@ -12,7 +12,7 @@ services:
   - type: web
     name: debowoseni-api
     runtime: python
-    plan: free # Starter ($7/mo) removes cold starts on the admin panel.
+    plan: starter # $7/mo, always-on — no spin-down, so the admin panel never cold-starts.
     region: frankfurt # Closest to the UK audience and the eu-west-1 mail setup.
     rootDir: backend
     buildCommand: pip install -r requirements.txt
