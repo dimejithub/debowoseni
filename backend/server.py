@@ -1099,6 +1099,24 @@ def admin_delete_subscriber(sub_id: str, user=Depends(require_user)):
     return {"ok": True}
 
 
+class SubscriberIds(BaseModel):
+    ids: list[str]
+
+
+@api.post("/admin/subscribers/bulk-delete")
+def admin_bulk_delete_subscribers(payload: SubscriberIds, user=Depends(require_user)):
+    """Remove several subscribers in one call — the multi-select cleanup path."""
+    ids = [i for i in (payload.ids or []) if i]
+    if not ids:
+        return {"ok": True, "deleted": 0}
+    try:
+        sb_admin.table("subscribers").delete().in_("id", ids).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Admin bulk delete subscribers failed: %s", exc)
+        raise HTTPException(500, "Couldn't delete those subscribers.")
+    return {"ok": True, "deleted": len(ids)}
+
+
 @api.get("/admin/enquiries")
 def admin_list_enquiries(user=Depends(require_user)):
     """Contact-form messages, newest first — the actual text behind the count."""
