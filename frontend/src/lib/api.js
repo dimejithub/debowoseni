@@ -182,6 +182,12 @@ export async function adminDeleteSubscriber(id) {
   return r.data;
 }
 
+export async function adminBulkDeleteSubscribers(ids) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/subscribers/bulk-delete`, { ids }, { headers });
+  return r.data;
+}
+
 // ---- Admin generic factory ----
 function adminCrud(resource) {
   return {

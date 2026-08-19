@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Download, Mail, Pencil, Plus, Trash2, X } from "lucid
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
 import {
+  adminBulkDeleteSubscribers,
   adminCreateSubscriber,
   adminDeleteSubscriber,
   adminListSubscribers,
@@ -32,7 +33,42 @@ export default function AdminSubscribers() {
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({ email: "", name: "", status: "subscribed" });
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState(() => new Set());
   const listRef = useReveal([items]);
+
+  const toggleSelect = (id) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const allSelected = !!items && items.length > 0 && items.every((s) => selected.has(s.id));
+  const toggleAll = () =>
+    setSelected(() => (allSelected ? new Set() : new Set((items || []).map((s) => s.id))));
+  const clearSelection = () => setSelected(new Set());
+  const dropFromSelection = (id) =>
+    setSelected((cur) => {
+      if (!cur.has(id)) return cur;
+      const next = new Set(cur);
+      next.delete(id);
+      return next;
+    });
+
+  const bulkDelete = async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!window.confirm(`Remove ${ids.length} subscriber${ids.length === 1 ? "" : "s"}? This can't be undone.`)) return;
+    const snapshot = items;
+    setItems((cur) => cur.filter((x) => !selected.has(x.id)));
+    clearSelection();
+    try {
+      await adminBulkDeleteSubscribers(ids);
+      toast.success(`Removed ${ids.length}.`);
+    } catch (err) {
+      setItems(snapshot);
+      toast.error("Couldn't remove", { description: errDetail(err) });
+    }
+  };
 
   useEffect(() => {
     if (loading || !user) return;
@@ -88,6 +124,7 @@ export default function AdminSubscribers() {
     if (!window.confirm(`Remove ${s.email} from the list? This can't be undone.`)) return;
     const snapshot = items;
     setItems((cur) => cur.filter((x) => x.id !== s.id));
+    dropFromSelection(s.id);
     try {
       await adminDeleteSubscriber(s.id);
       toast.success("Removed.");
@@ -210,6 +247,32 @@ export default function AdminSubscribers() {
           </div>
         ) : (
           <div className="mt-10 overflow-hidden rounded-[20px] border border-line">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-6 py-3">
+              <label className="flex cursor-pointer items-center gap-2.5 text-xs text-muted">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="h-4 w-4 accent-lime"
+                  data-testid="subscribers-select-all"
+                />
+                {selected.size > 0 ? `${selected.size} selected` : "Select all"}
+              </label>
+              {selected.size > 0 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={bulkDelete}
+                    className="press inline-flex items-center gap-1.5 rounded-full border border-red-500/40 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10"
+                    data-testid="subscribers-bulk-delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete selected ({selected.size})
+                  </button>
+                  <button onClick={clearSelection} className="text-xs text-muted hover:text-ink">
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
             <ul ref={listRef} data-testid="subscribers-list">
               {items.map((s, i) => (
                 <li
@@ -253,17 +316,27 @@ export default function AdminSubscribers() {
                     </div>
                   ) : (
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="flex items-center gap-2.5 text-sm text-ink">
-                          <Mail className="h-3.5 w-3.5 shrink-0 text-lime" />
-                          <span className="truncate">{s.email}</span>
-                          {s.status === "unsubscribed" && (
-                            <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
-                              Unsubscribed
-                            </span>
-                          )}
-                        </span>
-                        {s.name && <p className="mt-1 pl-6 text-xs text-muted">{s.name}</p>}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(s.id)}
+                          onChange={() => toggleSelect(s.id)}
+                          className="h-4 w-4 shrink-0 accent-lime"
+                          aria-label={`Select ${s.email}`}
+                          data-testid={`subscriber-check-${s.id}`}
+                        />
+                        <div className="min-w-0">
+                          <span className="flex items-center gap-2.5 text-sm text-ink">
+                            <Mail className="h-3.5 w-3.5 shrink-0 text-lime" />
+                            <span className="truncate">{s.email}</span>
+                            {s.status === "unsubscribed" && (
+                              <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
+                                Unsubscribed
+                              </span>
+                            )}
+                          </span>
+                          {s.name && <p className="mt-1 text-xs text-muted">{s.name}</p>}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="hidden text-xs text-muted sm:inline">{formatDate(s.created_at)}</span>
