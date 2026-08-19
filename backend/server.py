@@ -1018,6 +1018,87 @@ def admin_list_subscribers(user=Depends(require_user)):
     return {"subscribers": res.data or []}
 
 
+class AdminSubscriberIn(BaseModel):
+    email: EmailStr
+    name: Optional[str] = None
+    status: str = "subscribed"
+    tags: Optional[list[str]] = None
+    source: Optional[str] = None
+
+
+class AdminSubscriberPatch(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    status: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+
+@api.post("/admin/subscribers")
+def admin_create_subscriber(payload: AdminSubscriberIn, user=Depends(require_user)):
+    """Add a contact by hand. Deliberately does NOT fire the welcome automation —
+    Debo is adding someone on purpose, not capturing a fresh public sign-up."""
+    email = payload.email.strip().lower()
+    existing = (
+        sb_admin.table("subscribers").select("id").eq("email", email).limit(1).execute()
+    ).data or []
+    if existing:
+        raise HTTPException(409, "That email is already on the list.")
+    row = {
+        "email": email,
+        "name": (payload.name or "").strip() or None,
+        "status": payload.status or "subscribed",
+        "source": payload.source or "admin",
+        "tags": payload.tags or [],
+    }
+    try:
+        res = sb_admin.table("subscribers").insert(row).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Admin add subscriber failed: %s", exc)
+        raise HTTPException(500, "Couldn't add that subscriber.")
+    return (res.data or [None])[0]
+
+
+@api.patch("/admin/subscribers/{sub_id}")
+def admin_update_subscriber(
+    sub_id: str, payload: AdminSubscriberPatch, user=Depends(require_user)
+):
+    """Fix a typo, rename, retag, or flip subscribed/unsubscribed on one person."""
+    updates: dict[str, Any] = {}
+    if payload.email is not None:
+        updates["email"] = payload.email.strip().lower()
+    if payload.name is not None:
+        updates["name"] = payload.name.strip() or None
+    if payload.tags is not None:
+        updates["tags"] = payload.tags
+    if payload.status is not None:
+        updates["status"] = payload.status
+        updates["unsubscribed_at"] = (
+            now_iso() if payload.status == "unsubscribed" else None
+        )
+    if not updates:
+        raise HTTPException(400, "Nothing to update.")
+    try:
+        res = sb_admin.table("subscribers").update(updates).eq("id", sub_id).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Admin update subscriber failed: %s", exc)
+        raise HTTPException(409, "Couldn't save — that email may already be on the list.")
+    rows = res.data or []
+    if not rows:
+        raise HTTPException(404, "Subscriber not found.")
+    return rows[0]
+
+
+@api.delete("/admin/subscribers/{sub_id}")
+def admin_delete_subscriber(sub_id: str, user=Depends(require_user)):
+    """Remove a subscriber entirely — for clearing test rows and hard deletes."""
+    try:
+        sb_admin.table("subscribers").delete().eq("id", sub_id).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Admin delete subscriber failed: %s", exc)
+        raise HTTPException(500, "Couldn't delete that subscriber.")
+    return {"ok": True}
+
+
 @api.get("/admin/enquiries")
 def admin_list_enquiries(user=Depends(require_user)):
     """Contact-form messages, newest first — the actual text behind the count."""

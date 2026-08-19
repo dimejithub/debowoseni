@@ -164,6 +164,24 @@ export async function adminListSubscribers() {
   return r.data.subscribers || [];
 }
 
+export async function adminCreateSubscriber(payload) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/subscribers`, payload, { headers });
+  return r.data;
+}
+
+export async function adminUpdateSubscriber(id, payload) {
+  const headers = await authHeaders();
+  const r = await axios.patch(`${API}/admin/subscribers/${id}`, payload, { headers });
+  return r.data;
+}
+
+export async function adminDeleteSubscriber(id) {
+  const headers = await authHeaders();
+  const r = await axios.delete(`${API}/admin/subscribers/${id}`, { headers });
+  return r.data;
+}
+
 // ---- Admin generic factory ----
 function adminCrud(resource) {
   return {
