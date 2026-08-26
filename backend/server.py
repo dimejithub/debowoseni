@@ -59,6 +59,7 @@ except Exception:  # noqa: BLE001
 Image.MAX_IMAGE_PIXELS = 80_000_000  # ~80 megapixels
 
 import automations
+import event_reminders
 import mailer
 import newsletter
 
@@ -1879,8 +1880,9 @@ def run_sequences_task(x_task_token: Optional[str] = Header(default=None)):
     # journal digest. The newsletter is a no-op on all but the one hour a week
     # (or fortnight/month) it is configured to send.
     sequences = automations.run_due_steps(sb_admin)
+    reminders = event_reminders.run_due_reminders(sb_admin)
     digest = newsletter.run_if_due(sb_admin, deliver_campaign)
-    return {"sequences": sequences, "newsletter": digest}
+    return {"sequences": sequences, "event_reminders": reminders, "newsletter": digest}
 
 
 # ---------------------------------------------------------------------------
