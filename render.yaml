@@ -56,6 +56,12 @@ services:
       - key: AUTOMATION_TOKEN
         sync: false
 
+      # --- Optional. Where "new registration" alerts are emailed. Defaults to
+      # MAIL_REPLY_TO (hello@), which forwards to Debo. Set to another address
+      # to send the alerts somewhere else.
+      - key: EVENT_NOTIFY_EMAIL
+        sync: false
+
       # --- Optional. Opens and clicks stay at zero without the webhook secret;
       # /community records joins but emails the invite link without the URL.
       - key: RESEND_WEBHOOK_SECRET

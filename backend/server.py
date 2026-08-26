@@ -710,6 +710,57 @@ def registration_email(event: dict, reg: dict, unsub_url: Optional[str]) -> None
     )
 
 
+# Where "new registration" alerts go. Defaults to the reply-to address
+# (hello@), which forwards to Debo's inbox; override to send them elsewhere.
+EVENT_NOTIFY_EMAIL = os.environ.get("EVENT_NOTIFY_EMAIL", "").strip() or mailer.MAIL_REPLY_TO
+
+
+def registration_admin_notification(event: dict, reg: dict) -> None:
+    """Let Debo know a new registration came in, with the details. Best-effort —
+    a mail failure never fails the sign-up."""
+    if not EVENT_NOTIFY_EMAIL:
+        return
+    when = " · ".join(
+        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    )
+    waitlisted = reg.get("status") == "waitlisted"
+    lines = [
+        f"# New {'waitlist join' if waitlisted else 'registration'}",
+        "",
+        (
+            f"**{reg.get('name') or 'Someone'}** just "
+            f"{'joined the waitlist for' if waitlisted else 'registered for'} "
+            f"**{event.get('title')}**."
+        ),
+        "",
+        f"**Name:** {reg.get('name') or '—'}",
+        f"**Email:** {reg.get('email') or '—'}",
+    ]
+    if reg.get("phone"):
+        lines.append(f"**Phone:** {reg.get('phone')}")
+    if when:
+        lines.append(f"**When:** {when}")
+    if reg.get("notes"):
+        lines += ["", f"**Notes:** {reg.get('notes')}"]
+    lines += [
+        "",
+        "---",
+        "",
+        f"All sign-ups: [{mailer.SITE_URL}/admin/registrations]({mailer.SITE_URL}/admin/registrations)",
+    ]
+    body = "\n".join(lines)
+    html = mailer.render_layout(
+        mailer.markdown_to_html(body),
+        preheader=f"{reg.get('name') or 'New sign-up'} — {event.get('title')}",
+    )
+    mailer.send(
+        EVENT_NOTIFY_EMAIL,
+        f"New registration: {event.get('title')}",
+        html,
+        text=mailer.to_plain_text(body),
+    )
+
+
 @api.post("/events/{slug}/register")
 def register_for_event(slug: str, payload: RegistrationIn, background: BackgroundTasks):
     res = sb_admin.table("events").select("*").eq("slug", slug).limit(1).execute()
@@ -771,6 +822,7 @@ def register_for_event(slug: str, payload: RegistrationIn, background: Backgroun
         else None
     )
     background.add_task(registration_email, event, saved[0], unsub)
+    background.add_task(registration_admin_notification, event, saved[0])
     background.add_task(
         automations.fire,
         sb_admin,
