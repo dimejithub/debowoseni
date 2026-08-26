@@ -230,6 +230,7 @@ class EventIn(BaseModel):
     slug: Optional[str] = None
     description: Optional[str] = None
     cover_url: Optional[str] = None
+    video_url: Optional[str] = None
     gallery: list[str] = []
     location: Optional[str] = None
     location_type: str = "in_person"
@@ -251,6 +252,7 @@ class EventUpdate(BaseModel):
     slug: Optional[str] = None
     description: Optional[str] = None
     cover_url: Optional[str] = None
+    video_url: Optional[str] = None
     gallery: Optional[list[str]] = None
     location: Optional[str] = None
     location_type: Optional[str] = None
