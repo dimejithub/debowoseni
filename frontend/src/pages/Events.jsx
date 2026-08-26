@@ -102,7 +102,9 @@ function EventTeaser({ ev }) {
   if (ev.cover_url) {
     return (
       <div className="mt-10 overflow-hidden rounded-[18px] border border-line">
-        <img src={ev.cover_url} alt={ev.title} className="w-full object-cover" loading="lazy" />
+        <div className="relative w-full" style={{ aspectRatio: "16 / 6" }}>
+          <img src={ev.cover_url} alt={ev.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        </div>
       </div>
     );
   }
@@ -110,7 +112,7 @@ function EventTeaser({ ev }) {
 }
 
 const TABS = [
-  { key: "upcoming", label: "Upcoming" },
+  { key: "upcoming", label: "Live" },
   { key: "past", label: "Past" },
 ];
 
@@ -204,7 +206,7 @@ export default function Events() {
                       past ? "border border-line text-muted" : "bg-lime text-bg"
                     }`}
                   >
-                    {past ? "Past event" : "Upcoming"}
+                    {past ? "Past event" : "Live"}
                   </span>
                   <h2 className="mt-5">{ev.title}</h2>
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted">
@@ -267,7 +269,9 @@ export default function Events() {
                     </div>
                   ) : ev.cover_url ? (
                     <div className="mt-10 overflow-hidden rounded-[18px] border border-line">
-                      <img src={ev.cover_url} alt={ev.title} className="w-full object-cover" loading="lazy" />
+                      <div className="relative w-full" style={{ aspectRatio: "16 / 6" }}>
+                <img src={ev.cover_url} alt={ev.title} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              </div>
                     </div>
                   ) : null
                 ) : hasGallery ? (
@@ -293,7 +297,7 @@ export default function Events() {
             <p className="mt-3 text-muted">
               {tab === "past"
                 ? "Past events and their photos will live here."
-                : "No upcoming events right now — new dates will appear here as they're scheduled."}
+                : "No live events right now — new dates will appear here as they're scheduled."}
             </p>
           </div>
         )}

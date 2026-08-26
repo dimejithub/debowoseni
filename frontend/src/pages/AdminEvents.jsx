@@ -255,16 +255,22 @@ export default function AdminEvents() {
                 and they take over as the memories gallery.
               </p>
             </Field>
-            <Field label="Cover image">
+            <Field label="Cover image — a wide banner (like a Facebook/LinkedIn cover)">
               {draft.cover_url && (
                 <div className="mb-2 overflow-hidden rounded-[14px] border border-line">
-                  <img src={draft.cover_url} alt="" className="aspect-[16/10] w-full object-cover" />
+                  <div className="relative w-full" style={{ aspectRatio: "16 / 6" }}>
+                    <img src={draft.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  </div>
                 </div>
               )}
               <label className="btn-ghost cursor-pointer text-xs inline-flex">
                 <ImageIcon className="h-3.5 w-3.5" /> Upload cover
                 <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={uploadCover} data-testid="event-cover-upload" />
               </label>
+              <p className="mt-2 text-xs text-muted">
+                Landscape works best — around 1600×600. It's shown as a wide banner and
+                centre-cropped, so keep the key subject near the middle.
+              </p>
             </Field>
 
             <Field label={`Gallery (${(draft.gallery || []).length})`}>
