@@ -8,7 +8,7 @@ import { GroupHeading } from "@/components/admin/GroupHeading";
 import { adminEvents, adminUpload } from "@/lib/api";
 
 const EMPTY = {
-  title: "", slug: "", description: "", cover_url: "",
+  title: "", slug: "", description: "", cover_url: "", video_url: "",
   gallery: [], location: "", location_type: "in_person",
   event_date: "", start_time: "", end_time: "",
   is_free: true, price: "", currency: "GBP",
@@ -245,6 +245,16 @@ export default function AdminEvents() {
             )}
 
             <GroupHeading>Media</GroupHeading>
+            <Field label="Teaser video (optional) — YouTube, Vimeo or an .mp4 link">
+              <input value={draft.video_url} onChange={(e) => setDraft({ ...draft, video_url: e.target.value })}
+                placeholder="https://youtu.be/…  or  https://…/teaser.mp4"
+                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                data-testid="event-video-url" />
+              <p className="mt-2 text-xs text-muted">
+                Shows on the event while it's still upcoming. After the event, add photos below
+                and they take over as the memories gallery.
+              </p>
+            </Field>
             <Field label="Cover image">
               {draft.cover_url && (
                 <div className="mb-2 overflow-hidden rounded-[14px] border border-line">
