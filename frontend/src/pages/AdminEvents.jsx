@@ -13,7 +13,7 @@ const EMPTY = {
   event_date: "", start_time: "", end_time: "",
   is_free: true, price: "", currency: "GBP",
   register_url: "", registration_open: false, capacity: "",
-  status: "published", sort_order: 0,
+  status: "draft", sort_order: 0,
 };
 
 export default function AdminEvents() {
@@ -312,6 +312,11 @@ export default function AdminEvents() {
                 </select>
               </Field>
             </div>
+            <p className="mt-2 text-xs text-muted/80">
+              Keep it a <span className="text-ink/80">Draft</span> while you're still writing.
+              The first time you set an event to <span className="text-lime">Published</span>,
+              your mailing list is emailed the invite automatically — once. Later edits never re-send.
+            </p>
             <div className="flex items-center gap-2 border-t border-line pt-5">
               <button onClick={save} className="btn-lime" data-testid="save-event">
                 {editingId ? <><Save className="h-4 w-4" /> Update event</> : <><Plus className="h-4 w-4" /> Add event</>}

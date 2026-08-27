@@ -59,6 +59,7 @@ except Exception:  # noqa: BLE001
 Image.MAX_IMAGE_PIXELS = 80_000_000  # ~80 megapixels
 
 import automations
+import event_reminders
 import mailer
 import newsletter
 
@@ -1364,23 +1365,46 @@ def admin_list_events(user=Depends(require_user)):
 
 
 @api.post("/admin/events")
-def admin_create_event(payload: EventIn, user=Depends(require_user)):
+def admin_create_event(payload: EventIn, background: BackgroundTasks, user=Depends(require_user)):
     data = payload.model_dump()
     data["slug"] = ensure_unique_slug("events", data.get("slug") or slugify(payload.title))
-    return _admin_insert("events", data)
+    event = _admin_insert("events", data)
+    _maybe_announce_event(event, background)
+    return event
 
 
 @api.put("/admin/events/{item_id}")
-def admin_update_event(item_id: str, payload: EventUpdate, user=Depends(require_user)):
+def admin_update_event(item_id: str, payload: EventUpdate, background: BackgroundTasks, user=Depends(require_user)):
     data = payload.model_dump(exclude_unset=True)
     if "slug" in data and data["slug"]:
         data["slug"] = ensure_unique_slug("events", slugify(data["slug"]), exclude_id=item_id)
-    return _admin_update("events", item_id, data)
+    event = _admin_update("events", item_id, data)
+    _maybe_announce_event(event, background)
+    return event
 
 
 @api.delete("/admin/events/{item_id}")
 def admin_delete_event(item_id: str, user=Depends(require_user)):
     return _admin_delete("events", item_id)
+
+
+@api.post("/admin/events/{item_id}/announce")
+def admin_announce_event(item_id: str, background: BackgroundTasks, user=Depends(require_user)):
+    """Manually (re)send the mailing-list invite for an event — the escape hatch
+    for when the automatic send is wanted again, or an event was published before
+    the mailing list was ready."""
+    event = _admin_get("events", item_id)
+    if event.get("status") != "published":
+        raise HTTPException(400, "Publish the event before announcing it.")
+    recipients = resolve_segment("all")
+    if not recipients:
+        raise HTTPException(400, "There are no subscribers to announce to yet.")
+    try:
+        sb_admin.table("events").update({"announced_at": now_iso()}).eq("id", item_id).execute()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(500, "Could not record the announcement.") from exc
+    background.add_task(announce_event, item_id)
+    return {"ok": True, "recipient_count": len(recipients)}
 
 
 # ---------------------------------------------------------------------------
@@ -1619,6 +1643,132 @@ def deliver_campaign(campaign_id: str) -> None:
     logger.info("Campaign %s: %d sent, %d failed.", campaign_id, sent, failed)
 
 
+# ---------------------------------------------------------------------------
+# Event announcements — when Debo publishes an event, the mailing list hears
+# about it automatically. Built on top of the campaign pipeline so each blast
+# shows up in the dashboard with open/click stats and per-recipient unsubscribe.
+# ---------------------------------------------------------------------------
+def _event_when_where(event: dict) -> tuple[str, str]:
+    when = " · ".join(
+        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    )
+    where = event.get("location") or (
+        "Online" if event.get("location_type") == "online" else ""
+    )
+    return when, where
+
+
+def _event_price_label(event: dict) -> str:
+    if event.get("is_free"):
+        return "Free"
+    price = event.get("price")
+    if price in (None, ""):
+        return ""
+    currency = event.get("currency") or ""
+    sym = {
+        "GBP": "£", "USD": "$", "EUR": "€", "NGN": "₦",
+        "CAD": "$", "AUD": "$", "ZAR": "R", "GHS": "₵",
+    }.get(currency, (currency + " ") if currency else "")
+    try:
+        amt = float(price)
+    except (TypeError, ValueError):
+        return ""
+    return f"{sym}{int(amt) if amt.is_integer() else amt}"
+
+
+def build_event_announcement(event: dict) -> tuple[str, str, str]:
+    """Return (subject, preheader, markdown_body) for the mailing-list invite."""
+    title = event.get("title") or "A new event"
+    when, where = _event_when_where(event)
+    price = _event_price_label(event)
+    events_url = f"{mailer.SITE_URL}/events"
+
+    lines = [f"# You're invited: {title}", ""]
+    if event.get("cover_url"):
+        lines += [f"![{title}]({event['cover_url']})", ""]
+    if event.get("description"):
+        lines += [event["description"], ""]
+    details = []
+    if when:
+        details.append(f"**When:** {when}")
+    if where:
+        details.append(f"**Where:** {where}")
+    if price:
+        details.append(f"**Price:** {price}")
+    if details:
+        lines += details + [""]
+    cta = "Register now" if (event.get("registration_open") or event.get("register_url")) else "See the details"
+    lines += [
+        f"[{cta} →]({events_url})",
+        "",
+        "---",
+        "",
+        "See you there,",
+        "",
+        "Debo",
+    ]
+    subject = f"You're invited: {title}"
+    preheader = " · ".join(p for p in (when, where) if p) or "A new event from Debo Owoseni"
+    return subject, preheader, "\n".join(lines)
+
+
+def announce_event(event_id: str) -> None:
+    """Broadcast a published event to the whole mailing list, exactly once.
+
+    Runs in the background. Creates a real campaign row (so the send appears in
+    the dashboard with open/click stats) and delivers it through the shared
+    campaign pipeline. The caller stamps events.announced_at first, so this
+    never double-sends however many times the event is edited afterwards.
+    """
+    try:
+        event = (
+            sb_admin.table("events").select("*").eq("id", event_id).limit(1).execute()
+        ).data[0]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Event %s vanished before announcement: %s", event_id, exc)
+        return
+    if event.get("status") != "published":
+        return
+
+    subject, preheader, body = build_event_announcement(event)
+    try:
+        campaign = _admin_insert(
+            "campaigns",
+            {
+                "subject": subject,
+                "preheader": preheader,
+                "body": body,
+                "segment": "all",
+                "status": "sending",
+            },
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not create announcement campaign for %s: %s", event_id, exc)
+        return
+
+    deliver_campaign(campaign["id"])
+
+
+def _maybe_announce_event(event: dict, background: BackgroundTasks) -> None:
+    """Fire the mailing-list invite the first time an event becomes published.
+
+    Idempotent: guarded by events.announced_at, which we stamp synchronously
+    before enqueuing so a rapid second save can never blast the list twice. If
+    the announced_at column is missing (migration not yet run) the stamp fails
+    and we quietly skip — failing safe rather than sending unguarded.
+    """
+    if not event or event.get("status") != "published" or event.get("announced_at"):
+        return
+    try:
+        sb_admin.table("events").update(
+            {"announced_at": now_iso()}
+        ).eq("id", event["id"]).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Skipping announcement for %s (could not stamp): %s", event.get("id"), exc)
+        return
+    background.add_task(announce_event, event["id"])
+
+
 @api.post("/admin/campaigns/{item_id}/send")
 def admin_send_campaign(item_id: str, background: BackgroundTasks, user=Depends(require_user)):
     campaign = _admin_get("campaigns", item_id)
@@ -1730,8 +1880,9 @@ def run_sequences_task(x_task_token: Optional[str] = Header(default=None)):
     # journal digest. The newsletter is a no-op on all but the one hour a week
     # (or fortnight/month) it is configured to send.
     sequences = automations.run_due_steps(sb_admin)
+    reminders = event_reminders.run_due_reminders(sb_admin)
     digest = newsletter.run_if_due(sb_admin, deliver_campaign)
-    return {"sequences": sequences, "newsletter": digest}
+    return {"sequences": sequences, "event_reminders": reminders, "newsletter": digest}
 
 
 # ---------------------------------------------------------------------------
