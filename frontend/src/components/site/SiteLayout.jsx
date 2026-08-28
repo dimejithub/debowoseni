@@ -6,6 +6,7 @@ import { Footer } from "./Footer";
 import { Grain } from "./Grain";
 import { ScrollProgress } from "./ScrollProgress";
 import { CustomCursor } from "./CustomCursor";
+import { CookieConsent } from "./CookieConsent";
 
 export function SiteLayout() {
   const { pathname } = useLocation();
@@ -33,6 +34,7 @@ export function SiteLayout() {
         </AnimatePresence>
       </main>
       <Footer />
+      <CookieConsent />
     </div>
   );
 }

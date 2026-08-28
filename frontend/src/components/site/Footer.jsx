@@ -114,9 +114,23 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col items-start justify-between gap-3 border-t border-line pt-8 text-sm text-muted md:flex-row md:items-center">
-          <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
-          <Credit />
+        <div className="mt-16 border-t border-line pt-8">
+          <p className="max-w-3xl text-xs leading-relaxed text-muted/70">
+            LTE Coaching is a developmental service — not psychotherapy, counselling, psychiatric
+            or medical treatment, nor legal or regulated financial advice.{" "}
+            <Link to="/professional-practice" className="lime-link" data-testid="footer-practice-link">
+              Professional Practice &amp; Code of Ethics
+            </Link>
+            .
+          </p>
+          <div className="mt-6 flex flex-col items-start justify-between gap-3 text-sm text-muted md:flex-row md:items-center">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
+              <Link to="/privacy" className="lime-link" data-testid="footer-privacy-link">Privacy Policy</Link>
+              <Link to="/professional-practice" className="lime-link" data-testid="footer-practice-link-bottom">Professional Practice</Link>
+            </div>
+            <Credit />
+          </div>
         </div>
       </div>
 
