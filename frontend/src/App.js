@@ -16,6 +16,7 @@ import ExpressionAcademic from "@/pages/ExpressionAcademic";
 import ExpressionMarriage from "@/pages/ExpressionMarriage";
 import TheEnquiry from "@/pages/TheEnquiry";
 import ProfessionalPractice from "@/pages/ProfessionalPractice";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminPosts from "@/pages/AdminPosts";
@@ -69,6 +70,7 @@ function App() {
             <Route path="/expressions/marriage-101" element={<ExpressionMarriage />} />
             <Route path="/expressions/the-enquiry" element={<TheEnquiry />} />
             <Route path="/professional-practice" element={<ProfessionalPractice />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             {/* Replaces the Systeme funnel that lived on lte.debowoseni.com */}
             <Route path="/programmes" element={<Programmes />} />
             <Route path="/community" element={<Community />} />

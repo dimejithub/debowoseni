@@ -124,7 +124,11 @@ export function Footer() {
             .
           </p>
           <div className="mt-6 flex flex-col items-start justify-between gap-3 text-sm text-muted md:flex-row md:items-center">
-            <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p>© {new Date().getFullYear()} Debo&apos; Owoseni. All rights reserved.</p>
+              <Link to="/privacy" className="lime-link" data-testid="footer-privacy-link">Privacy Policy</Link>
+              <Link to="/professional-practice" className="lime-link" data-testid="footer-practice-link-bottom">Professional Practice</Link>
+            </div>
             <Credit />
           </div>
         </div>

@@ -55,7 +55,7 @@ export function CookieConsent() {
               <p className="text-sm leading-relaxed text-ink/85">
                 We use only <span className="text-ink">essential cookies</span> to make this site
                 work — no tracking, advertising or third-party analytics.{" "}
-                <Link to="/professional-practice" className="lime-link" data-testid="cookie-learn-more">
+                <Link to="/privacy" className="lime-link" data-testid="cookie-learn-more">
                   How we handle your information
                 </Link>
                 .
