@@ -1,0 +1,174 @@
+/* ==========================================================================
+   KINETIC TYPOGRAPHY — scoped design system
+   --------------------------------------------------------------------------
+   Every token and helper lives under `.kt`, so this aggressive brutalist
+   aesthetic (acid yellow, sharp 0px corners, uppercase viewport type) never
+   leaks into the site's global dark/lime identity. Wrap any Kinetic surface
+   in a `.kt` root and compose the helpers below.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+
+.kt {
+  /* Foundation */
+  --kt-bg: #09090b;          /* rich black — softer than pure #000 */
+  --kt-fg: #fafafa;          /* off-white — less harsh than pure #fff */
+  --kt-muted: #27272a;       /* dark gray secondary surfaces */
+  --kt-muted-fg: #a1a1aa;    /* zinc-400 body / descriptions */
+  /* Accent */
+  --kt-accent: #dfe104;      /* acid yellow / lime — high energy */
+  --kt-accent-fg: #000000;   /* pure black on accent */
+  --kt-border: #3f3f46;      /* zinc-700 structural lines */
+
+  background: var(--kt-bg);
+  color: var(--kt-fg);
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  /* This scope opts out of the site's global 20px radius entirely. */
+  --radius: 0px;
+}
+
+.kt ::selection { background: var(--kt-accent); color: var(--kt-accent-fg); }
+
+.kt :focus-visible {
+  outline: 3px solid var(--kt-accent);
+  outline-offset: 2px;
+}
+
+/* --- Display type -------------------------------------------------------- */
+.kt-display {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;   /* tracking-tighter on big type */
+  line-height: 0.8;
+}
+
+/* --- Marquees ------------------------------------------------------------ */
+/* GPU-friendly translateX loop. Content is duplicated in markup so a -50%
+   translate lands seamlessly. No gradient edges — the raw edge is the point. */
+@keyframes kt-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.kt-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: kt-marquee var(--kt-marquee-duration, 24s) linear infinite;
+}
+
+/* --- Hover-inversion card ------------------------------------------------ */
+/* Base is rich black with a 2px zinc border; on hover the whole card floods
+   acid yellow and every child inverts to black via currentColor + the
+   .kt-invert hook. Hard-ish 300ms flip, no gradient. */
+.kt-card {
+  border: 2px solid var(--kt-border);
+  background: var(--kt-bg);
+  color: var(--kt-fg);
+  border-radius: 0;
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
+}
+.kt-card:hover,
+.kt-card:focus-within {
+  background: var(--kt-accent);
+  border-color: var(--kt-accent);
+  color: var(--kt-accent-fg);
+}
+.kt-card .kt-muted { color: var(--kt-muted-fg); transition: color 300ms ease; }
+.kt-card:hover .kt-muted,
+.kt-card:focus-within .kt-muted { color: rgba(0, 0, 0, 0.7); }
+.kt-card .kt-ghost-num { color: var(--kt-muted); transition: color 300ms ease; }
+.kt-card:hover .kt-ghost-num,
+.kt-card:focus-within .kt-ghost-num { color: rgba(0, 0, 0, 0.25); }
+
+/* --- Buttons ------------------------------------------------------------- */
+.kt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 3.5rem;                /* 56px default */
+  padding: 0 2rem;               /* px 2x-ish of height */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  border-radius: 0;
+  transition: transform 200ms ease, background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+.kt-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.kt-btn--accent {
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+  border: 2px solid var(--kt-accent);
+}
+.kt-btn--accent:hover { transform: scale(1.05); }
+.kt-btn--accent:active { transform: scale(0.95); }
+
+.kt-btn--outline {
+  background: transparent;
+  color: var(--kt-fg);
+  border: 2px solid var(--kt-border);
+}
+.kt-btn--outline:hover { background: var(--kt-fg); color: var(--kt-accent-fg); border-color: var(--kt-fg); }
+.kt-btn--outline:active { transform: scale(0.97); }
+
+.kt-btn--ghost {
+  background: transparent;
+  color: var(--kt-fg);
+  border: 2px solid transparent;
+}
+.kt-btn--ghost:hover { color: var(--kt-accent); }
+
+.kt-btn--lg { height: 5rem; padding: 0 3rem; font-size: 1.125rem; }
+.kt-btn--sm { height: 2.5rem; padding: 0 1rem; font-size: 0.875rem; }
+
+/* --- Oversized underline input ------------------------------------------ */
+.kt-input {
+  width: 100%;
+  height: 6rem;                  /* dramatic scale */
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--kt-border);
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  padding: 0;
+  border-radius: 0;
+  transition: border-color 150ms ease;
+}
+.kt-input::placeholder { color: var(--kt-muted); text-transform: uppercase; }
+.kt-input:focus { outline: none; border-bottom-color: var(--kt-accent); }
+
+/* --- Noise / grain overlay ---------------------------------------------- */
+.kt-noise::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* --- Hairline connected grid -------------------------------------------- */
+/* gap-px over an accent-lit container turns the gaps into hairline dividers. */
+.kt-hairline-grid { background: var(--kt-border); gap: 1px; }
+.kt-hairline-grid > * { background: var(--kt-bg); }
+
+/* ==========================================================================
+   Motion preferences — everything kinetic yields to reduced-motion.
+   Marquees freeze in place, scroll transforms are neutralised at the call
+   site (see useKineticScroll), and content stays fully legible.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .kt-marquee-track { animation: none; transform: none; }
+}

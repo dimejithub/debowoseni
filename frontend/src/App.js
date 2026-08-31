@@ -38,6 +38,7 @@ import AdminEnquiries from "@/pages/AdminEnquiries";
 import Programmes from "@/pages/Programmes";
 import Community from "@/pages/Community";
 import Unsubscribe from "@/pages/Unsubscribe";
+import Kinetic from "@/pages/Kinetic";
 import { AuthProvider } from "@/lib/auth";
 
 // Old /journal URLs (pre-rename) redirect to /articles.
@@ -76,6 +77,9 @@ function App() {
             <Route path="/community" element={<Community />} />
           </Route>
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+          {/* Kinetic Typography design-system showcase — standalone, fully
+              scoped under `.kt` so it never touches the site's dark/lime theme. */}
+          <Route path="/kinetic" element={<Kinetic />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/posts" element={<AdminPosts />} />
