@@ -229,6 +229,51 @@ def unsubscribe_url_for(token: str) -> str:
     return f"{SITE_URL}/unsubscribe?token={token}"
 
 
+def _time_parts(t):
+    """'19:00' -> (7, 0, 'PM'). None if it isn't a parseable HH:MM time."""
+    try:
+        bits = str(t).split(":")
+        h, m = int(bits[0]), int(bits[1]) if len(bits) > 1 else 0
+    except (ValueError, IndexError):
+        return None
+    return ((h + 11) % 12) + 1, m, "AM" if h < 12 else "PM"
+
+
+def _fmt_time(t) -> str:
+    """'19:00' -> '7:00 PM'. Returns the input unchanged if it isn't a time."""
+    p = _time_parts(t)
+    return f"{p[0]}:{p[1]:02d} {p[2]}" if p else str(t)
+
+
+def format_event_when(event_date=None, start_time=None, end_time=None) -> str:
+    """Human-friendly 'when' line for emails, e.g.
+    'Friday 18 September · 7:00 – 8:30 PM'. Degrades gracefully when parts are
+    missing or the date isn't a plain ISO date."""
+    from datetime import date as _date
+
+    parts = []
+    if event_date:
+        try:
+            d = _date.fromisoformat(str(event_date)[:10])
+            parts.append(f"{d.strftime('%A')} {d.day} {d.strftime('%B')}")
+        except ValueError:
+            parts.append(str(event_date))
+
+    time_str = ""
+    if start_time and end_time:
+        sp, ep = _time_parts(start_time), _time_parts(end_time)
+        if sp and ep and sp[2] == ep[2]:
+            # Same meridiem — show it once: '7:00 – 8:30 PM'.
+            time_str = f"{sp[0]}:{sp[1]:02d} – {ep[0]}:{ep[1]:02d} {ep[2]}"
+        else:
+            time_str = f"{_fmt_time(start_time)} – {_fmt_time(end_time)}"
+    elif start_time:
+        time_str = _fmt_time(start_time)
+    if time_str:
+        parts.append(time_str)
+    return " · ".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Sending
 # ---------------------------------------------------------------------------
