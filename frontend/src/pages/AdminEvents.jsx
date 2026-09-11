@@ -23,7 +23,7 @@ export default function AdminEvents() {
   const [draft, setDraft] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(true);
-  const [linkAudience, setLinkAudience] = useState("registrants");
+  const [linkAudience, setLinkAudience] = useState("all");
   const [sendingLink, setSendingLink] = useState(false);
   const listRef = useReveal([items]);
 
@@ -380,8 +380,8 @@ export default function AdminEvents() {
                     <select value={linkAudience} onChange={(e) => setLinkAudience(e.target.value)}
                       className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
                       data-testid="event-link-audience">
-                      <option value="registrants">This event&apos;s registrants</option>
                       <option value="all">All subscribers</option>
+                      <option value="registrants">This event&apos;s registrants</option>
                     </select>
                   </Field>
                   <div className="flex items-end">
