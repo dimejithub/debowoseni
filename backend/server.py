@@ -275,9 +275,9 @@ class EventUpdate(BaseModel):
 
 
 class EventLinkSend(BaseModel):
-    # Who receives the joining link. "all" = the whole mailing list; "registrants"
-    # = only people who registered for this event.
-    segment: str = Field(default="all", pattern="^(all|registrants)$")
+    # Who receives the joining link. "registrants" (default) = only people who
+    # registered for this event; "all" = the whole mailing list.
+    segment: str = Field(default="registrants", pattern="^(all|registrants)$")
 
 
 class RegistrationIn(BaseModel):
