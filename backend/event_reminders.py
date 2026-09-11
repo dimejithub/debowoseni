@@ -51,8 +51,8 @@ def _parse_event_date(value: Optional[str]) -> Optional[date]:
 
 
 def _when_where(event: dict) -> tuple[str, str]:
-    when = " · ".join(
-        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    when = mailer.format_event_when(
+        event.get("event_date"), event.get("start_time"), event.get("end_time")
     )
     where = event.get("location") or (
         "Online" if event.get("location_type") == "online" else ""

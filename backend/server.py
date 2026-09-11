@@ -675,8 +675,8 @@ def unsubscribe(payload: UnsubscribeIn):
 # ---------------------------------------------------------------------------
 def registration_email(event: dict, reg: dict, unsub_url: Optional[str]) -> None:
     """Confirmation email. Best-effort — a mail failure never fails the sign-up."""
-    when = " · ".join(
-        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    when = mailer.format_event_when(
+        event.get("event_date"), event.get("start_time"), event.get("end_time")
     )
     where = event.get("location") or (
         "Online" if event.get("location_type") == "online" else ""
@@ -731,8 +731,8 @@ def registration_admin_notification(event: dict, reg: dict) -> None:
     a mail failure never fails the sign-up."""
     if not EVENT_NOTIFY_EMAIL:
         return
-    when = " · ".join(
-        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    when = mailer.format_event_when(
+        event.get("event_date"), event.get("start_time"), event.get("end_time")
     )
     waitlisted = reg.get("status") == "waitlisted"
     lines = [
@@ -1659,8 +1659,8 @@ def deliver_campaign(campaign_id: str) -> None:
 # shows up in the dashboard with open/click stats and per-recipient unsubscribe.
 # ---------------------------------------------------------------------------
 def _event_when_where(event: dict) -> tuple[str, str]:
-    when = " · ".join(
-        p for p in (event.get("event_date"), (event.get("start_time") or "")[:5]) if p
+    when = mailer.format_event_when(
+        event.get("event_date"), event.get("start_time"), event.get("end_time")
     )
     where = event.get("location") or (
         "Online" if event.get("location_type") == "online" else ""
