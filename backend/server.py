@@ -235,6 +235,8 @@ class EventIn(BaseModel):
     gallery: list[str] = []
     location: Optional[str] = None
     location_type: str = "in_person"
+    online_url: Optional[str] = None
+    online_details: Optional[str] = None
     event_date: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
@@ -257,6 +259,8 @@ class EventUpdate(BaseModel):
     gallery: Optional[list[str]] = None
     location: Optional[str] = None
     location_type: Optional[str] = None
+    online_url: Optional[str] = None
+    online_details: Optional[str] = None
     event_date: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
@@ -268,6 +272,12 @@ class EventUpdate(BaseModel):
     capacity: Optional[int] = None
     status: Optional[str] = Field(default=None, pattern="^(draft|published)$")
     sort_order: Optional[int] = None
+
+
+class EventLinkSend(BaseModel):
+    # Who receives the joining link. "all" = the whole mailing list; "registrants"
+    # = only people who registered for this event.
+    segment: str = Field(default="all", pattern="^(all|registrants)$")
 
 
 class RegistrationIn(BaseModel):
@@ -1767,6 +1777,93 @@ def _maybe_announce_event(event: dict, background: BackgroundTasks) -> None:
         logger.warning("Skipping announcement for %s (could not stamp): %s", event.get("id"), exc)
         return
     background.add_task(announce_event, event["id"])
+
+
+# ---------------------------------------------------------------------------
+# Event joining link — a few days before an online event, Debo pastes the
+# Zoom/Meet/webinar link (and any dial-in text) in the admin panel and
+# broadcasts it, so contacts can plan ahead and join on the day.
+# ---------------------------------------------------------------------------
+def build_event_link_email(event: dict) -> tuple[str, str, str]:
+    """Return (subject, preheader, markdown_body) for the joining-link email."""
+    title = event.get("title") or "the event"
+    when, where = _event_when_where(event)
+    online_url = (event.get("online_url") or "").strip()
+
+    lines = [f"# You're in — here's your link", ""]
+    lines.append(f"Here are the joining details for **{title}**.")
+    lines.append("")
+    if when:
+        lines.append(f"**When:** {when}")
+    if where:
+        lines.append(f"**Where:** {where}")
+    lines += ["", f"[Join the event →]({online_url})", ""]
+    if (event.get("online_details") or "").strip():
+        lines += ["**Other ways to join**", "", event["online_details"].strip(), ""]
+    lines += [
+        "Add it to your calendar now so it's ready when the time comes.",
+        "",
+        "---",
+        "",
+        "See you there,",
+        "",
+        "Debo",
+    ]
+    subject = f"Your joining link for {title}"
+    preheader = when or f"Joining details for {title}"
+    return subject, preheader, "\n".join(lines)
+
+
+def send_event_link(event_id: str, segment: str) -> None:
+    """Broadcast an online event's joining link to a segment, via the campaign
+    pipeline (so it lands in the dashboard with open/click stats)."""
+    try:
+        event = (
+            sb_admin.table("events").select("*").eq("id", event_id).limit(1).execute()
+        ).data[0]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Event %s vanished before link send: %s", event_id, exc)
+        return
+    if not (event.get("online_url") or "").strip():
+        return
+
+    subject, preheader, body = build_event_link_email(event)
+    try:
+        campaign = _admin_insert(
+            "campaigns",
+            {"subject": subject, "preheader": preheader, "body": body,
+             "segment": segment, "status": "sending"},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not create link campaign for %s: %s", event_id, exc)
+        return
+
+    deliver_campaign(campaign["id"])
+
+
+@api.post("/admin/events/{item_id}/send-link")
+def admin_send_event_link(
+    item_id: str, payload: EventLinkSend, background: BackgroundTasks, user=Depends(require_user)
+):
+    """Broadcast an online event's joining link. Audience is the whole mailing
+    list ('all') or just this event's registrants ('registrants')."""
+    event = _admin_get("events", item_id)
+    if event.get("status") != "published":
+        raise HTTPException(400, "Publish the event before sending its link.")
+    if not (event.get("online_url") or "").strip():
+        raise HTTPException(400, "Add the online joining link to the event first.")
+
+    segment = "all" if payload.segment == "all" else f"tag:event:{event.get('slug')}"
+    recipients = resolve_segment(segment)
+    if not recipients:
+        raise HTTPException(
+            400,
+            "No subscribers to send to yet."
+            if payload.segment == "all"
+            else "No one has registered for this event yet.",
+        )
+    background.add_task(send_event_link, item_id, segment)
+    return {"ok": True, "recipient_count": len(recipients), "segment": payload.segment}
 
 
 @api.post("/admin/campaigns/{item_id}/send")

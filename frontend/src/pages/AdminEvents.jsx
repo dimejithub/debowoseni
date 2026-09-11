@@ -5,11 +5,12 @@ import { ArrowLeft, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
 import { GroupHeading } from "@/components/admin/GroupHeading";
-import { adminEvents, adminUpload } from "@/lib/api";
+import { adminEvents, adminUpload, adminSendEventLink } from "@/lib/api";
 
 const EMPTY = {
   title: "", slug: "", description: "", cover_url: "", video_url: "",
   gallery: [], location: "", location_type: "in_person",
+  online_url: "", online_details: "",
   event_date: "", start_time: "", end_time: "",
   is_free: true, price: "", currency: "GBP",
   register_url: "", registration_open: false, capacity: "",
@@ -22,6 +23,8 @@ export default function AdminEvents() {
   const [draft, setDraft] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(true);
+  const [linkAudience, setLinkAudience] = useState("all");
+  const [sendingLink, setSendingLink] = useState(false);
   const listRef = useReveal([items]);
 
   useEffect(() => {
@@ -48,6 +51,8 @@ export default function AdminEvents() {
       end_time: draft.end_time || null,
       // On-site sign-ups and an external link are mutually exclusive, so only
       // one of them is ever persisted.
+      online_url: (draft.online_url || "").trim() || null,
+      online_details: (draft.online_details || "").trim() || null,
       register_url: draft.registration_open
         ? null
         : (draft.register_url || "").trim() || null,
@@ -71,6 +76,8 @@ export default function AdminEvents() {
     setDraft({
       ...EMPTY, ...ev,
       gallery: Array.isArray(ev.gallery) ? ev.gallery : [],
+      online_url: ev.online_url || "",
+      online_details: ev.online_details || "",
       event_date: ev.event_date ? ev.event_date.slice(0, 10) : "",
       location_type: ev.location_type || "in_person",
       is_free: ev.is_free ?? true,
@@ -87,6 +94,32 @@ export default function AdminEvents() {
     if (!window.confirm("Delete this event?")) return;
     try { await adminEvents.remove(id); toast.success("Deleted."); refresh(); }
     catch (err) { toast.error("Couldn't delete", { description: err?.message || "" }); }
+  };
+
+  // Persist the joining link/details, then broadcast them to the chosen audience.
+  const sendLink = async () => {
+    if (!editingId) return;
+    const url = (draft.online_url || "").trim();
+    if (!url) { toast.error("Add the joining link first"); return; }
+    const who = linkAudience === "all" ? "all subscribers" : "this event's registrants";
+    if (!window.confirm(`Save and email the joining link to ${who}?`)) return;
+    setSendingLink(true);
+    try {
+      await adminEvents.update(editingId, {
+        online_url: url,
+        online_details: (draft.online_details || "").trim() || null,
+      });
+      const res = await adminSendEventLink(editingId, linkAudience);
+      const n = res.recipient_count;
+      toast.success("Joining link is sending", {
+        description: `Going to ${n} ${n === 1 ? "person" : "people"}.`,
+      });
+      refresh();
+    } catch (err) {
+      toast.error("Couldn't send link", {
+        description: err?.response?.data?.detail || err?.message || "",
+      });
+    } finally { setSendingLink(false); }
   };
 
   const uploadCover = async (e) => {
@@ -179,6 +212,24 @@ export default function AdminEvents() {
                 <option value="in_person">In-person</option>
                 <option value="online">Online</option>
               </select>
+            </Field>
+
+            <GroupHeading>Online joining details</GroupHeading>
+            <Field label="Video call / webinar link (Zoom, Google Meet, Teams…)">
+              <input value={draft.online_url} onChange={(e) => setDraft({ ...draft, online_url: e.target.value })}
+                placeholder="https://meet.google.com/…"
+                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                data-testid="event-online-url" />
+            </Field>
+            <Field label="Other joining details (optional) — dial-in number, PIN, etc.">
+              <textarea rows={3} value={draft.online_details} onChange={(e) => setDraft({ ...draft, online_details: e.target.value })}
+                placeholder={"Or dial: (GB) +44 20 3956 7090  PIN: 709 442 341#"}
+                className="w-full resize-y rounded-[14px] border border-line bg-bg px-4 py-3 text-sm outline-none focus:border-lime"
+                data-testid="event-online-details" />
+              <p className="mt-2 text-xs text-muted">
+                Add these a few days before an online event, then broadcast them from the
+                &ldquo;Broadcast joining link&rdquo; button below so contacts can plan ahead.
+              </p>
             </Field>
 
             <GroupHeading>Tickets &amp; registration</GroupHeading>
@@ -317,6 +368,37 @@ export default function AdminEvents() {
               The first time you set an event to <span className="text-lime">Published</span>,
               your mailing list is emailed the invite automatically — once. Later edits never re-send.
             </p>
+            {editingId && (
+              <>
+                <GroupHeading>Broadcast joining link</GroupHeading>
+                <p className="text-xs text-muted">
+                  Email the joining link above to your contacts so they can plan ahead. Registrants
+                  also receive it automatically in their 7/3/2/1-day reminders once it's set.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Send to">
+                    <select value={linkAudience} onChange={(e) => setLinkAudience(e.target.value)}
+                      className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                      data-testid="event-link-audience">
+                      <option value="all">All subscribers</option>
+                      <option value="registrants">This event&apos;s registrants</option>
+                    </select>
+                  </Field>
+                  <div className="flex items-end">
+                    <button onClick={sendLink}
+                      disabled={sendingLink || !(draft.online_url || "").trim() || draft.status !== "published"}
+                      className="btn-lime w-full justify-center disabled:opacity-50"
+                      data-testid="send-event-link">
+                      {sendingLink ? "Sending…" : "Send joining link"}
+                    </button>
+                  </div>
+                </div>
+                {draft.status !== "published" && (
+                  <p className="text-xs text-muted/70">Publish the event to enable sending.</p>
+                )}
+              </>
+            )}
+
             <div className="flex items-center gap-2 border-t border-line pt-5">
               <button onClick={save} className="btn-lime" data-testid="save-event">
                 {editingId ? <><Save className="h-4 w-4" /> Update event</> : <><Plus className="h-4 w-4" /> Add event</>}

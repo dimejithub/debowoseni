@@ -220,6 +220,13 @@ export const adminPublications = adminCrud("publications");
 export const adminEvents = adminCrud("events");
 export const adminCampaigns = adminCrud("campaigns");
 
+// Broadcast an online event's joining link. segment: "all" | "registrants".
+export async function adminSendEventLink(id, segment = "all") {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/events/${id}/send-link`, { segment }, { headers });
+  return r.data;
+}
+
 // ---- Admin — dashboard stats ----
 export async function adminStats() {
   const headers = await authHeaders();
