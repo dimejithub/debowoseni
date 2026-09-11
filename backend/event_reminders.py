@@ -80,9 +80,19 @@ def build_reminder(event: dict, days_before: int, first_name: str) -> tuple[str,
         lines.append(f"**When:** {when}")
     if where:
         lines.append(f"**Where:** {where}")
+    lines.append("")
+
+    # If the online joining link is set, put it front and centre so registrants
+    # can join straight from the reminder; otherwise point back to the event page.
+    online_url = (event.get("online_url") or "").strip()
+    if online_url:
+        lines.append(f"[Join the event →]({online_url})")
+        if (event.get("online_details") or "").strip():
+            lines += ["", "**Other ways to join**", "", event["online_details"].strip()]
+    else:
+        lines.append(f"[See the details →]({events_url})")
+
     lines += [
-        "",
-        f"[See the details →]({events_url})",
         "",
         "---",
         "",
