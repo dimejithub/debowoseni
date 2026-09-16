@@ -25,7 +25,7 @@ function Kicker() {
         <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-lime/70" />
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime" />
       </span>
-      Transformation Coaching
+      Debo&apos; Owoseni
     </p>
   );
 }
