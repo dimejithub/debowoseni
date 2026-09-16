@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, BellRing, ChevronDown, Copy, ImageIcon, Plus, Save, Trash2, Users, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
 import { GroupHeading } from "@/components/admin/GroupHeading";
-import { adminEvents, adminUpload, adminSendEventLink } from "@/lib/api";
+import { adminEvents, adminUpload, adminSendEventLink, adminEventReminderStatus } from "@/lib/api";
 
 const EMPTY = {
   title: "", slug: "", description: "", cover_url: "", video_url: "",
@@ -25,6 +25,9 @@ export default function AdminEvents() {
   const [busy, setBusy] = useState(true);
   const [linkAudience, setLinkAudience] = useState("all");
   const [sendingLink, setSendingLink] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(null); // event id whose panel is open
+  const [reminderData, setReminderData] = useState({}); // id -> status
+  const [reminderBusy, setReminderBusy] = useState(null); // id currently loading
   const listRef = useReveal([items]);
 
   useEffect(() => {
@@ -153,6 +156,24 @@ export default function AdminEvents() {
         description: err?.response?.data?.detail || err?.message || "",
       });
     } finally { setSendingLink(false); }
+  };
+
+  // Show/refresh the countdown-reminder readout for one event. Fetches on first
+  // open (and re-fetches on an explicit refresh) so the list stays cheap to load.
+  const toggleReminders = async (id, { force = false } = {}) => {
+    const willOpen = force || reminderOpen !== id;
+    setReminderOpen(willOpen ? id : null);
+    if (!willOpen) return;
+    if (reminderData[id] && !force) return;
+    setReminderBusy(id);
+    try {
+      const data = await adminEventReminderStatus(id);
+      setReminderData((m) => ({ ...m, [id]: data }));
+    } catch (err) {
+      toast.error("Couldn't load reminder status", { description: err?.message || "" });
+    } finally {
+      setReminderBusy(null);
+    }
   };
 
   const uploadCover = async (e) => {
@@ -482,10 +503,26 @@ export default function AdminEvents() {
                       <button onClick={() => duplicate(ev)} className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-lime hover:text-lime" data-testid={`duplicate-event-${ev.id}`}>
                         <Copy className="h-3.5 w-3.5" /> Duplicate
                       </button>
+                      <button
+                        onClick={() => toggleReminders(ev.id)}
+                        className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-lime hover:text-lime"
+                        data-testid={`reminders-toggle-${ev.id}`}
+                        aria-expanded={reminderOpen === ev.id}
+                      >
+                        <BellRing className="h-3.5 w-3.5" /> Reminders
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${reminderOpen === ev.id ? "rotate-180" : ""}`} />
+                      </button>
                       <button onClick={() => remove(ev.id)} className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-destructive hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" /> Delete
                       </button>
                     </div>
+                    {reminderOpen === ev.id && (
+                      <ReminderPanel
+                        data={reminderData[ev.id]}
+                        busy={reminderBusy === ev.id}
+                        onRefresh={() => toggleReminders(ev.id, { force: true })}
+                      />
+                    )}
                   </div>
                 </li>
               ))}
@@ -503,5 +540,115 @@ function Field({ label, children }) {
       <span className="text-xs uppercase tracking-[0.2em] text-muted">{label}</span>
       <div className="mt-2">{children}</div>
     </label>
+  );
+}
+
+// e.g. "Fri 11 Sep"
+function fmtDate(iso) {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// The 7/3/2/1-day countdown readout for a single event.
+function ReminderPanel({ data, busy, onRefresh }) {
+  if (busy && !data) {
+    return (
+      <div className="mt-4 h-32 animate-pulse rounded-[14px] border border-line bg-bg" data-testid="reminder-panel" />
+    );
+  }
+  if (!data) return null;
+
+  const {
+    registrant_count: regs = 0,
+    has_join_link: hasLink,
+    days_until: daysUntil,
+    published,
+    event_date: eventDate,
+    milestones = [],
+  } = data;
+
+  const notReady = !published || !eventDate;
+
+  return (
+    <div className="mt-4 rounded-[14px] border border-line bg-bg p-4" data-testid="reminder-panel">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <span className="inline-flex items-center gap-1.5 text-ink">
+            <Users className="h-3.5 w-3.5 text-lime" />
+            {regs} registrant{regs === 1 ? "" : "s"}
+          </span>
+          {typeof daysUntil === "number" && (
+            <span className="rounded-full border border-line px-2 py-0.5">
+              {daysUntil > 0 ? `${daysUntil} day${daysUntil === 1 ? "" : "s"} to go`
+                : daysUntil === 0 ? "Today" : "Past event"}
+            </span>
+          )}
+          <span className={`rounded-full px-2 py-0.5 ${hasLink ? "text-lime border border-lime/40" : "border border-line"}`}>
+            {hasLink ? "Join link set" : "No join link"}
+          </span>
+        </div>
+        <button onClick={onRefresh} className="press text-xs text-muted hover:text-lime" data-testid="reminder-refresh">
+          {busy ? "Refreshing…" : "Refresh"}
+        </button>
+      </div>
+
+      {notReady ? (
+        <p className="mt-3 text-xs text-muted/80">
+          Countdown reminders begin once the event is <span className="text-ink/80">published</span> with a date.
+          Each registrant then gets a 7 / 3 / 2 / 1-day nudge automatically.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-line/70">
+          {milestones.map((m) => (
+            <li key={m.days_before} className="flex items-center justify-between gap-3 py-2">
+              <div className="flex items-baseline gap-2">
+                <span className="w-14 text-sm text-ink">{m.days_before} day{m.days_before === 1 ? "" : "s"}</span>
+                <span className="text-xs text-muted">{fmtDate(m.date)}</span>
+              </div>
+              <MilestoneStatus m={m} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {!notReady && (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted/70">
+          &ldquo;Sent&rdquo; means the reminder was handed to the mailer without error. To confirm inbox
+          delivery, check your email provider&apos;s logs.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MilestoneStatus({ m }) {
+  const pill = "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium";
+  if (m.when === "past") {
+    if (m.sent === 0 && m.failed === 0) {
+      return <span className={`${pill} border border-line text-muted`}>None sent</span>;
+    }
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className={`${pill} bg-lime/15 text-lime`}>{m.sent} sent</span>
+        {m.failed > 0 && <span className={`${pill} bg-destructive/15 text-destructive`}>{m.failed} failed</span>}
+      </span>
+    );
+  }
+  if (m.when === "today") {
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className={`${pill} bg-amber-400/15 text-amber-400`}>Due today</span>
+        <span className="text-[11px] text-muted">{m.sent} sent · {m.pending} pending</span>
+        {m.failed > 0 && <span className={`${pill} bg-destructive/15 text-destructive`}>{m.failed} failed</span>}
+      </span>
+    );
+  }
+  // upcoming
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={`${pill} border border-line text-muted`}>Scheduled</span>
+      <span className="text-[11px] text-muted">{m.pending} to send</span>
+    </span>
   );
 }

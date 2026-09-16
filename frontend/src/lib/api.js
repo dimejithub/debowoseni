@@ -227,6 +227,13 @@ export async function adminSendEventLink(id, segment = "all") {
   return r.data;
 }
 
+// Countdown-reminder readout for one event: registrant count + 7/3/2/1-day status.
+export async function adminEventReminderStatus(id) {
+  const headers = await authHeaders();
+  const r = await axios.get(`${API}/admin/events/${id}/reminder-status`, { headers });
+  return r.data;
+}
+
 // ---- Admin — dashboard stats ----
 export async function adminStats() {
   const headers = await authHeaders();

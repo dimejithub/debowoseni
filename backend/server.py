@@ -1866,6 +1866,84 @@ def admin_send_event_link(
     return {"ok": True, "recipient_count": len(recipients), "segment": payload.segment}
 
 
+def _event_reminder_status(event: dict) -> dict:
+    """Countdown-reminder readout for one event.
+
+    Answers the question Debo actually asks — "did the 7/3/2/1-day reminders go
+    out, and to how many?" — using the *same* registrant audience the sender
+    uses (event_reminders._registrants), so the numbers here match reality.
+    """
+    from datetime import timedelta as _timedelta
+
+    ev_date = event_reminders._parse_event_date(event.get("event_date"))
+    registrants = (
+        event_reminders._registrants(sb_admin, event["id"]) if event.get("id") else []
+    )
+    reg_count = len(registrants)
+
+    # Every reminder we've already recorded for this event, bucketed by milestone.
+    by_milestone: dict[int, dict] = {}
+    try:
+        rows = (
+            sb_admin.table("event_reminders")
+            .select("email,days_before,status")
+            .eq("event_id", event["id"])
+            .execute()
+        ).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Reminder status lookup failed for %s: %s", event.get("id"), exc)
+        rows = []
+    for r in rows:
+        b = by_milestone.setdefault(r.get("days_before"), {"sent": 0, "failed": 0})
+        if (r.get("status") or "sent") == "failed":
+            b["failed"] += 1
+        else:
+            b["sent"] += 1
+
+    today = event_reminders._today()
+    milestones = []
+    for d in event_reminders.REMINDER_MILESTONES:
+        b = by_milestone.get(d, {"sent": 0, "failed": 0})
+        reminded = b["sent"] + b["failed"]
+        on_date = (ev_date - _timedelta(days=d)) if ev_date else None
+        if on_date is None:
+            when = "unknown"
+        elif on_date < today:
+            when = "past"
+        elif on_date == today:
+            when = "today"
+        else:
+            when = "upcoming"
+        milestones.append(
+            {
+                "days_before": d,
+                "date": on_date.isoformat() if on_date else None,
+                "when": when,
+                "sent": b["sent"],
+                "failed": b["failed"],
+                # People yet to be reminded for a checkpoint that hasn't passed.
+                "pending": 0 if when == "past" else max(reg_count - reminded, 0),
+            }
+        )
+
+    return {
+        "event_id": event.get("id"),
+        "title": event.get("title"),
+        "event_date": event.get("event_date"),
+        "days_until": (ev_date - today).days if ev_date else None,
+        "registrant_count": reg_count,
+        "has_join_link": bool((event.get("online_url") or "").strip()),
+        "published": event.get("status") == "published",
+        "milestones": milestones,
+    }
+
+
+@api.get("/admin/events/{item_id}/reminder-status")
+def admin_event_reminder_status(item_id: str, user=Depends(require_user)):
+    """Per-event countdown-reminder readout for the admin panel."""
+    return _event_reminder_status(_admin_get("events", item_id))
+
+
 @api.post("/admin/campaigns/{item_id}/send")
 def admin_send_campaign(item_id: str, background: BackgroundTasks, user=Depends(require_user)):
     campaign = _admin_get("campaigns", item_id)
