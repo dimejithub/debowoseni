@@ -420,6 +420,64 @@
   }
   .live-ping { animation: live-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
 
+  /* --- Cinematic hero ------------------------------------------------ */
+  /* Faint blueprint grid, softly masked toward the edges. */
+  .hero-grid {
+    background-size: 58px 58px;
+    background-image:
+      linear-gradient(to right, rgba(243, 245, 242, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(243, 245, 242, 0.045) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+    mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+  }
+
+  /* Brushed-silver headline with physical depth. */
+  .text-silver {
+    background: linear-gradient(180deg, #ffffff 0%, #9aa39c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transform: translateZ(0); /* avoid WebKit clip glitch */
+    filter:
+      drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+  }
+
+  /* Deep, physical hero card with a lime mouse-sheen and gentle tilt. */
+  .premium-card {
+    background: linear-gradient(150deg, rgba(20, 26, 25, 0.92) 0%, rgba(8, 13, 13, 0.97) 100%);
+    box-shadow:
+      0 40px 100px -20px rgba(0, 0, 0, 0.9),
+      0 20px 40px -20px rgba(0, 0, 0, 0.8),
+      inset 0 1px 2px rgba(255, 255, 255, 0.06),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .premium-card__sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(188, 234, 62, 0.10) 0%,
+      transparent 45%
+    );
+    mix-blend-mode: screen;
+    opacity: var(--sheen-opacity, 0);
+    transition: opacity 0.3s ease;
+  }
+
+  /* Cinematic vignette to sink the frame edges. */
+  .hero-vignette {
+    background: radial-gradient(125% 95% at 50% 32%, transparent 42%, rgba(0, 0, 0, 0.62) 100%);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tile-rise, .spark-line, .spark-area, .spark-pulse, .spark-dot, .bar-grow,
     .dash-aurora, .tile-breathe, .live-ping, .tile-rise.tile-breathe {
@@ -431,6 +489,8 @@
     .dash-aurora { opacity: 0.4; }
     .press:active { transform: none; }
     [data-reveal], [data-reveal="in"] { opacity: 1; transform: none; transition: none; }
+    .premium-card { transform: none; transition: none; }
+    .premium-card__sheen { display: none; }
   }
 }
 
