@@ -78,7 +78,7 @@ export default function AdminSequences() {
       <header className="border-b border-line bg-surface/60 backdrop-blur">
         <div className="container-page flex h-16 items-center justify-between">
           <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted hover:text-lime">
-            <ArrowLeft className="h-4 w-4" /> CMS
+            <ArrowLeft className="h-4 w-4" /> Admin Panel
           </Link>
           <p className="font-display text-sm tracking-tight">Automations</p>
           <span />

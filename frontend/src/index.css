@@ -510,3 +510,51 @@
     border-top-color: inherit; border-bottom-color: inherit;
   }
 }
+
+/* ===========================================================================
+   CMS (admin) light theme
+   ---------------------------------------------------------------------------
+   The public site stays dark; everything under /admin renders inside `.cms`,
+   which flips the design tokens to the site's warm cream palette so the panel
+   reads bright and calm instead of dark. Every admin view is built on the token
+   utilities (bg-bg / bg-surface / text-ink / text-muted / border-line), so
+   redefining the variables re-themes the whole CMS at once. These rules are
+   intentionally unlayered, so they win over Tailwind's layered utilities.
+   ======================================================================== */
+.cms {
+  --bg: #f4efe6;          /* warm cream page, matching the site's light sections */
+  --surface: #ffffff;      /* white cards */
+  --surface-2: #faf6ee;    /* faint raised surface */
+  --line: #e7dfd0;         /* soft warm border */
+  --ink: #211d18;          /* near-black warm ink */
+  --muted: #6f6a60;        /* readable warm grey */
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* Lime stays the brand accent for solid fills, but as text on a light surface
+   it is unreadable — accent text and icons use a darker leaf green instead. */
+.cms .text-lime { color: #3f6b0f; }
+.cms .hover\:text-lime:hover { color: #3f6b0f; }
+.cms .group:hover .group-hover\:text-lime { color: #3f6b0f; }
+
+/* Dark ink on lime fills (buttons, status badges, active tabs, the primary tile). */
+.cms .btn-lime,
+.cms .text-bg { color: #14170d; }
+
+/* Amber warning banners: darken so they stay legible on cream. */
+.cms .text-amber-300,
+.cms .text-amber-400 { color: #b45309; }
+
+/* Keep the panel flat and clean like the light hero: drop the film-grain and
+   soften the lime aurora into a faint warm wash rather than a dark glow. */
+.cms .grain::before { display: none; }
+.cms .dash-aurora { opacity: 0.4; }
+
+/* Warmer, lighter hover than the dark theme's bright lime border + glow. */
+.cms .card-lift:hover,
+.cms .tile-rise:hover {
+  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+  box-shadow: 0 16px 34px -20px rgba(33, 29, 24, 0.30);
+}

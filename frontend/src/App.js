@@ -39,12 +39,15 @@ import Programmes from "@/pages/Programmes";
 import Community from "@/pages/Community";
 import Unsubscribe from "@/pages/Unsubscribe";
 import { AuthProvider } from "@/lib/auth";
+import { AdminThemeLayout } from "@/components/admin/AdminThemeLayout";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 // Old /journal URLs (pre-rename) redirect to /articles.
 function LegacyArticleRedirect() {
   const { slug } = useParams();
   return <Navigate to={`/articles/${slug}`} replace />;
 }
+
 
 function App() {
   return (
@@ -76,26 +79,32 @@ function App() {
             <Route path="/community" element={<Community />} />
           </Route>
           <Route path="/unsubscribe" element={<Unsubscribe />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/posts" element={<AdminPosts />} />
-          <Route path="/admin/new" element={<AdminEditor />} />
-          <Route path="/admin/edit/:id" element={<AdminEditor />} />
-          <Route path="/admin/testimonials" element={<AdminTestimonials />} />
-          <Route path="/admin/books" element={<AdminBooks />} />
-          <Route path="/admin/publications" element={<AdminPublications />} />
-          <Route path="/admin/events" element={<AdminEvents />} />
-          <Route path="/admin/subscribers" element={<AdminSubscribers />} />
-          <Route path="/admin/registrations" element={<AdminRegistrations />} />
-          <Route path="/admin/emails" element={<AdminCampaigns />} />
-          <Route path="/admin/emails/new" element={<AdminCampaignEditor />} />
-          <Route path="/admin/emails/:id" element={<AdminCampaignEditor />} />
-          <Route path="/admin/people" element={<AdminPeople />} />
-          <Route path="/admin/people/:email" element={<AdminPerson />} />
-          <Route path="/admin/automations" element={<AdminSequences />} />
-          <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
-          <Route path="/admin/newsletter" element={<AdminNewsletter />} />
-          <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+          {/* Admin: day/night themed shell. Login sits outside the sidebar
+              shell; every authenticated page renders inside it. */}
+          <Route element={<AdminThemeLayout />}>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route element={<AdminShell />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/posts" element={<AdminPosts />} />
+              <Route path="/admin/new" element={<AdminEditor />} />
+              <Route path="/admin/edit/:id" element={<AdminEditor />} />
+              <Route path="/admin/testimonials" element={<AdminTestimonials />} />
+              <Route path="/admin/books" element={<AdminBooks />} />
+              <Route path="/admin/publications" element={<AdminPublications />} />
+              <Route path="/admin/events" element={<AdminEvents />} />
+              <Route path="/admin/subscribers" element={<AdminSubscribers />} />
+              <Route path="/admin/registrations" element={<AdminRegistrations />} />
+              <Route path="/admin/emails" element={<AdminCampaigns />} />
+              <Route path="/admin/emails/new" element={<AdminCampaignEditor />} />
+              <Route path="/admin/emails/:id" element={<AdminCampaignEditor />} />
+              <Route path="/admin/people" element={<AdminPeople />} />
+              <Route path="/admin/people/:email" element={<AdminPerson />} />
+              <Route path="/admin/automations" element={<AdminSequences />} />
+              <Route path="/admin/automations/:id" element={<AdminSequenceEditor />} />
+              <Route path="/admin/newsletter" element={<AdminNewsletter />} />
+              <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
