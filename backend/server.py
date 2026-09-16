@@ -2419,6 +2419,42 @@ def _fetch_rows(table: str, columns: str) -> list[dict]:
         return []
 
 
+def _next_event_summary() -> Optional[dict]:
+    """The soonest upcoming published event, with its registrant count and the
+    next countdown nudge still due — for the dashboard's at-a-glance line."""
+    today = event_reminders._today()
+    try:
+        rows = (
+            sb_admin.table("events")
+            .select("*")
+            .eq("status", "published")
+            .gte("event_date", today.isoformat())
+            .order("event_date", desc=False)
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Next-event lookup failed: %s", exc)
+        return None
+    if not rows:
+        return None
+    status = _event_reminder_status(rows[0])
+    # Milestones are ordered 7 -> 1 (i.e. ascending date), so the first one that
+    # isn't already past is the soonest nudge still to come.
+    next_nudge = next(
+        (m for m in status["milestones"] if m["when"] in ("today", "upcoming")), None
+    )
+    return {
+        "title": status["title"],
+        "slug": rows[0].get("slug"),
+        "event_date": status["event_date"],
+        "days_until": status["days_until"],
+        "registrant_count": status["registrant_count"],
+        "has_join_link": status["has_join_link"],
+        "next_nudge": next_nudge,
+    }
+
+
 @api.get("/admin/stats")
 def admin_stats(user=Depends(require_user)):
     """Everything the dashboard shows. The counts are independent, so they run
@@ -2447,9 +2483,11 @@ def admin_stats(user=Depends(require_user)):
             "bounced": ex.submit(_count, "campaign_sends", status="bounced"),
             "contact": ex.submit(_count, "contact_messages"),
         }
+        f_next_event = ex.submit(_next_event_summary)
         subscribers = f_subscribers.result()
         regs = f_regs.result()
         c = {k: fut.result() for k, fut in f.items()}
+        next_event = f_next_event.result()
 
     # Growth over the last 30 days, bucketed by day for the sparkline.
     from collections import Counter
@@ -2509,6 +2547,7 @@ def admin_stats(user=Depends(require_user)):
             "tracking_configured": bool(RESEND_WEBHOOK_SECRET),
         },
         "contact_messages": c["contact"],
+        "next_event": next_event,
         "mail_configured": mailer.enabled,
         "automation_scheduler_configured": bool(AUTOMATION_TOKEN),
     }
