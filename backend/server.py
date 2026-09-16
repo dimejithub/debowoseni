@@ -2562,6 +2562,92 @@ def _next_event_summary() -> Optional[dict]:
     }
 
 
+def _upcoming_events(limit: int = 4) -> list[dict]:
+    """The next few published events, each with its registrant count."""
+    today = event_reminders._today()
+    try:
+        rows = (
+            sb_admin.table("events")
+            .select("*")
+            .eq("status", "published")
+            .gte("event_date", today.isoformat())
+            .order("event_date", desc=False)
+            .limit(limit)
+            .execute()
+        ).data or []
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Upcoming-events lookup failed: %s", exc)
+        return []
+    out = []
+    for e in rows:
+        ev_date = event_reminders._parse_event_date(e.get("event_date"))
+        out.append(
+            {
+                "title": e.get("title"),
+                "slug": e.get("slug"),
+                "event_date": e.get("event_date"),
+                "days_until": (ev_date - today).days if ev_date else None,
+                "location": e.get("location"),
+                "registrant_count": (
+                    len(event_reminders._registrants(sb_admin, e["id"])) if e.get("id") else 0
+                ),
+            }
+        )
+    return out
+
+
+def _recent_activity(limit: int = 7) -> list[dict]:
+    """Newest sign-ups, registrations and enquiries, merged into one feed."""
+    items: list[dict] = []
+
+    def _grab(table, columns):
+        try:
+            return (
+                sb_admin.table(table).select(columns)
+                .order("created_at", desc=True).limit(limit).execute()
+            ).data or []
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Recent %s lookup failed: %s", table, exc)
+            return []
+
+    for s in _grab("subscribers", "email,name,created_at"):
+        items.append({
+            "kind": "subscriber",
+            "name": s.get("name") or s.get("email") or "Someone",
+            "detail": "joined the mailing list",
+            "at": s.get("created_at"),
+        })
+
+    regs = _grab("event_registrations", "email,name,created_at,event_id")
+    ev_ids = [r.get("event_id") for r in regs if r.get("event_id")]
+    titles: dict[str, str] = {}
+    if ev_ids:
+        try:
+            evs = (sb_admin.table("events").select("id,title").in_("id", ev_ids).execute()).data or []
+            titles = {e["id"]: e.get("title") for e in evs}
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Recent-activity event join failed: %s", exc)
+    for r in regs:
+        items.append({
+            "kind": "registration",
+            "name": r.get("name") or r.get("email") or "Someone",
+            "detail": f"registered for {titles.get(r.get('event_id')) or 'an event'}",
+            "at": r.get("created_at"),
+        })
+
+    for m in _grab("contact_messages", "name,email,created_at"):
+        items.append({
+            "kind": "enquiry",
+            "name": m.get("name") or m.get("email") or "Someone",
+            "detail": "sent an enquiry",
+            "at": m.get("created_at"),
+        })
+
+    items = [i for i in items if i.get("at")]
+    items.sort(key=lambda i: i["at"], reverse=True)
+    return items[:limit]
+
+
 @api.get("/admin/stats")
 def admin_stats(user=Depends(require_user)):
     """Everything the dashboard shows. The counts are independent, so they run
@@ -2591,10 +2677,14 @@ def admin_stats(user=Depends(require_user)):
             "contact": ex.submit(_count, "contact_messages"),
         }
         f_next_event = ex.submit(_next_event_summary)
+        f_upcoming = ex.submit(_upcoming_events, 4)
+        f_activity = ex.submit(_recent_activity, 7)
         subscribers = f_subscribers.result()
         regs = f_regs.result()
         c = {k: fut.result() for k, fut in f.items()}
         next_event = f_next_event.result()
+        upcoming_events = f_upcoming.result()
+        recent_activity = f_activity.result()
 
     # Growth over the last 30 days, bucketed by day for the sparkline.
     from collections import Counter
@@ -2655,6 +2745,8 @@ def admin_stats(user=Depends(require_user)):
         },
         "contact_messages": c["contact"],
         "next_event": next_event,
+        "upcoming_events": upcoming_events,
+        "recent_activity": recent_activity,
         "mail_configured": mailer.enabled,
         "automation_scheduler_configured": bool(AUTOMATION_TOKEN) or INTERNAL_SCHEDULER_ENABLED,
     }
