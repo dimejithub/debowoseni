@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -2087,19 +2088,83 @@ def admin_run_sequences(item_id: str, user=Depends(require_user)):
 # scheduler (see .github/workflows/run-automations.yml) calls this on a
 # timer. It doubles as a keep-warm ping for the backend.
 # ---------------------------------------------------------------------------
+def _run_automation_tick() -> dict:
+    """Run one automation tick and return its report.
+
+    The same tick drives the drip sequences, the event countdown reminders and
+    the scheduled journal digest (a no-op except the hour it is configured to
+    send). Idempotent — every send is de-duped — so it is safe to run from the
+    internal scheduler and an external cron at once; nothing is ever sent twice.
+    """
+    sequences = automations.run_due_steps(sb_admin)
+    reminders = event_reminders.run_due_reminders(sb_admin)
+    digest = newsletter.run_if_due(sb_admin, deliver_campaign)
+    return {"sequences": sequences, "event_reminders": reminders, "newsletter": digest}
+
+
 @api.post("/tasks/run-sequences")
 def run_sequences_task(x_task_token: Optional[str] = Header(default=None)):
     if not AUTOMATION_TOKEN:
         raise HTTPException(503, "AUTOMATION_TOKEN is not configured.")
     if x_task_token != AUTOMATION_TOKEN:
         raise HTTPException(401, "Bad task token")
-    # The same hourly tick drives both the drip sequences and the scheduled
-    # journal digest. The newsletter is a no-op on all but the one hour a week
-    # (or fortnight/month) it is configured to send.
-    sequences = automations.run_due_steps(sb_admin)
-    reminders = event_reminders.run_due_reminders(sb_admin)
-    digest = newsletter.run_if_due(sb_admin, deliver_campaign)
-    return {"sequences": sequences, "event_reminders": reminders, "newsletter": digest}
+    return _run_automation_tick()
+
+
+# ---------------------------------------------------------------------------
+# Internal automation scheduler
+#
+# The backend runs on an always-on plan, so it drives its own automation tick
+# instead of depending on an external cron. A daemon thread wakes every
+# AUTOMATION_INTERVAL_MINUTES (default 15) and runs the same idempotent tick as
+# POST /tasks/run-sequences. Because every send is de-duped, this coexists
+# safely with the GitHub Action or any other cron — nothing is sent twice.
+#
+# Set INTERNAL_SCHEDULER=off to disable it (e.g. to drive the tick purely from
+# an external cron).
+# ---------------------------------------------------------------------------
+INTERNAL_SCHEDULER_ENABLED = os.environ.get("INTERNAL_SCHEDULER", "on").strip().lower() not in (
+    "off", "0", "false", "no",
+)
+try:
+    AUTOMATION_INTERVAL_SECONDS = max(
+        60, int(os.environ.get("AUTOMATION_INTERVAL_MINUTES", "15")) * 60
+    )
+except ValueError:
+    AUTOMATION_INTERVAL_SECONDS = 15 * 60
+
+_scheduler_started = False
+
+
+def _automation_scheduler_loop() -> None:
+    # A short initial pause lets a fresh deploy settle and the DB connection warm
+    # before the first tick.
+    time.sleep(45)
+    while True:
+        try:
+            report = _run_automation_tick()
+            sent = ((report.get("sequences") or {}).get("sent", 0)) + (
+                (report.get("event_reminders") or {}).get("sent", 0)
+            )
+            if sent:
+                logger.info("Internal scheduler tick: %d email(s) sent.", sent)
+        except Exception as exc:  # noqa: BLE001 — a bad tick must never kill the thread
+            logger.warning("Internal scheduler tick failed: %s", exc)
+        time.sleep(AUTOMATION_INTERVAL_SECONDS)
+
+
+def _start_internal_scheduler() -> None:
+    global _scheduler_started
+    if _scheduler_started or not INTERNAL_SCHEDULER_ENABLED:
+        return
+    _scheduler_started = True
+    threading.Thread(
+        target=_automation_scheduler_loop, name="automation-scheduler", daemon=True
+    ).start()
+    logger.info(
+        "Internal automation scheduler started (every %d min).",
+        AUTOMATION_INTERVAL_SECONDS // 60,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2591,7 +2656,7 @@ def admin_stats(user=Depends(require_user)):
         "contact_messages": c["contact"],
         "next_event": next_event,
         "mail_configured": mailer.enabled,
-        "automation_scheduler_configured": bool(AUTOMATION_TOKEN),
+        "automation_scheduler_configured": bool(AUTOMATION_TOKEN) or INTERNAL_SCHEDULER_ENABLED,
     }
 
 
@@ -2709,6 +2774,11 @@ def seed_admin():
         logger.info("Admin %s created.", ADMIN_EMAIL)
     except Exception as exc:
         logger.warning("Admin seeding skipped: %s", exc)
+
+
+@app.on_event("startup")
+def _launch_internal_scheduler():
+    _start_internal_scheduler()
 
 
 app.include_router(api)
