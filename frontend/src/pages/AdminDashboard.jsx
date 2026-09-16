@@ -2,6 +2,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowUpRight,
+  BellRing,
   BookOpen,
   Calendar,
   Contact,
@@ -219,6 +220,62 @@ function Eyebrow({ children }) {
   );
 }
 
+// e.g. "Fri 18 Sep"
+function fmtShortDate(iso) {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// "today" / "tomorrow" / "in N days"
+function relDays(days) {
+  if (typeof days !== "number") return "";
+  if (days <= 0) return "today";
+  if (days === 1) return "tomorrow";
+  return `in ${days} days`;
+}
+
+/**
+ * At-a-glance line for the soonest upcoming event: how far off it is, how many
+ * are registered, and when the next countdown reminder goes out — so Debo can
+ * see the mailing is on track without opening each event.
+ */
+function NextEventLine({ ev }) {
+  if (!ev) return null;
+  const regs = ev.registrant_count ?? 0;
+  const n = ev.next_nudge;
+  let nudge;
+  if (!n) {
+    nudge = (ev.days_until ?? 1) <= 0 ? "Happening today" : "All countdown reminders sent";
+  } else if (n.when === "today") {
+    nudge = `Sending the ${n.days_before}-day reminder today — ${n.sent} sent${n.pending ? `, ${n.pending} pending` : ""}`;
+  } else {
+    nudge = `Next reminder: ${n.days_before}-day nudge on ${fmtShortDate(n.date)}`;
+  }
+  return (
+    <Link
+      to="/admin/events"
+      className="press group mb-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[16px] border border-lime/25 bg-gradient-to-r from-[color-mix(in_srgb,var(--lime)_8%,var(--surface))] to-surface px-5 py-4"
+      data-testid="next-event-line"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-lime/15">
+        <BellRing className="h-4 w-4 text-lime" />
+      </span>
+      <span className="font-display text-base tracking-tight text-ink">{ev.title}</span>
+      <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+        {relDays(ev.days_until)}
+        {ev.event_date ? ` · ${fmtShortDate(ev.event_date)}` : ""}
+      </span>
+      <span className="text-xs text-muted">
+        {regs} registrant{regs === 1 ? "" : "s"}
+      </span>
+      <span className="text-xs text-lime/90">· {nudge}</span>
+      <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted/40 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
+    </Link>
+  );
+}
+
 // Last-known stats are cached in the browser so the dashboard paints its real
 // numbers instantly on the next visit — even while a cold Render backend is
 // still waking up — then quietly refreshes them. Nothing sensitive here, just
@@ -354,6 +411,7 @@ export default function AdminDashboard() {
             </span>
             <span className="text-[0.62rem] font-medium uppercase tracking-[0.18em] text-lime/80">Live</span>
           </div>
+          {stats?.next_event && <NextEventLine ev={stats.next_event} />}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="admin-stats">
             <div className="col-span-2 lg:col-span-2 lg:row-span-1">
               <Stat
