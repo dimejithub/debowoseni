@@ -171,25 +171,29 @@ export default function Home() {
             }}
           >
             <div className="pointer-events-none absolute -inset-px rounded-[32px] ring-1 ring-inset ring-white/5" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-0 h-px w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-lime to-transparent"
+            />
 
             <Reveal>
               <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.28em] text-ink/70">
                 <span className="inline-block h-px w-8 bg-lime/60" />
-                Debo&apos; Owoseni
+                Transformation Coaching
                 <span className="inline-block h-px w-8 bg-lime/60" />
               </p>
             </Reveal>
             <Reveal delay={0.08}>
               <h1 className="mx-auto mt-7 max-w-4xl text-ink">
-                A mission to catalyse transformation in{" "}
-                <span className="font-display-italic text-lime">one million lives</span>{" "}
-                <span className="font-display-italic">by 2035…</span>
+                Move from uncertainty to{" "}
+                <span className="font-display-italic text-lime">confident, purposeful action</span>.
               </h1>
             </Reveal>
             <Reveal delay={0.18}>
               <p className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85">
-                Powering bold and transformative ideas with strategy, creativity, and growth —
-                at the intersection of faith, knowledge, and service.
+                I help purpose-driven individuals and leaders define what matters, strengthen their
+                confidence, and develop practical strategies for meaningful personal and professional
+                growth.
               </p>
             </Reveal>
             <Reveal delay={0.28}>
