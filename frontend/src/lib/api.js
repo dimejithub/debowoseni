@@ -234,6 +234,13 @@ export async function adminEventReminderStatus(id) {
   return r.data;
 }
 
+// Send the real reminder email for this event to the signed-in admin's inbox.
+export async function adminSendTestReminder(id) {
+  const headers = await authHeaders();
+  const r = await axios.post(`${API}/admin/events/${id}/test-reminder`, {}, { headers });
+  return r.data;
+}
+
 // ---- Admin — dashboard stats ----
 export async function adminStats() {
   const headers = await authHeaders();

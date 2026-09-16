@@ -1944,6 +1944,48 @@ def admin_event_reminder_status(item_id: str, user=Depends(require_user)):
     return _event_reminder_status(_admin_get("events", item_id))
 
 
+@api.post("/admin/events/{item_id}/test-reminder")
+def admin_test_reminder(item_id: str, user=Depends(require_user)):
+    """Send the real countdown-reminder email for this event to the signed-in
+    admin's own inbox, so Debo can preview exactly what registrants receive —
+    built and rendered through the live mailer pipeline.
+
+    Safety: the recipient is always the authenticated admin's own address, never
+    a value from the request, so this can't be used to mail anyone else.
+    """
+    to = getattr(user, "email", None) or (user.get("email") if isinstance(user, dict) else None)
+    if not to:
+        raise HTTPException(400, "Your admin account has no email to send the test to.")
+    event = _admin_get("events", item_id)
+
+    # Mirror a live send: preview the nearest milestone still ahead (falling back
+    # to the 1-day copy when the event is today or already past).
+    ev_date = event_reminders._parse_event_date(event.get("event_date"))
+    days_before = 2
+    if ev_date:
+        days_until = (ev_date - event_reminders._today()).days
+        ahead = [d for d in event_reminders.REMINDER_MILESTONES if d <= max(days_until, 1)]
+        days_before = max(ahead) if ahead else 1
+
+    first_name = ((to.split("@")[0] or "there").split(".")[0] or "there").title()
+    subject, preheader, body = event_reminders.build_reminder(event, days_before, first_name)
+    result = mailer.send(
+        to,
+        f"[TEST] {subject}",
+        mailer.render_layout(mailer.markdown_to_html(body), preheader=preheader),
+        text=mailer.to_plain_text(body),
+    )
+    if not result.get("ok"):
+        raise HTTPException(502, f"Test send failed: {result.get('error') or 'unknown error'}")
+    return {
+        "ok": True,
+        "to": to,
+        "days_before": days_before,
+        # True when RESEND_API_KEY isn't set: the send was logged, not delivered.
+        "dry_run": bool(result.get("skipped")),
+    }
+
+
 @api.post("/admin/campaigns/{item_id}/send")
 def admin_send_campaign(item_id: str, background: BackgroundTasks, user=Depends(require_user)):
     campaign = _admin_get("campaigns", item_id)
