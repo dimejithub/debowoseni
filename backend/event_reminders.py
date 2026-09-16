@@ -31,6 +31,10 @@ logger = logging.getLogger("debowoseni.event_reminders")
 # readability — the logic keys off exact day-count matches, not order.
 REMINDER_MILESTONES = [7, 3, 2, 1]
 
+# Registration statuses that mean the person is no longer attending — everyone
+# else (registered, attended, waitlisted, imported/blank) gets the countdown.
+_SKIP_STATUSES = {"cancelled", "canceled", "declined", "removed", "no_show", "no-show"}
+
 # One run sends at most this many reminders, so a large event can never hold the
 # scheduled task open indefinitely. The next hourly tick picks up the remainder
 # (still the same milestone day, so nothing is missed).
@@ -106,17 +110,26 @@ def build_reminder(event: dict, days_before: int, first_name: str) -> tuple[str,
 
 
 def _registrants(sb, event_id: str) -> list[dict]:
+    """Everyone signed up for the event, except those explicitly cancelled.
+
+    We include registered, attended, waitlisted and any imported/blank status —
+    anyone who put their name down should hear the countdown. Only clearly
+    dropped statuses are excluded.
+    """
     try:
-        return (
+        rows = (
             sb.table("event_registrations")
             .select("email,name,status")
             .eq("event_id", event_id)
-            .in_("status", ["registered", "attended"])
             .execute()
         ).data or []
     except Exception as exc:  # noqa: BLE001
         logger.warning("Registrant lookup failed for %s: %s", event_id, exc)
         return []
+    return [
+        r for r in rows
+        if (r.get("status") or "").strip().lower() not in _SKIP_STATUSES
+    ]
 
 
 def _already_sent(sb, event_id: str, days_before: int) -> set[str]:

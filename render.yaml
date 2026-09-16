@@ -73,3 +73,37 @@ services:
       # the admin panel to work from a branch preview.
       - key: CORS_ORIGINS
         value: https://debowoseni.com,https://www.debowoseni.com
+
+  # ---------------------------------------------------------------------------
+  # Scheduled automations. Render-native cron that fires the same tick the
+  # GitHub Action does — drip sequences, event countdown reminders (7/3/2/1
+  # days), and the journal digest. Render's scheduler is dependable, so this
+  # replaces GitHub Actions' throttled cron (which only ran every few hours).
+  # The endpoint is idempotent (each send is de-duped), so running alongside
+  # the GitHub Action — or overlapping ticks — never double-sends.
+  #
+  # The backend host and the automation token are wired automatically from the
+  # web service above, so there is nothing to paste for this job.
+  # ---------------------------------------------------------------------------
+  - type: cron
+    name: debowoseni-automations
+    runtime: python
+    region: frankfurt
+    rootDir: backend
+    schedule: "*/15 * * * *" # every 15 minutes
+    buildCommand: pip install --quiet httpx
+    startCommand: >-
+      python -c "import os,httpx;r=httpx.post('https://'+os.environ['BACKEND_HOST']+'/api/tasks/run-sequences',headers={'X-Task-Token':os.environ['AUTOMATION_TOKEN']},timeout=120.0);print(r.status_code,r.text[:400]);r.raise_for_status()"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: BACKEND_HOST
+        fromService:
+          type: web
+          name: debowoseni-api
+          property: host
+      - key: AUTOMATION_TOKEN
+        fromService:
+          type: web
+          name: debowoseni-api
+          envVarKey: AUTOMATION_TOKEN
