@@ -65,20 +65,18 @@ function useCountUp(value, duration = 1000) {
 // "—" instead of blanking the panel.
 const num = (value, fallback = "—") => (typeof value === "number" ? value : fallback);
 
-// Icon-badge gradients drawn from the debowoseni palette — lime (primary),
-// warm ink, and the brand violet — so the dashboard stays on-brand in either
-// theme. White icons read on all three.
-const G_LIME = "from-[#7bc11a] to-[#4f8a0f]";
-const G_INK = "from-[#3a352b] to-[#1c1916]";
-const G_VIOLET = "from-[#8079ff] to-[#5a51df]";
+// Every icon badge uses the brand lime gradient with a dark ink glyph — the
+// same treatment as the lime buttons. Bright lime reads with high contrast on
+// both the cream (light) and dark cards, and the dark glyph reads on the lime.
+const G_LIME = "from-[#cbef5a] to-[#9ad11e]";
 
 function MaterialStat({ label, value, foot, footAccent, Icon, gradient, to }) {
   const shown = useCountUp(value);
   const body = (
     <>
       <div className="flex items-start justify-between">
-        <span className={`-mt-9 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr ${gradient} shadow-lg shadow-black/15`}>
-          <Icon className="h-7 w-7 text-white" />
+        <span className={`-mt-9 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr ${gradient} shadow-lg shadow-lime-900/20`}>
+          <Icon className="h-7 w-7 text-[#16210a]" strokeWidth={2.25} />
         </span>
         <div className="pt-1 text-right">
           <p className="text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-muted">{label}</p>
@@ -254,12 +252,12 @@ export default function AdminDashboard() {
       foot: "in the last 30 days",
     },
     {
-      label: "Registrations", to: "/admin/registrations", Icon: Users, gradient: G_INK,
+      label: "Registrations", to: "/admin/registrations", Icon: Users, gradient: G_LIME,
       value: num(stats?.registrations?.total),
       foot: stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : "",
     },
     {
-      label: "Emails sent", to: "/admin/emails", Icon: Send, gradient: G_VIOLET,
+      label: "Emails sent", to: "/admin/emails", Icon: Send, gradient: G_LIME,
       value: num(stats?.campaigns?.sent),
       foot: stats ? `${stats.campaigns?.total ?? 0} campaigns created` : "",
     },
@@ -269,12 +267,12 @@ export default function AdminDashboard() {
       foot: stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : "",
     },
     {
-      label: "Automations", to: "/admin/automations", Icon: Workflow, gradient: G_INK,
+      label: "Automations", to: "/admin/automations", Icon: Workflow, gradient: G_LIME,
       value: num(stats?.automations?.sequences),
       foot: stats ? `${stats.automations?.enrolled ?? 0} people mid-sequence` : "",
     },
     {
-      label: "Programmes", to: "/admin/people", Icon: GraduationCap, gradient: G_VIOLET,
+      label: "Programmes", to: "/admin/people", Icon: GraduationCap, gradient: G_LIME,
       value: num(stats?.enrolments?.active),
       foot: stats ? `${stats.enrolments?.completed ?? 0} completed` : "",
     },
@@ -284,7 +282,7 @@ export default function AdminDashboard() {
       foot: "via the contact form",
     },
     {
-      label: "Published", to: "/admin/posts", Icon: Sparkles, gradient: G_INK,
+      label: "Published", to: "/admin/posts", Icon: Sparkles, gradient: G_LIME,
       value: stats?.content
         ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
         : "—",
