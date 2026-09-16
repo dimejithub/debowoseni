@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, ImageIcon, Plus, Save, Trash2, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
 import { GroupHeading } from "@/components/admin/GroupHeading";
@@ -94,6 +94,39 @@ export default function AdminEvents() {
     if (!window.confirm("Delete this event?")) return;
     try { await adminEvents.remove(id); toast.success("Deleted."); refresh(); }
     catch (err) { toast.error("Couldn't delete", { description: err?.message || "" }); }
+  };
+
+  // Clone an existing event into a fresh draft — ideal for recurring events.
+  // Reusable details carry over; the date, slug, gallery and status reset so it's
+  // a clean new draft that won't announce until deliberately published.
+  const duplicate = (ev) => {
+    setEditingId(null);
+    setDraft({
+      ...EMPTY,
+      title: ev.title || "",
+      description: ev.description || "",
+      cover_url: ev.cover_url || "",
+      video_url: ev.video_url || "",
+      location: ev.location || "",
+      location_type: ev.location_type || "in_person",
+      online_url: ev.online_url || "",
+      online_details: ev.online_details || "",
+      start_time: ev.start_time || "",
+      end_time: ev.end_time || "",
+      is_free: ev.is_free ?? true,
+      price: ev.price ?? "",
+      currency: ev.currency || "GBP",
+      register_url: ev.register_url || "",
+      registration_open: ev.registration_open ?? false,
+      capacity: ev.capacity ?? "",
+      sort_order: ev.sort_order ?? 0,
+      // reset on purpose: slug (regenerates), event_date (pick the new date),
+      // gallery (photos are per-event), status (stays Draft until published)
+    });
+    window.scrollTo(0, 0);
+    toast.success("Duplicated into a new draft", {
+      description: "Set the new date, then click Add event.",
+    });
   };
 
   // Persist the joining link/details, then broadcast them to the chosen audience.
@@ -444,8 +477,11 @@ export default function AdminEvents() {
                     </div>
                     <p className="font-display text-xl tracking-tight">{ev.title}</p>
                     <p className="text-xs text-muted">{(ev.gallery || []).length} image{(ev.gallery || []).length === 1 ? "" : "s"}</p>
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <button onClick={() => edit(ev)} className="btn-ghost text-xs">Edit</button>
+                      <button onClick={() => duplicate(ev)} className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-lime hover:text-lime" data-testid={`duplicate-event-${ev.id}`}>
+                        <Copy className="h-3.5 w-3.5" /> Duplicate
+                      </button>
                       <button onClick={() => remove(ev.id)} className="press inline-flex items-center gap-1 rounded-full border border-line bg-bg px-3 py-2 text-xs hover:border-destructive hover:text-destructive">
                         <Trash2 className="h-3.5 w-3.5" /> Delete
                       </button>
