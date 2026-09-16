@@ -175,7 +175,13 @@ def render_layout(
         "Helvetica,Arial,sans-serif;"
     )
     return f"""<!doctype html>
-<html><body style="margin:0;padding:0;background:#eceae6;">
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#eceae6;">
 {preheader_block}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eceae6;padding:32px 16px;{font}">
   <tr><td align="center">

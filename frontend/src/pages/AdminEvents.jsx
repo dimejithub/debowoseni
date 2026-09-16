@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, BellRing, ChevronDown, Copy, ImageIcon, Plus, Save, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, BellRing, ChevronDown, Copy, ImageIcon, Plus, Save, Send, Trash2, Users, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useReveal } from "@/lib/useReveal";
 import { GroupHeading } from "@/components/admin/GroupHeading";
-import { adminEvents, adminUpload, adminSendEventLink, adminEventReminderStatus } from "@/lib/api";
+import { adminEvents, adminUpload, adminSendEventLink, adminEventReminderStatus, adminSendTestReminder } from "@/lib/api";
 
 const EMPTY = {
   title: "", slug: "", description: "", cover_url: "", video_url: "",
@@ -553,6 +553,31 @@ function fmtDate(iso) {
 
 // The 7/3/2/1-day countdown readout for a single event.
 function ReminderPanel({ data, busy, onRefresh }) {
+  const [testing, setTesting] = useState(false);
+
+  const sendTest = async () => {
+    if (!data?.event_id) return;
+    setTesting(true);
+    try {
+      const res = await adminSendTestReminder(data.event_id);
+      if (res.dry_run) {
+        toast.info("Email isn't configured", {
+          description: "The test was logged, not delivered. Set RESEND_API_KEY on the backend to send for real.",
+        });
+      } else {
+        toast.success("Test sent", {
+          description: `Check ${res.to} — it's the ${res.days_before}-day reminder for this event.`,
+        });
+      }
+    } catch (err) {
+      toast.error("Couldn't send test", {
+        description: err?.response?.data?.detail || err?.message || "",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   if (busy && !data) {
     return (
       <div className="mt-4 h-32 animate-pulse rounded-[14px] border border-line bg-bg" data-testid="reminder-panel" />
@@ -613,10 +638,20 @@ function ReminderPanel({ data, busy, onRefresh }) {
         </ul>
       )}
       {!notReady && (
-        <p className="mt-3 text-[11px] leading-relaxed text-muted/70">
-          &ldquo;Sent&rdquo; means the reminder was handed to the mailer without error. To confirm inbox
-          delivery, check your email provider&apos;s logs.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="max-w-sm text-[11px] leading-relaxed text-muted/70">
+            &ldquo;Sent&rdquo; means handed to the mailer without error. Send yourself a test to
+            see the real email in your inbox.
+          </p>
+          <button
+            onClick={sendTest}
+            disabled={testing}
+            className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs hover:border-lime hover:text-lime disabled:opacity-50"
+            data-testid="send-test-reminder"
+          >
+            <Send className="h-3.5 w-3.5" /> {testing ? "Sending…" : "Send test to my inbox"}
+          </button>
+        </div>
       )}
     </div>
   );
