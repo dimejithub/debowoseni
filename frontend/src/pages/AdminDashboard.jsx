@@ -1,25 +1,16 @@
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   BellRing,
-  BookOpen,
-  Calendar,
-  Contact,
-  FileText,
   GraduationCap,
   Inbox,
-  LayoutDashboard,
   LogOut,
   Mail,
-  Menu,
   MessageCircle,
-  Newspaper,
-  Quote,
   Send,
   Sparkles,
   Users,
   Workflow,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -29,11 +20,7 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-/**
- * Rolls a number up to its target the first time a real value arrives, so each
- * metric reads as "counting in" rather than snapping. Non-numbers (the "—"
- * fallback) pass straight through, and reduced-motion users skip the animation.
- */
+/** Rolls a number up to its target the first time a real value arrives. */
 function useCountUp(value, duration = 1000) {
   const [display, setDisplay] = useState(typeof value === "number" ? 0 : value);
   const fromRef = useRef(0);
@@ -74,120 +61,16 @@ function useCountUp(value, duration = 1000) {
   return typeof display === "number" ? display.toLocaleString() : display;
 }
 
-// Sidebar navigation, grouped so it reads as two jobs — publishing the site,
-// and running the audience.
-const NAV_GROUPS = [
-  {
-    label: "Content",
-    items: [
-      { to: "/admin/posts", label: "Journal", Icon: FileText },
-      { to: "/admin/testimonials", label: "Testimonials", Icon: Quote },
-      { to: "/admin/books", label: "Books", Icon: BookOpen },
-      { to: "/admin/publications", label: "Publications", Icon: GraduationCap },
-      { to: "/admin/events", label: "Events", Icon: Calendar },
-    ],
-  },
-  {
-    label: "Audience & mail",
-    items: [
-      { to: "/admin/people", label: "People", Icon: Contact },
-      { to: "/admin/registrations", label: "Registrations", Icon: Users },
-      { to: "/admin/enquiries", label: "Enquiries", Icon: Inbox },
-      { to: "/admin/emails", label: "Emails", Icon: Send },
-      { to: "/admin/newsletter", label: "Newsletter", Icon: Newspaper },
-      { to: "/admin/automations", label: "Automations", Icon: Workflow },
-      { to: "/admin/subscribers", label: "Subscribers", Icon: Mail },
-    ],
-  },
-];
-
-// The frontend and backend deploy independently, so the dashboard can briefly
-// get a stats payload from an older backend missing some keys. Every read goes
-// through this so a missing key degrades to "—" instead of blanking the panel.
+// The frontend and backend deploy independently, so a missing key degrades to
+// "—" instead of blanking the panel.
 const num = (value, fallback = "—") => (typeof value === "number" ? value : fallback);
 
 // Icon-badge gradients drawn from the debowoseni palette — lime (primary),
-// warm ink, and the brand violet — rather than a generic multi-colour set, so
-// the dashboard stays on-brand. White icons read on all three.
+// warm ink, and the brand violet — so the dashboard stays on-brand in either
+// theme. White icons read on all three.
 const G_LIME = "from-[#7bc11a] to-[#4f8a0f]";
 const G_INK = "from-[#3a352b] to-[#1c1916]";
 const G_VIOLET = "from-[#8079ff] to-[#5a51df]";
-
-/* ------------------------------------------------------------------ Sidebar */
-
-function NavItem({ to, label, Icon, active, onNavigate }) {
-  return (
-    <Link
-      to={to}
-      onClick={onNavigate}
-      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-        active
-          ? "bg-lime/20 font-semibold text-ink"
-          : "text-muted hover:bg-lime/10 hover:text-ink"
-      }`}
-    >
-      <span
-        className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
-          active ? "bg-lime text-bg" : "bg-bg text-muted group-hover:text-lime"
-        }`}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
-      {label}
-    </Link>
-  );
-}
-
-function Sidebar({ open, onClose, pathname }) {
-  return (
-    <>
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm md:hidden"
-          onClick={onClose}
-          aria-hidden
-        />
-      )}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-surface transition-transform duration-300 md:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-        data-testid="cms-sidebar"
-      >
-        <div className="flex h-16 items-center justify-between border-b border-line px-5">
-          <Link to="/admin" className="font-display text-base tracking-tight text-ink" onClick={onClose}>
-            debo owoseni<span className="text-lime">.</span>
-          </Link>
-          <button className="text-muted hover:text-ink md:hidden" onClick={onClose} aria-label="Close menu">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-          <NavItem to="/admin" label="Dashboard" Icon={LayoutDashboard} active={pathname === "/admin"} onNavigate={onClose} />
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted/70">
-                {group.label}
-              </p>
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavItem key={item.to} {...item} active={pathname === item.to} onNavigate={onClose} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        <div className="border-t border-line px-5 py-4">
-          <Link to="/" className="text-xs text-muted hover:text-lime">← Back to the public site</Link>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-/* -------------------------------------------------------------- Stat cards */
 
 function MaterialStat({ label, value, foot, footAccent, Icon, gradient, to }) {
   const shown = useCountUp(value);
@@ -206,21 +89,15 @@ function MaterialStat({ label, value, foot, footAccent, Icon, gradient, to }) {
       </div>
       <div className="my-3.5 border-t border-line" />
       <p className="text-xs leading-relaxed text-muted">
-        {footAccent && <span className="font-semibold text-emerald-600">{footAccent} </span>}
+        {footAccent && <span className="font-semibold text-emerald-500">{footAccent} </span>}
         {foot}
       </p>
     </>
   );
   const cls =
     "block rounded-2xl border border-line bg-surface p-4 pt-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
-  return to ? (
-    <Link to={to} className={cls}>{body}</Link>
-  ) : (
-    <div className={cls}>{body}</div>
-  );
+  return to ? <Link to={to} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
 }
-
-/* ----------------------------------------------------------------- Charts */
 
 // 30-day subscriber growth as a filled area + line, sized for a full card.
 function GrowthChart({ points }) {
@@ -245,13 +122,11 @@ function GrowthChart({ points }) {
         </linearGradient>
       </defs>
       <path d={area} fill="url(#grow)" />
-      <path d={line} fill="none" stroke="#5f9e12" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={lastX} cy={lastY} r="3.5" fill="#5f9e12" vectorEffect="non-scaling-stroke" />
+      <path d={line} fill="none" stroke="#78be1f" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={lastX} cy={lastY} r="3.5" fill="#78be1f" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
-
-/* -------------------------------------------------------------- Next event */
 
 function fmtShortDate(iso) {
   if (!iso) return "";
@@ -313,20 +188,20 @@ function Card({ title, action, children, className = "" }) {
   );
 }
 
+// Amber base tones read on the dark theme; the .cms light theme darkens them for
+// contrast on cream (see index.css), so the same warning works in both modes.
 function Warning({ title, children }) {
   return (
     <div className="flex gap-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-5 text-sm">
-      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-600">!</span>
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-300">!</span>
       <div>
-        <p className="font-semibold text-amber-700">{title}</p>
+        <p className="font-semibold text-amber-300">{title}</p>
         <p className="mt-1.5 text-muted">{children}</p>
       </div>
     </div>
   );
 }
 
-// Last-known stats are cached in the browser so the dashboard paints its real
-// numbers instantly on the next visit, then quietly refreshes.
 const STATS_CACHE_KEY = "do-admin-stats-cache";
 function readCachedStats() {
   try {
@@ -340,10 +215,8 @@ function readCachedStats() {
 export default function AdminDashboard() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [health, setHealth] = useState(null);
   const [stats, setStats] = useState(readCachedStats);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -375,51 +248,43 @@ export default function AdminDashboard() {
 
   const cards = [
     {
-      label: "Mailing list", to: "/admin/subscribers", Icon: Mail,
-      gradient: G_LIME,
+      label: "Mailing list", to: "/admin/subscribers", Icon: Mail, gradient: G_LIME,
       value: num(stats?.subscribers?.active),
       footAccent: stats ? `+${stats.subscribers?.last_30_days ?? 0}` : null,
       foot: "in the last 30 days",
     },
     {
-      label: "Registrations", to: "/admin/registrations", Icon: Users,
-      gradient: G_INK,
+      label: "Registrations", to: "/admin/registrations", Icon: Users, gradient: G_INK,
       value: num(stats?.registrations?.total),
       foot: stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : "",
     },
     {
-      label: "Emails sent", to: "/admin/emails", Icon: Send,
-      gradient: G_VIOLET,
+      label: "Emails sent", to: "/admin/emails", Icon: Send, gradient: G_VIOLET,
       value: num(stats?.campaigns?.sent),
       foot: stats ? `${stats.campaigns?.total ?? 0} campaigns created` : "",
     },
     {
-      label: "Community", to: "/admin/people", Icon: MessageCircle,
-      gradient: G_LIME,
+      label: "Community", to: "/admin/people", Icon: MessageCircle, gradient: G_LIME,
       value: num(stats?.community?.members),
       foot: stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : "",
     },
     {
-      label: "Automations", to: "/admin/automations", Icon: Workflow,
-      gradient: G_INK,
+      label: "Automations", to: "/admin/automations", Icon: Workflow, gradient: G_INK,
       value: num(stats?.automations?.sequences),
       foot: stats ? `${stats.automations?.enrolled ?? 0} people mid-sequence` : "",
     },
     {
-      label: "Programmes", to: "/admin/people", Icon: GraduationCap,
-      gradient: G_VIOLET,
+      label: "Programmes", to: "/admin/people", Icon: GraduationCap, gradient: G_VIOLET,
       value: num(stats?.enrolments?.active),
       foot: stats ? `${stats.enrolments?.completed ?? 0} completed` : "",
     },
     {
-      label: "Enquiries", to: "/admin/enquiries", Icon: Inbox,
-      gradient: G_LIME,
+      label: "Enquiries", to: "/admin/enquiries", Icon: Inbox, gradient: G_LIME,
       value: num(stats?.contact_messages),
       foot: "via the contact form",
     },
     {
-      label: "Published", to: "/admin/posts", Icon: Sparkles,
-      gradient: G_INK,
+      label: "Published", to: "/admin/posts", Icon: Sparkles, gradient: G_INK,
       value: stats?.content
         ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
         : "—",
@@ -430,120 +295,106 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-bg text-ink" data-testid="admin-dashboard">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
-
-      <div className="md:pl-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-md">
-          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3">
-              <button
-                className="grid h-9 w-9 place-items-center rounded-lg border border-line text-muted hover:text-ink md:hidden"
-                onClick={() => setMenuOpen(true)}
-                aria-label="Open menu"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <div>
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted">Admin Panel</p>
-                <h1 className="font-display text-lg leading-none tracking-tight sm:text-xl">Dashboard</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="hidden text-muted lg:inline">{user?.email}</span>
-              <button
-                onClick={async () => { await signOut(); navigate("/admin/login"); }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 transition-colors hover:border-lime hover:text-lime"
-                data-testid="admin-signout"
-              >
-                <LogOut className="h-4 w-4" /> Sign out
-              </button>
-            </div>
+    <div data-testid="admin-dashboard">
+      {/* Page top bar */}
+      <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div>
+            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted">Admin Panel</p>
+            <h1 className="font-display text-lg leading-none tracking-tight sm:text-xl">Dashboard</h1>
           </div>
-        </header>
-
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* Warnings */}
-          <div className="mb-6 space-y-4">
-            {missingTables.length > 0 && (
-              <Warning title="Some Supabase tables are not initialised.">
-                Missing: <code className="rounded bg-bg px-1.5 py-0.5 text-ink">{missingTables.join(", ")}</code>. Re-run{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">supabase_schema_phase3.sql</code> and{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">phase4.sql</code> in the Supabase SQL editor.
-              </Warning>
-            )}
-            {stats?.mail_configured && stats.automation_scheduler_configured === false && (
-              <Warning title="Automations are not being driven.">
-                Sequences will enrol people but never send. Enable the internal scheduler or set the{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">AUTOMATION_TOKEN</code> so the tick can run.
-              </Warning>
-            )}
-            {stats && !stats.mail_configured && (
-              <Warning title="Email sending is not configured.">
-                Confirmations and broadcasts are logged instead of sent. Set{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">RESEND_API_KEY</code> on the backend and verify the sending domain in Resend.
-              </Warning>
-            )}
-          </div>
-
-          {stats?.next_event && (
-            <div className="mb-6">
-              <NextEventLine ev={stats.next_event} />
-            </div>
-          )}
-
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 gap-x-5 gap-y-9 pt-6 sm:grid-cols-2 xl:grid-cols-4" data-testid="admin-stats">
-            {cards.map((c) => (
-              <MaterialStat key={c.label} {...c} />
-            ))}
-          </div>
-
-          {/* Charts */}
-          <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
-            <Card
-              title="Subscriber growth"
-              className="lg:col-span-2"
-              action={
-                <span className="text-xs text-muted">
-                  <span className="font-semibold text-emerald-600">+{stats?.subscribers?.last_30_days ?? 0}</span> in 30 days
-                </span>
-              }
+          <div className="flex items-center gap-3 text-sm">
+            <span className="hidden text-muted lg:inline">{user?.email}</span>
+            <button
+              onClick={async () => { await signOut(); navigate("/admin/login"); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 transition-colors hover:border-lime hover:text-lime"
+              data-testid="admin-signout"
             >
-              <GrowthChart points={stats?.subscribers?.growth} />
-            </Card>
-
-            <Card title="Where subscribers come from">
-              {stats?.subscribers?.by_source?.length ? (
-                <div className="space-y-4">
-                  {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
-                    const pct = Math.round((count / total) * 100);
-                    return (
-                      <div key={source}>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-ink/85">{source}</span>
-                          <span className="text-muted [font-variant-numeric:tabular-nums]">
-                            {count} <span className="text-muted/60">· {pct}%</span>
-                          </span>
-                        </div>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg">
-                          <div
-                            className="bar-grow h-full rounded-full bg-gradient-to-r from-lime/70 to-lime"
-                            style={{ width: `${Math.max(pct, 2)}%`, "--bar-delay": `${i * 90}ms` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted">No subscribers yet.</p>
-              )}
-            </Card>
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
           </div>
-        </main>
-      </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6 space-y-4">
+          {missingTables.length > 0 && (
+            <Warning title="Some Supabase tables are not initialised.">
+              Missing: <code className="rounded bg-bg px-1.5 py-0.5 text-ink">{missingTables.join(", ")}</code>. Re-run{" "}
+              <code className="rounded bg-bg px-1.5 py-0.5 text-ink">supabase_schema_phase3.sql</code> and{" "}
+              <code className="rounded bg-bg px-1.5 py-0.5 text-ink">phase4.sql</code> in the Supabase SQL editor.
+            </Warning>
+          )}
+          {stats?.mail_configured && stats.automation_scheduler_configured === false && (
+            <Warning title="Automations are not being driven.">
+              Sequences will enrol people but never send. Enable the internal scheduler or set the{" "}
+              <code className="rounded bg-bg px-1.5 py-0.5 text-ink">AUTOMATION_TOKEN</code> so the tick can run.
+            </Warning>
+          )}
+          {stats && !stats.mail_configured && (
+            <Warning title="Email sending is not configured.">
+              Confirmations and broadcasts are logged instead of sent. Set{" "}
+              <code className="rounded bg-bg px-1.5 py-0.5 text-ink">RESEND_API_KEY</code> on the backend and verify the sending domain in Resend.
+            </Warning>
+          )}
+        </div>
+
+        {stats?.next_event && (
+          <div className="mb-6">
+            <NextEventLine ev={stats.next_event} />
+          </div>
+        )}
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 gap-x-5 gap-y-9 pt-6 sm:grid-cols-2 xl:grid-cols-4" data-testid="admin-stats">
+          {cards.map((c) => (
+            <MaterialStat key={c.label} {...c} />
+          ))}
+        </div>
+
+        {/* Charts */}
+        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <Card
+            title="Subscriber growth"
+            className="lg:col-span-2"
+            action={
+              <span className="text-xs text-muted">
+                <span className="font-semibold text-emerald-500">+{stats?.subscribers?.last_30_days ?? 0}</span> in 30 days
+              </span>
+            }
+          >
+            <GrowthChart points={stats?.subscribers?.growth} />
+          </Card>
+
+          <Card title="Where subscribers come from">
+            {stats?.subscribers?.by_source?.length ? (
+              <div className="space-y-4">
+                {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
+                  const pct = Math.round((count / total) * 100);
+                  return (
+                    <div key={source}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-ink/85">{source}</span>
+                        <span className="text-muted [font-variant-numeric:tabular-nums]">
+                          {count} <span className="text-muted/60">· {pct}%</span>
+                        </span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg">
+                        <div
+                          className="bar-grow h-full rounded-full bg-gradient-to-r from-lime/70 to-lime"
+                          style={{ width: `${Math.max(pct, 2)}%`, "--bar-delay": `${i * 90}ms` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted">No subscribers yet.</p>
+            )}
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
