@@ -187,7 +187,7 @@ def render_layout(
             debo&nbsp;owoseni<span style="color:#bcea3e;">.</span>
           </td>
           <td align="right" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a938c;">
-            Transformation
+            Coaching
           </td>
         </tr></table>
       </td></tr>
@@ -202,7 +202,7 @@ def render_layout(
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="border-top:1px solid #eeeeee;padding-top:22px;">
             <p style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:1.5;color:#4a4a4a;">
-              A mission to catalyse transformation in one million lives by 2035.
+              Helping purpose-driven individuals and leaders move from uncertainty to confident, purposeful action.
             </p>
             <p style="margin:0 0 16px;font-size:13px;color:#777;">
               <a href="{SITE_URL}/articles" style="color:#1c1c1c;text-decoration:none;font-weight:600;">Journal</a>
