@@ -292,13 +292,20 @@ export default function AdminDashboard() {
       foot: stats ? `${stats.campaigns?.total ?? 0} campaigns created` : "" },
     { label: "Enquiries", to: "/admin/enquiries", Icon: Inbox, value: num(stats?.contact_messages), foot: "via the contact form" },
   ];
+  // Repoint "Automations" to people actually mid-sequence (a result), not the
+  // number of sequences configured. Any stat that's zero is dropped so the row
+  // never shows a hollow "0" — Community, Attended etc. only appear when real.
   const mini = [
-    { label: "Community", to: "/admin/people", Icon: MessageCircle, value: num(stats?.community?.members) },
-    { label: "Automations", to: "/admin/automations", Icon: Workflow, value: num(stats?.automations?.sequences) },
+    { label: "In sequences", to: "/admin/automations", Icon: Workflow, value: num(stats?.automations?.enrolled) },
     { label: "Attended", to: "/admin/registrations", Icon: CalendarCheck, value: num(stats?.registrations?.attended) },
+    { label: "Community", to: "/admin/people", Icon: MessageCircle, value: num(stats?.community?.members) },
     { label: "Published", to: "/admin/posts", Icon: Sparkles,
       value: stats?.content ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0) : "—" },
-  ];
+  ].filter((m) => typeof m.value === "number" && m.value > 0);
+
+  // Open/click numbers only mean anything once the Resend webhook is wired, so
+  // the engagement card only shows when tracking is on — otherwise it's zeros.
+  const showEngagement = Boolean(stats?.engagement?.tracking_configured);
 
   return (
     <div data-testid="admin-dashboard">
@@ -377,20 +384,19 @@ export default function AdminDashboard() {
 
         {/* Growth + engagement */}
         <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <Card title="Subscriber growth" className="lg:col-span-2"
+          <Card title="Subscriber growth" className={showEngagement ? "lg:col-span-2" : "lg:col-span-3"}
             action={<span className="text-xs text-muted"><span className="font-semibold text-emerald-500">+{stats?.subscribers?.last_30_days ?? 0}</span> in 30 days</span>}>
             <GrowthChart points={stats?.subscribers?.growth} />
           </Card>
-          <Card title="Email engagement">
-            {eng.tracking_configured === false && (
-              <p className="mb-3 text-xs text-muted">Open/click tracking isn&apos;t configured yet.</p>
-            )}
-            <div className="space-y-4">
-              <EngagementBar label="Opened" value={eng.opened || 0} max={engMax} Icon={MailOpen} />
-              <EngagementBar label="Clicked" value={eng.clicked || 0} max={engMax} Icon={MousePointerClick} />
-              <EngagementBar label="Bounced" value={eng.bounced || 0} max={engMax} Icon={Mail} />
-            </div>
-          </Card>
+          {showEngagement && (
+            <Card title="Email engagement">
+              <div className="space-y-4">
+                <EngagementBar label="Opened" value={eng.opened || 0} max={engMax} Icon={MailOpen} />
+                <EngagementBar label="Clicked" value={eng.clicked || 0} max={engMax} Icon={MousePointerClick} />
+                <EngagementBar label="Bounced" value={eng.bounced || 0} max={engMax} Icon={Mail} />
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Upcoming events · recent activity · sources */}
@@ -455,12 +461,14 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Secondary numbers */}
-        <Card className="mt-5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {mini.map((m) => <MiniStat key={m.label} {...m} />)}
-          </div>
-        </Card>
+        {/* Secondary numbers — only the ones with something real to show */}
+        {mini.length > 0 && (
+          <Card className="mt-5">
+            <div className={`grid gap-2 ${mini.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : mini.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {mini.map((m) => <MiniStat key={m.label} {...m} />)}
+            </div>
+          </Card>
+        )}
       </main>
     </div>
   );
