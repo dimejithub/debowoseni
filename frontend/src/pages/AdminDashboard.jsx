@@ -1,6 +1,5 @@
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   ArrowUpRight,
   BellRing,
   BookOpen,
@@ -9,8 +8,10 @@ import {
   FileText,
   GraduationCap,
   Inbox,
+  LayoutDashboard,
   LogOut,
   Mail,
+  Menu,
   MessageCircle,
   Newspaper,
   Quote,
@@ -18,6 +19,7 @@ import {
   Sparkles,
   Users,
   Workflow,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -29,9 +31,8 @@ const prefersReducedMotion = () =>
 
 /**
  * Rolls a number up to its target the first time a real value arrives, so each
- * metric reads as "counting in" rather than snapping — the live-dashboard feel.
- * Non-numbers (the "—" fallback) pass straight through, and reduced-motion users
- * get the final value immediately.
+ * metric reads as "counting in" rather than snapping. Non-numbers (the "—"
+ * fallback) pass straight through, and reduced-motion users skip the animation.
  */
 function useCountUp(value, duration = 1000) {
   const [display, setDisplay] = useState(typeof value === "number" ? 0 : value);
@@ -73,162 +74,191 @@ function useCountUp(value, duration = 1000) {
   return typeof display === "number" ? display.toLocaleString() : display;
 }
 
-// Nav cards, grouped so the panel reads as two jobs — publishing the site, and
-// running the audience — rather than one long undifferentiated list.
-const CARD_GROUPS = [
+// Sidebar navigation, grouped so it reads as two jobs — publishing the site,
+// and running the audience.
+const NAV_GROUPS = [
   {
     label: "Content",
-    cards: [
-      { to: "/admin/posts", title: "Journal posts", desc: "Categories, drafts, publishes.", Icon: FileText, testId: "card-posts" },
-      { to: "/admin/testimonials", title: "Testimonials", desc: "Quotes shown on the home page.", Icon: Quote, testId: "card-testimonials" },
-      { to: "/admin/books", title: "Books", desc: "Featured book and bookshelf.", Icon: BookOpen, testId: "card-books" },
-      { to: "/admin/publications", title: "Publications", desc: "Academic papers and Scholar links.", Icon: GraduationCap, testId: "card-publications" },
-      { to: "/admin/events", title: "Events", desc: "Galleries and registration settings.", Icon: Calendar, testId: "card-events" },
+    items: [
+      { to: "/admin/posts", label: "Journal", Icon: FileText },
+      { to: "/admin/testimonials", label: "Testimonials", Icon: Quote },
+      { to: "/admin/books", label: "Books", Icon: BookOpen },
+      { to: "/admin/publications", label: "Publications", Icon: GraduationCap },
+      { to: "/admin/events", label: "Events", Icon: Calendar },
     ],
   },
   {
     label: "Audience & mail",
-    cards: [
-      { to: "/admin/people", title: "People", desc: "Every contact, with their full history.", Icon: Contact, testId: "card-people" },
-      { to: "/admin/registrations", title: "Registrations", desc: "Who signed up, who attended.", Icon: Users, testId: "card-registrations" },
-      { to: "/admin/enquiries", title: "Enquiries", desc: "Messages from the contact form.", Icon: Inbox, testId: "card-enquiries" },
-      { to: "/admin/emails", title: "Emails", desc: "Write and send to the list.", Icon: Send, testId: "card-emails" },
-      { to: "/admin/newsletter", title: "Newsletter", desc: "Auto digest of new journal posts.", Icon: Newspaper, testId: "card-newsletter" },
-      { to: "/admin/automations", title: "Automations", desc: "Triggered email sequences.", Icon: Workflow, testId: "card-automations" },
-      { to: "/admin/subscribers", title: "Subscribers", desc: "The whole mailing list, exportable.", Icon: Mail, testId: "card-subscribers" },
+    items: [
+      { to: "/admin/people", label: "People", Icon: Contact },
+      { to: "/admin/registrations", label: "Registrations", Icon: Users },
+      { to: "/admin/enquiries", label: "Enquiries", Icon: Inbox },
+      { to: "/admin/emails", label: "Emails", Icon: Send },
+      { to: "/admin/newsletter", label: "Newsletter", Icon: Newspaper },
+      { to: "/admin/automations", label: "Automations", Icon: Workflow },
+      { to: "/admin/subscribers", label: "Subscribers", Icon: Mail },
     ],
   },
 ];
 
-/**
- * The frontend (Cloudflare) and the backend (Render) deploy independently, so
- * the dashboard can briefly receive a stats payload from an older backend that
- * has no community/enrolment/automation keys. Reading through those blind would
- * blank the whole admin panel, so every access goes through this.
- */
+// The frontend and backend deploy independently, so the dashboard can briefly
+// get a stats payload from an older backend missing some keys. Every read goes
+// through this so a missing key degrades to "—" instead of blanking the panel.
 const num = (value, fallback = "—") => (typeof value === "number" ? value : fallback);
 
-/**
- * 30-day sign-up sparkline. Area fill plus an emphasised final point, so the
- * card reads as a trend at a glance rather than a bare line.
- */
-function Sparkline({ points }) {
-  if (!points || points.length < 2) return null;
+// Icon-badge gradients drawn from the debowoseni palette — lime (primary),
+// warm ink, and the brand violet — rather than a generic multi-colour set, so
+// the dashboard stays on-brand. White icons read on all three.
+const G_LIME = "from-[#7bc11a] to-[#4f8a0f]";
+const G_INK = "from-[#3a352b] to-[#1c1916]";
+const G_VIOLET = "from-[#8079ff] to-[#5a51df]";
+
+/* ------------------------------------------------------------------ Sidebar */
+
+function NavItem({ to, label, Icon, active, onNavigate }) {
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+        active
+          ? "bg-lime/20 font-semibold text-ink"
+          : "text-muted hover:bg-lime/10 hover:text-ink"
+      }`}
+    >
+      <span
+        className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+          active ? "bg-lime text-bg" : "bg-bg text-muted group-hover:text-lime"
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      {label}
+    </Link>
+  );
+}
+
+function Sidebar({ open, onClose, pathname }) {
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm md:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-line bg-surface transition-transform duration-300 md:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+        data-testid="cms-sidebar"
+      >
+        <div className="flex h-16 items-center justify-between border-b border-line px-5">
+          <Link to="/admin" className="font-display text-base tracking-tight text-ink" onClick={onClose}>
+            debo owoseni<span className="text-lime">.</span>
+          </Link>
+          <button className="text-muted hover:text-ink md:hidden" onClick={onClose} aria-label="Close menu">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+          <NavItem to="/admin" label="Dashboard" Icon={LayoutDashboard} active={pathname === "/admin"} onNavigate={onClose} />
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted/70">
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavItem key={item.to} {...item} active={pathname === item.to} onNavigate={onClose} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="border-t border-line px-5 py-4">
+          <Link to="/" className="text-xs text-muted hover:text-lime">← Back to the public site</Link>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+/* -------------------------------------------------------------- Stat cards */
+
+function MaterialStat({ label, value, foot, footAccent, Icon, gradient, to }) {
+  const shown = useCountUp(value);
+  const body = (
+    <>
+      <div className="flex items-start justify-between">
+        <span className={`-mt-9 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr ${gradient} shadow-lg shadow-black/15`}>
+          <Icon className="h-7 w-7 text-white" />
+        </span>
+        <div className="pt-1 text-right">
+          <p className="text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-muted">{label}</p>
+          <p className="font-display text-[2rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums]">
+            {shown}
+          </p>
+        </div>
+      </div>
+      <div className="my-3.5 border-t border-line" />
+      <p className="text-xs leading-relaxed text-muted">
+        {footAccent && <span className="font-semibold text-emerald-600">{footAccent} </span>}
+        {foot}
+      </p>
+    </>
+  );
+  const cls =
+    "block rounded-2xl border border-line bg-surface p-4 pt-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+  return to ? (
+    <Link to={to} className={cls}>{body}</Link>
+  ) : (
+    <div className={cls}>{body}</div>
+  );
+}
+
+/* ----------------------------------------------------------------- Charts */
+
+// 30-day subscriber growth as a filled area + line, sized for a full card.
+function GrowthChart({ points }) {
+  if (!points || points.length < 2) {
+    return <div className="grid h-[200px] place-items-center text-sm text-muted">No sign-up data yet.</div>;
+  }
+  const w = 720;
+  const h = 200;
+  const pad = 8;
   const max = Math.max(...points.map((p) => p.count), 1);
-  const w = 260;
-  const h = 44;
   const step = w / (points.length - 1);
-  const xy = points.map((p, i) => [i * step, h - (p.count / max) * (h - 4) - 2]);
+  const xy = points.map((p, i) => [i * step, h - pad - (p.count / max) * (h - pad * 2)]);
   const line = xy.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   const area = `${line} L${w},${h} L0,${h} Z`;
   const [lastX, lastY] = xy[xy.length - 1];
-  // Path length drives the draw-in dash animation, so it starts fully hidden
-  // and unspools left-to-right regardless of the actual curve.
-  const len = xy.reduce((acc, [x, y], i) => {
-    if (i === 0) return 0;
-    const [px, py] = xy[i - 1];
-    return acc + Math.hypot(x - px, y - py);
-  }, 0);
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="mt-5 h-11 w-full overflow-visible" preserveAspectRatio="none" aria-hidden>
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height: 200 }} preserveAspectRatio="none" aria-hidden>
       <defs>
-        <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--lime)" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="var(--lime)" stopOpacity="0" />
+        <linearGradient id="grow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7bc11a" stopOpacity="0.32" />
+          <stop offset="100%" stopColor="#7bc11a" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path className="spark-area" d={area} fill="url(#spark)" />
-      <path
-        className="spark-line"
-        style={{ "--spark-len": len.toFixed(1) }}
-        d={line}
-        fill="none"
-        stroke="var(--lime)"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <circle className="spark-pulse" cx={lastX} cy={lastY} r="2.6" fill="var(--lime)" vectorEffect="non-scaling-stroke" />
-      <circle className="spark-dot" cx={lastX} cy={lastY} r="2.6" fill="var(--lime)" vectorEffect="non-scaling-stroke" />
+      <path d={area} fill="url(#grow)" />
+      <path d={line} fill="none" stroke="#5f9e12" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={lastX} cy={lastY} r="3.5" fill="#5f9e12" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
-/**
- * A metric tile. `primary` gives the headline stat (the mailing list) a lime
- * wash so the eye lands there first. `to` makes the whole tile a link into the
- * fuller view of that stat, with a hover affordance and a corner arrow.
- */
-function trackSpotlight(e) {
-  const r = e.currentTarget.getBoundingClientRect();
-  e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
-  e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
-}
+/* -------------------------------------------------------------- Next event */
 
-function Stat({ label, value, sub, Icon, primary, to, rise = 0, children }) {
-  const shown = useCountUp(value);
-  const inner = (
-    <div className="relative z-[1] flex flex-1 flex-col">
-      <div className="flex items-start justify-between gap-2">
-        {/* Reserve two lines so a wrapping label ("Emails sent") never shoves
-            its number out of line with the tile beside it. */}
-        <p className="flex min-h-[2rem] min-w-0 items-start text-[0.6rem] font-medium uppercase leading-[1.35] tracking-[0.1em] text-muted sm:text-[0.68rem] sm:tracking-[0.18em]">
-          {label}
-        </p>
-        <span className="flex shrink-0 items-center gap-1.5">
-          {to && (
-            <ArrowUpRight className="h-3.5 w-3.5 text-muted/40 opacity-0 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime group-hover:opacity-100" />
-          )}
-          {Icon && (
-            <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-lime" : "text-muted/60 transition-colors group-hover:text-lime"}`} />
-          )}
-        </span>
-      </div>
-      <p className="mt-1 font-display text-[2.15rem] leading-none tracking-tight text-ink [font-variant-numeric:tabular-nums] sm:mt-2 sm:text-[2.6rem]">
-        {shown}
-      </p>
-      {sub && <p className="mt-2.5 text-[0.72rem] leading-relaxed text-muted sm:text-xs">{sub}</p>}
-      {children}
-    </div>
-  );
-
-  const cls = `tile-rise press group relative flex flex-col overflow-hidden rounded-[20px] border p-5 sm:p-6 ${
-    primary
-      ? "tile-breathe border-lime/30 bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_9%,var(--surface))] to-surface hover:border-lime/50"
-      : "min-h-[8.75rem] border-line bg-surface hover:border-lime/40 sm:min-h-[9.5rem]"
-  }`;
-  const style = { "--rise-delay": `${rise}ms` };
-  const glow = <span className="spotlight-glow" aria-hidden />;
-
-  return to ? (
-    <Link to={to} className={cls} style={style} onMouseMove={trackSpotlight}>
-      {glow}
-      {inner}
-    </Link>
-  ) : (
-    <div className={cls} style={style} onMouseMove={trackSpotlight}>
-      {glow}
-      {inner}
-    </div>
-  );
-}
-
-/** Small uppercase section marker, reused above each band of the page. */
-function Eyebrow({ children }) {
-  return (
-    <p className="mb-5 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted">{children}</p>
-  );
-}
-
-// e.g. "Fri 18 Sep"
 function fmtShortDate(iso) {
   if (!iso) return "";
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 }
-
-// "today" / "tomorrow" / "in N days"
 function relDays(days) {
   if (typeof days !== "number") return "";
   if (days <= 0) return "today";
@@ -236,11 +266,6 @@ function relDays(days) {
   return `in ${days} days`;
 }
 
-/**
- * At-a-glance line for the soonest upcoming event: how far off it is, how many
- * are registered, and when the next countdown reminder goes out — so Debo can
- * see the mailing is on track without opening each event.
- */
 function NextEventLine({ ev }) {
   if (!ev) return null;
   const regs = ev.registrant_count ?? 0;
@@ -256,30 +281,52 @@ function NextEventLine({ ev }) {
   return (
     <Link
       to="/admin/events"
-      className="press group mb-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[16px] border border-lime/25 bg-gradient-to-r from-[color-mix(in_srgb,var(--lime)_8%,var(--surface))] to-surface px-5 py-4"
+      className="group flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-lime/40 bg-lime/10 px-5 py-4 transition hover:bg-lime/15"
       data-testid="next-event-line"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-lime/15">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lime/25">
         <BellRing className="h-4 w-4 text-lime" />
       </span>
       <span className="font-display text-base tracking-tight text-ink">{ev.title}</span>
-      <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">
+      <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-muted">
         {relDays(ev.days_until)}
         {ev.event_date ? ` · ${fmtShortDate(ev.event_date)}` : ""}
       </span>
-      <span className="text-xs text-muted">
-        {regs} registrant{regs === 1 ? "" : "s"}
-      </span>
-      <span className="text-xs text-lime/90">· {nudge}</span>
-      <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted/40 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
+      <span className="text-xs text-muted">{regs} registrant{regs === 1 ? "" : "s"}</span>
+      <span className="text-xs font-medium text-lime">· {nudge}</span>
+      <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted/50 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
     </Link>
   );
 }
 
+function Card({ title, action, children, className = "" }) {
+  return (
+    <div className={`rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6 ${className}`}>
+      {(title || action) && (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          {title && <h3 className="font-display text-lg tracking-tight text-ink">{title}</h3>}
+          {action}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function Warning({ title, children }) {
+  return (
+    <div className="flex gap-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-5 text-sm">
+      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-600">!</span>
+      <div>
+        <p className="font-semibold text-amber-700">{title}</p>
+        <p className="mt-1.5 text-muted">{children}</p>
+      </div>
+    </div>
+  );
+}
+
 // Last-known stats are cached in the browser so the dashboard paints its real
-// numbers instantly on the next visit — even while a cold Render backend is
-// still waking up — then quietly refreshes them. Nothing sensitive here, just
-// the same counts already shown on screen.
+// numbers instantly on the next visit, then quietly refreshes.
 const STATS_CACHE_KEY = "do-admin-stats-cache";
 function readCachedStats() {
   try {
@@ -293,8 +340,10 @@ function readCachedStats() {
 export default function AdminDashboard() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [health, setHealth] = useState(null);
   const [stats, setStats] = useState(readCachedStats);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -305,7 +354,7 @@ export default function AdminDashboard() {
         try {
           localStorage.setItem(STATS_CACHE_KEY, JSON.stringify(s));
         } catch {
-          /* private mode / quota — the dashboard just won't pre-fill next time */
+          /* private mode / quota — just won't pre-fill next time */
         }
       })
       .catch(() => {
@@ -315,11 +364,6 @@ export default function AdminDashboard() {
 
   if (!loading && !user) return <Navigate to="/admin/login" replace />;
 
-  // The schema banner is a genuine setup aid, but on a cold backend PostgREST's
-  // schema cache lags and briefly reports an existing table as missing — a false
-  // alarm. Only treat the schema as broken when NOTHING responds (a truly
-  // un-provisioned database); if even one table answers, the rest are just
-  // catching up, so we stay quiet.
   const probed = health?.tables ? Object.values(health.tables) : [];
   const anyReachable = probed.some(Boolean);
   const missingTables =
@@ -329,244 +373,177 @@ export default function AdminDashboard() {
 
   const total = stats?.subscribers?.total || 1;
 
-  return (
-    <div className="grain relative min-h-screen bg-bg text-ink" data-testid="admin-dashboard">
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/70 backdrop-blur-md">
-        <div className="container-page flex h-16 items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-lime">
-            <ArrowLeft className="h-4 w-4" /> Site
-          </Link>
-          <p className="font-display text-sm tracking-tight">CMS · Admin</p>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted md:inline">{user?.email}</span>
-            <button
-              onClick={async () => { await signOut(); navigate("/admin/login"); }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 transition-colors hover:border-lime hover:text-lime"
-              data-testid="admin-signout"
-            >
-              <LogOut className="h-4 w-4" /> Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+  const cards = [
+    {
+      label: "Mailing list", to: "/admin/subscribers", Icon: Mail,
+      gradient: G_LIME,
+      value: num(stats?.subscribers?.active),
+      footAccent: stats ? `+${stats.subscribers?.last_30_days ?? 0}` : null,
+      foot: "in the last 30 days",
+    },
+    {
+      label: "Registrations", to: "/admin/registrations", Icon: Users,
+      gradient: G_INK,
+      value: num(stats?.registrations?.total),
+      foot: stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : "",
+    },
+    {
+      label: "Emails sent", to: "/admin/emails", Icon: Send,
+      gradient: G_VIOLET,
+      value: num(stats?.campaigns?.sent),
+      foot: stats ? `${stats.campaigns?.total ?? 0} campaigns created` : "",
+    },
+    {
+      label: "Community", to: "/admin/people", Icon: MessageCircle,
+      gradient: G_LIME,
+      value: num(stats?.community?.members),
+      foot: stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : "",
+    },
+    {
+      label: "Automations", to: "/admin/automations", Icon: Workflow,
+      gradient: G_INK,
+      value: num(stats?.automations?.sequences),
+      foot: stats ? `${stats.automations?.enrolled ?? 0} people mid-sequence` : "",
+    },
+    {
+      label: "Programmes", to: "/admin/people", Icon: GraduationCap,
+      gradient: G_VIOLET,
+      value: num(stats?.enrolments?.active),
+      foot: stats ? `${stats.enrolments?.completed ?? 0} completed` : "",
+    },
+    {
+      label: "Enquiries", to: "/admin/enquiries", Icon: Inbox,
+      gradient: G_LIME,
+      value: num(stats?.contact_messages),
+      foot: "via the contact form",
+    },
+    {
+      label: "Published", to: "/admin/posts", Icon: Sparkles,
+      gradient: G_INK,
+      value: stats?.content
+        ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
+        : "—",
+      foot: stats?.content
+        ? `${stats.content.posts ?? 0} posts · ${stats.content.events ?? 0} events · ${stats.content.books ?? 0} books`
+        : "",
+    },
+  ];
 
-      <main className="container-page relative py-10 md:py-12">
-        <div className="dash-aurora inset-x-0 top-0 h-[420px]" aria-hidden />
-        <div className="relative z-10">
-        {missingTables.length > 0 && (
-          <div className="mb-6 flex gap-4 rounded-[16px] border border-amber-400/30 bg-amber-400/5 p-5 text-sm" data-testid="schema-warning">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-amber-300">!</span>
-            <div>
-              <p className="font-semibold text-amber-300">Some Supabase tables are not initialised.</p>
-              <p className="mt-1.5 text-muted">
+  return (
+    <div className="min-h-screen bg-bg text-ink" data-testid="admin-dashboard">
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} pathname={pathname} />
+
+      <div className="md:pl-64">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-md">
+          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3">
+              <button
+                className="grid h-9 w-9 place-items-center rounded-lg border border-line text-muted hover:text-ink md:hidden"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div>
+                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted">Admin Panel</p>
+                <h1 className="font-display text-lg leading-none tracking-tight sm:text-xl">Dashboard</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="hidden text-muted lg:inline">{user?.email}</span>
+              <button
+                onClick={async () => { await signOut(); navigate("/admin/login"); }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 transition-colors hover:border-lime hover:text-lime"
+                data-testid="admin-signout"
+              >
+                <LogOut className="h-4 w-4" /> Sign out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Warnings */}
+          <div className="mb-6 space-y-4">
+            {missingTables.length > 0 && (
+              <Warning title="Some Supabase tables are not initialised.">
                 Missing: <code className="rounded bg-bg px-1.5 py-0.5 text-ink">{missingTables.join(", ")}</code>. Re-run{" "}
                 <code className="rounded bg-bg px-1.5 py-0.5 text-ink">supabase_schema_phase3.sql</code> and{" "}
                 <code className="rounded bg-bg px-1.5 py-0.5 text-ink">phase4.sql</code> in the Supabase SQL editor.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {stats?.mail_configured && stats.automation_scheduler_configured === false && (
-          <div className="mb-6 flex gap-4 rounded-[16px] border border-amber-400/30 bg-amber-400/5 p-5 text-sm" data-testid="scheduler-warning">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-amber-300">!</span>
-            <div>
-              <p className="font-semibold text-amber-300">Automations are not being driven.</p>
-              <p className="mt-1.5 text-muted">
-                Sequences will enrol people but never send. Add the{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">AUTOMATION_TOKEN</code> and{" "}
-                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">BACKEND_URL</code> repository secrets so the hourly job can run them.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {stats && !stats.mail_configured && (
-          <div className="mb-6 flex gap-4 rounded-[16px] border border-amber-400/30 bg-amber-400/5 p-5 text-sm" data-testid="mail-warning">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-amber-300">!</span>
-            <div>
-              <p className="font-semibold text-amber-300">Email sending is not configured.</p>
-              <p className="mt-1.5 text-muted">
+              </Warning>
+            )}
+            {stats?.mail_configured && stats.automation_scheduler_configured === false && (
+              <Warning title="Automations are not being driven.">
+                Sequences will enrol people but never send. Enable the internal scheduler or set the{" "}
+                <code className="rounded bg-bg px-1.5 py-0.5 text-ink">AUTOMATION_TOKEN</code> so the tick can run.
+              </Warning>
+            )}
+            {stats && !stats.mail_configured && (
+              <Warning title="Email sending is not configured.">
                 Confirmations and broadcasts are logged instead of sent. Set{" "}
                 <code className="rounded bg-bg px-1.5 py-0.5 text-ink">RESEND_API_KEY</code> on the backend and verify the sending domain in Resend.
-              </p>
-            </div>
+              </Warning>
+            )}
           </div>
-        )}
 
-        <div className="mb-10 md:mb-12">
-          <h1 className="text-5xl md:text-6xl">CMS</h1>
-          <p className="mt-3 max-w-2xl text-muted">
-            Everything on debowoseni.com — content, events, registrations and the mailing list.
-          </p>
-        </div>
-
-        {/* Overview */}
-        <section className="mb-12">
-          <div className="mb-5 flex items-center gap-2.5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted">Overview</p>
-            <span className="relative flex h-1.5 w-1.5" title="Live data">
-              <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-lime" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime" />
-            </span>
-            <span className="text-[0.62rem] font-medium uppercase tracking-[0.18em] text-lime/80">Live</span>
-          </div>
-          {stats?.next_event && <NextEventLine ev={stats.next_event} />}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="admin-stats">
-            <div className="col-span-2 lg:col-span-2 lg:row-span-1">
-              <Stat
-                label="Mailing list"
-                to="/admin/subscribers"
-                value={num(stats?.subscribers?.active)}
-                sub={stats ? `+${stats.subscribers?.last_30_days ?? 0} in the last 30 days` : "loading…"}
-                Icon={Mail}
-                primary
-                rise={0}
-              >
-                <Sparkline points={stats?.subscribers?.growth} />
-              </Stat>
+          {stats?.next_event && (
+            <div className="mb-6">
+              <NextEventLine ev={stats.next_event} />
             </div>
-            <Stat
-              label="Registrations"
-              to="/admin/registrations"
-              value={num(stats?.registrations?.total)}
-              sub={stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : ""}
-              Icon={Users}
-              rise={70}
-            />
-            <Stat
-              label="Community"
-              to="/admin/people"
-              value={num(stats?.community?.members)}
-              sub={stats ? `${stats.enrolments?.total ?? 0} programme enrolments` : ""}
-              Icon={MessageCircle}
-              rise={140}
-            />
-            <Stat
-              label="Emails sent"
-              to="/admin/emails"
-              value={num(stats?.campaigns?.sent)}
-              sub={stats ? `${stats.campaigns?.total ?? 0} campaigns created` : ""}
-              Icon={Send}
-              rise={210}
-            />
-            <Stat
-              label="Automations"
-              to="/admin/automations"
-              value={num(stats?.automations?.sequences)}
-              sub={stats ? `${stats.automations?.enrolled ?? 0} people part-way through` : ""}
-              Icon={Workflow}
-              rise={280}
-            />
-            <Stat
-              label="Programmes"
-              to="/admin/people"
-              value={num(stats?.enrolments?.active)}
-              sub={stats ? `${stats.enrolments?.completed ?? 0} completed` : ""}
-              Icon={GraduationCap}
-              rise={350}
-            />
-            <Stat
-              label="Enquiries"
-              to="/admin/enquiries"
-              value={num(stats?.contact_messages)}
-              sub="via the contact form"
-              Icon={Inbox}
-              rise={420}
-            />
-            <Stat
-              label="Published"
-              rise={490}
-              value={
-                stats?.content
-                  ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0)
-                  : "—"
+          )}
+
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 gap-x-5 gap-y-9 pt-6 sm:grid-cols-2 xl:grid-cols-4" data-testid="admin-stats">
+            {cards.map((c) => (
+              <MaterialStat key={c.label} {...c} />
+            ))}
+          </div>
+
+          {/* Charts */}
+          <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <Card
+              title="Subscriber growth"
+              className="lg:col-span-2"
+              action={
+                <span className="text-xs text-muted">
+                  <span className="font-semibold text-emerald-600">+{stats?.subscribers?.last_30_days ?? 0}</span> in 30 days
+                </span>
               }
-              sub={
-                stats?.content ? (
-                  <span className="flex flex-wrap gap-x-1.5 gap-y-1">
-                    <Link to="/admin/posts" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
-                      {stats.content.posts ?? 0} posts
-                    </Link>
-                    <span className="text-muted/40">·</span>
-                    <Link to="/admin/events" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
-                      {stats.content.events ?? 0} events
-                    </Link>
-                    <span className="text-muted/40">·</span>
-                    <Link to="/admin/books" className="rounded px-1 -mx-1 hover:bg-lime/10 hover:text-lime">
-                      {stats.content.books ?? 0} books
-                    </Link>
-                  </span>
-                ) : (
-                  ""
-                )
-              }
-              Icon={Sparkles}
-            />
+            >
+              <GrowthChart points={stats?.subscribers?.growth} />
+            </Card>
+
+            <Card title="Where subscribers come from">
+              {stats?.subscribers?.by_source?.length ? (
+                <div className="space-y-4">
+                  {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
+                    const pct = Math.round((count / total) * 100);
+                    return (
+                      <div key={source}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-ink/85">{source}</span>
+                          <span className="text-muted [font-variant-numeric:tabular-nums]">
+                            {count} <span className="text-muted/60">· {pct}%</span>
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg">
+                          <div
+                            className="bar-grow h-full rounded-full bg-gradient-to-r from-lime/70 to-lime"
+                            style={{ width: `${Math.max(pct, 2)}%`, "--bar-delay": `${i * 90}ms` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">No subscribers yet.</p>
+              )}
+            </Card>
           </div>
-        </section>
-
-        {stats?.subscribers?.by_source?.length > 0 && (
-          <section className="mb-12">
-            <Eyebrow>Where subscribers come from</Eyebrow>
-            <div className="rounded-[20px] border border-line bg-surface p-7" data-testid="stats-by-source">
-              <div className="space-y-4">
-                {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
-                  const pct = Math.round((count / total) * 100);
-                  return (
-                    <div key={source}>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-ink/85">{source}</span>
-                        <span className="text-muted [font-variant-numeric:tabular-nums]">
-                          {count} <span className="text-muted/60">· {pct}%</span>
-                        </span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg">
-                        <div
-                          className="bar-grow h-full rounded-full bg-gradient-to-r from-lime/70 to-lime"
-                          style={{ width: `${Math.max(pct, 2)}%`, "--bar-delay": `${i * 90}ms` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Manage */}
-        {CARD_GROUPS.map((group) => (
-          <section key={group.label} className="mb-10">
-            <Eyebrow>{group.label}</Eyebrow>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {group.cards.map(({ to, title, desc, Icon, testId }, i) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="tile-rise card-lift press group relative flex items-start gap-4 overflow-hidden rounded-[18px] border border-line bg-surface p-5"
-                  style={{ "--rise-delay": `${i * 55}ms` }}
-                  data-testid={testId}
-                  onMouseMove={trackSpotlight}
-                >
-                  <span className="spotlight-glow" aria-hidden />
-                  <span className="relative z-[1] flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-line bg-bg transition-all duration-300 group-hover:border-lime/50 group-hover:scale-105">
-                    <Icon className="h-[18px] w-[18px] text-lime" />
-                  </span>
-                  <div className="relative z-[1] min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg leading-tight">{title}</h3>
-                      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
-                    </div>
-                    <p className="mt-1 text-sm leading-relaxed text-muted">{desc}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
