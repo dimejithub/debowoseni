@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
@@ -147,29 +147,69 @@ export default function Home() {
   const eventGallery =
     (events[0]?.gallery && events[0].gallery.length ? events[0].gallery : EVENT_IMAGES).slice(0, 3);
 
+  // Cinematic hero card: lime mouse-sheen + a gentle 3D tilt that tracks the
+  // cursor. Written straight to the node (no re-render) and throttled with rAF;
+  // skipped for reduced-motion and coarse-pointer (touch) devices.
+  const heroCardRef = useRef(null);
+  const heroRaf = useRef(0);
+  const heroInteractive = () =>
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const onHeroMove = (e) => {
+    const el = heroCardRef.current;
+    if (!el || !heroInteractive()) return;
+    cancelAnimationFrame(heroRaf.current);
+    heroRaf.current = requestAnimationFrame(() => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      el.style.setProperty("--mouse-x", `${x}px`);
+      el.style.setProperty("--mouse-y", `${y}px`);
+      el.style.setProperty("--sheen-opacity", "1");
+      el.style.setProperty("--rx", `${(y / r.height - 0.5) * -5}deg`);
+      el.style.setProperty("--ry", `${(x / r.width - 0.5) * 5}deg`);
+    });
+  };
+  const onHeroLeave = () => {
+    const el = heroCardRef.current;
+    if (!el) return;
+    cancelAnimationFrame(heroRaf.current);
+    el.style.setProperty("--sheen-opacity", "0");
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+  };
+
   return (
     <div data-testid="home-page">
-      {/* HERO — Ken-Burns motion gallery behind glassmorphism panel */}
-      <section className="relative overflow-hidden" data-testid="hero-section">
+      {/* HERO — cinematic: session-photo Ken-Burns backdrop, blueprint grid,
+          and a deep premium card that tracks the cursor. */}
+      <section className="relative overflow-hidden" data-testid="hero-section" style={{ perspective: "1400px" }}>
         {/* Animated event-image background */}
         <KenBurnsBackdrop images={EVENT_IMAGES} />
+
+        {/* Faint blueprint grid over the imagery */}
+        <div className="hero-grid pointer-events-none absolute inset-0 z-[1]" aria-hidden />
 
         {/* Soft lime glow on top of the gallery */}
         <div className="lime-glow pointer-events-none absolute inset-x-0 top-0 h-[70vh]" aria-hidden />
 
-        <div className="container-page relative pt-28 pb-24 md:pt-36 md:pb-36">
-          {/* Glass panel that frames the headline content */}
+        <div className="container-page relative z-10 pt-28 pb-24 md:pt-36 md:pb-36">
+          {/* Deep premium card that frames the headline content */}
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
+            ref={heroCardRef}
+            onMouseMove={onHeroMove}
+            onMouseLeave={onHeroLeave}
+            initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mx-auto max-w-4xl rounded-[32px] border border-white/10 bg-bg/55 px-6 py-14 text-center shadow-[0_40px_120px_-30px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:px-12 md:py-20"
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="premium-card relative mx-auto max-w-4xl overflow-hidden rounded-[32px] px-6 py-14 text-center md:px-12 md:py-20"
             data-testid="hero-glass-panel"
-            style={{
-              backgroundImage:
-                "linear-gradient(180deg, rgba(8,13,13,0.45) 0%, rgba(8,13,13,0.78) 100%)",
-            }}
           >
+            {/* mouse-following lime sheen */}
+            <div className="premium-card__sheen" aria-hidden />
             <div className="pointer-events-none absolute -inset-px rounded-[32px] ring-1 ring-inset ring-white/5" />
             <div
               aria-hidden
@@ -184,9 +224,10 @@ export default function Home() {
               </p>
             </Reveal>
             <Reveal delay={0.08}>
-              <h1 className="mx-auto mt-7 max-w-4xl text-ink">
-                Move from uncertainty to{" "}
-                <span className="font-display-italic text-lime">confident, purposeful action</span>.
+              <h1 className="mx-auto mt-7 max-w-4xl">
+                <span className="text-silver">Move from uncertainty to </span>
+                <span className="font-display-italic text-lime">confident, purposeful action</span>
+                <span className="text-silver">.</span>
               </h1>
             </Reveal>
             <Reveal delay={0.18}>
