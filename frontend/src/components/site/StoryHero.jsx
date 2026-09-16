@@ -13,16 +13,19 @@ import { EVENT_IMAGES, YOUTUBE_CHANNEL_URL } from "@/lib/data";
 import { MagneticButton } from "@/components/site/MagneticButton";
 
 const LINE1 = "Move from uncertainty";
-const LINE2 = "to confident, purposeful action";
+const LINE2_WORDS = ["to", "confident,", "purposeful", "action."];
 const SUBTEXT =
   "I help purpose-driven individuals and leaders define what matters, strengthen their confidence, and develop practical strategies for meaningful personal and professional growth.";
+const CREDENTIALS = ["18+ years", "Coaching", "Academia", "Authorship"];
 
-function Eyebrow() {
+function Kicker() {
   return (
-    <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.28em] text-ink/70">
-      <span className="inline-block h-px w-8 bg-lime/60" />
+    <p className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.34em] text-ink/70">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-lime/70" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-lime" />
+      </span>
       Transformation Coaching
-      <span className="inline-block h-px w-8 bg-lime/60" />
     </p>
   );
 }
@@ -55,8 +58,33 @@ function Ctas() {
   );
 }
 
-// Slow crossfade of session photos — the "past session" backdrop, kept from the
-// original hero. Ken-Burns drift on the visible frame.
+function Credentials() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] uppercase tracking-[0.24em] text-ink/55">
+      {CREDENTIALS.map((c, i) => (
+        <span key={c} className="inline-flex items-center gap-4">
+          {i > 0 && <span className="h-1 w-1 rounded-full bg-lime/50" aria-hidden />}
+          {c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// One word of the "confident, purposeful action" line, rising + sharpening into
+// place across its own slice of the scroll — a kinetic, staggered reveal.
+function ScrollWord({ progress, start, end, children }) {
+  const opacity = useTransform(progress, [start, end], [0, 1]);
+  const y = useTransform(progress, [start, end], [30, 0]);
+  const blur = useTransform(progress, [start, end], [12, 0]);
+  const filter = useMotionTemplate`blur(${blur}px)`;
+  return (
+    <motion.span className="mr-[0.24em] inline-block" style={{ opacity, y, filter }}>
+      {children}
+    </motion.span>
+  );
+}
+
 function SessionBackdrop({ images, index }) {
   if (!images.length) return null;
   return (
@@ -78,11 +106,10 @@ function SessionBackdrop({ images, index }) {
 }
 
 /**
- * StoryHero — a scroll-told hero. It opens on "Move from uncertainty" over a
- * blurred, dimmed session backdrop, then as you scroll the picture sharpens and
- * "to confident, purposeful action" resolves in, the deep premium card settles,
- * and the supporting copy + CTAs arrive. Falls back to a calm static hero for
- * reduced-motion.
+ * StoryHero — a scroll-told hero. Opens on "Move from uncertainty" over a
+ * blurred, dimmed session backdrop; scrolling clears the picture while
+ * "to confident, purposeful action" builds in word by word and the supporting
+ * copy + CTAs arrive. Falls back to a calm static hero for reduced-motion.
  */
 export function StoryHero() {
   const images = EVENT_IMAGES || [];
@@ -101,26 +128,30 @@ export function StoryHero() {
     offset: ["start start", "end end"],
   });
 
-  // Background: uncertainty (blurred, dim, over-scaled) → clarity (sharp, bright).
-  const bgBlur = useTransform(scrollYProgress, [0, 0.55], [14, 0]);
-  const bgBright = useTransform(scrollYProgress, [0, 0.6], [0.5, 1]);
-  const bgScale = useTransform(scrollYProgress, [0, 1], [1.14, 1]);
+  // Background: uncertainty (blurred, dim, over-scaled) → clarity (sharp, richer
+  // — less scrim so Debo's session photo breathes through at the payoff).
+  const bgBlur = useTransform(scrollYProgress, [0, 0.55], [16, 0]);
+  const bgBright = useTransform(scrollYProgress, [0, 0.6], [0.42, 1]);
+  const bgScale = useTransform(scrollYProgress, [0, 1], [1.18, 1.02]);
+  const bgY = useTransform(scrollYProgress, [0, 1], ["-2%", "3%"]);
   const bgFilter = useMotionTemplate`blur(${bgBlur}px) brightness(${bgBright})`;
-  const scrimOpacity = useTransform(scrollYProgress, [0, 0.6], [0.7, 0.42]);
+  const scrimOpacity = useTransform(scrollYProgress, [0, 0.6], [0.78, 0.32]);
+  const glowOpacity = useTransform(scrollYProgress, [0, 0.7], [0.12, 0.55]);
 
-  // Content beats. The eyebrow, "Move from uncertainty" and the card are visible
-  // from the first frame; scrolling resolves the rest of the story.
-  const line2Opacity = useTransform(scrollYProgress, [0.14, 0.5], [0.12, 1]);
-  const line2Blur = useTransform(scrollYProgress, [0.14, 0.55], [16, 0]);
-  const line2Filter = useMotionTemplate`blur(${line2Blur}px)`;
-  const line2Y = useTransform(scrollYProgress, [0.14, 0.5], [24, 0]);
-  const subOpacity = useTransform(scrollYProgress, [0.42, 0.64], [0, 1]);
-  const subY = useTransform(scrollYProgress, [0.42, 0.64], [20, 0]);
-  const ctaOpacity = useTransform(scrollYProgress, [0.56, 0.8], [0, 1]);
-  const ctaY = useTransform(scrollYProgress, [0.56, 0.8], [20, 0]);
-  const cueOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
+  // Content beats.
+  const subOpacity = useTransform(scrollYProgress, [0.5, 0.72], [0, 1]);
+  const subY = useTransform(scrollYProgress, [0.5, 0.72], [22, 0]);
+  const ctaOpacity = useTransform(scrollYProgress, [0.64, 0.86], [0, 1]);
+  const ctaY = useTransform(scrollYProgress, [0.64, 0.86], [22, 0]);
+  const credOpacity = useTransform(scrollYProgress, [0.8, 0.98], [0, 1]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [12, -26]); // subtle depth parallax
+  const cueOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
 
-  // Reduced motion / no-JS-scroll fallback: a calm, fully-visible hero.
+  const WORD_START = 0.14;
+  const WORD_STEP = 0.07;
+  const WORD_WINDOW = 0.2;
+
+  // Reduced motion / no-scroll fallback.
   if (reduce) {
     return (
       <section className="relative overflow-hidden" data-testid="hero-section">
@@ -128,18 +159,19 @@ export function StoryHero() {
           <SessionBackdrop images={images} index={bgIndex} />
           <div className="absolute inset-0 bg-bg/70" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/40 via-bg/60 to-bg" />
+          <div className="hero-vignette absolute inset-0" aria-hidden />
         </div>
         <div className="hero-grid pointer-events-none absolute inset-0 z-[1]" aria-hidden />
         <div className="container-page relative z-10 pt-28 pb-24 text-center md:pt-36 md:pb-32">
-          <div className="premium-card mx-auto max-w-4xl rounded-[32px] px-6 py-14 md:px-12 md:py-20">
-            <Eyebrow />
-            <h1 className="mx-auto mt-7 max-w-4xl">
+          <div className="premium-card mx-auto max-w-4xl rounded-[28px] px-6 py-16 md:px-14 md:py-24">
+            <Kicker />
+            <h1 className="mx-auto mt-8 max-w-4xl leading-[0.98] tracking-tight">
               <span className="text-silver">{LINE1} </span>
-              <span className="font-display-italic text-lime">{LINE2}</span>
-              <span className="text-silver">.</span>
+              <span className="font-display-italic text-lime">to confident, purposeful action.</span>
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85">{SUBTEXT}</p>
             <div className="mt-10"><Ctas /></div>
+            <div className="mt-10"><Credentials /></div>
           </div>
         </div>
       </section>
@@ -147,68 +179,75 @@ export function StoryHero() {
   }
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative"
-      style={{ height: "200vh" }}
-      data-testid="hero-section"
-    >
+    <section ref={sectionRef} className="relative" style={{ height: "230vh" }} data-testid="hero-section">
       {/* Pinned stage */}
       <div className="sticky top-0 flex h-screen items-center overflow-hidden" style={{ perspective: "1400px" }}>
-        {/* Session backdrop with scroll-driven clarity */}
-        <motion.div className="absolute inset-0" style={{ filter: bgFilter, scale: bgScale }} aria-hidden>
+        {/* Session backdrop with scroll-driven clarity + parallax drift */}
+        <motion.div className="absolute inset-0" style={{ filter: bgFilter, scale: bgScale, y: bgY }} aria-hidden>
           <SessionBackdrop images={images} index={bgIndex} />
         </motion.div>
         <motion.div className="absolute inset-0 bg-bg" style={{ opacity: scrimOpacity }} aria-hidden />
-        <div className="absolute inset-0 bg-gradient-to-b from-bg/30 via-transparent to-bg" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg/40 via-transparent to-bg" aria-hidden />
+        <div className="hero-vignette pointer-events-none absolute inset-0 z-[1]" aria-hidden />
         <div className="hero-grid pointer-events-none absolute inset-0 z-[1]" aria-hidden />
-        <div className="lime-glow pointer-events-none absolute inset-x-0 top-0 h-[70vh]" aria-hidden />
+        <motion.div
+          className="lime-glow pointer-events-none absolute inset-x-0 top-0 h-[75vh]"
+          style={{ opacity: glowOpacity }}
+          aria-hidden
+        />
 
-        {/* Card */}
+        {/* Content */}
         <div className="container-page relative z-10 w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="premium-card relative mx-auto max-w-4xl overflow-hidden rounded-[32px] px-6 py-14 text-center md:px-12 md:py-20"
-          >
-            <div className="pointer-events-none absolute -inset-px rounded-[32px] ring-1 ring-inset ring-white/5" />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-0 h-px w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-lime to-transparent"
-            />
-
-            <Eyebrow />
-
-            <h1 className="mx-auto mt-7 max-w-4xl">
-              <span className="text-silver">{LINE1} </span>
-              <motion.span
-                className="font-display-italic text-lime"
-                style={{ opacity: line2Opacity, y: line2Y, filter: line2Filter, display: "inline-block" }}
-              >
-                {LINE2}.
-              </motion.span>
-            </h1>
-
-            <motion.p
-              className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85"
-              style={{ opacity: subOpacity, y: subY }}
+          <motion.div style={{ y: contentY }}>
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="premium-card relative mx-auto max-w-4xl overflow-hidden rounded-[28px] px-6 py-16 text-center md:px-14 md:py-24"
             >
-              {SUBTEXT}
-            </motion.p>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-0 h-px w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-lime to-transparent"
+              />
 
-            <motion.div className="mt-10" style={{ opacity: ctaOpacity, y: ctaY }}>
-              <Ctas />
+              <Kicker />
+
+              <h1 className="mx-auto mt-8 max-w-4xl leading-[0.98] tracking-tight">
+                <span className="text-silver">{LINE1} </span>
+                <span className="font-display-italic text-lime">
+                  {LINE2_WORDS.map((w, i) => (
+                    <ScrollWord
+                      key={w + i}
+                      progress={scrollYProgress}
+                      start={WORD_START + i * WORD_STEP}
+                      end={WORD_START + i * WORD_STEP + WORD_WINDOW}
+                    >
+                      {w}
+                    </ScrollWord>
+                  ))}
+                </span>
+              </h1>
+
+              <motion.p
+                className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85"
+                style={{ opacity: subOpacity, y: subY }}
+              >
+                {SUBTEXT}
+              </motion.p>
+
+              <motion.div className="mt-10" style={{ opacity: ctaOpacity, y: ctaY }}>
+                <Ctas />
+              </motion.div>
+
+              <motion.div className="mt-10" style={{ opacity: credOpacity }}>
+                <Credentials />
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
 
-        {/* Scroll cue — fades out as the story begins */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
-          style={{ opacity: cueOpacity }}
-          aria-hidden
-        >
+        {/* Scroll cue */}
+        <motion.div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2" style={{ opacity: cueOpacity }} aria-hidden>
           <div className="flex h-10 w-6 items-start justify-center rounded-full border border-white/20 p-1.5">
             <motion.div
               className="h-2 w-1 rounded-full bg-lime"

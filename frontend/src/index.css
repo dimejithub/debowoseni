@@ -473,6 +473,11 @@
     transition: opacity 0.3s ease;
   }
 
+  /* Cinematic vignette to sink the frame edges. */
+  .hero-vignette {
+    background: radial-gradient(125% 95% at 50% 32%, transparent 42%, rgba(0, 0, 0, 0.62) 100%);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tile-rise, .spark-line, .spark-area, .spark-pulse, .spark-dot, .bar-grow,
     .dash-aurora, .tile-breathe, .live-ping, .tile-rise.tile-breathe {
