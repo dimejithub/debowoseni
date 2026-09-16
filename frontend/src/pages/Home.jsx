@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import {
   ABOUT_HERO_URL,
   EVENT_IMAGES,
@@ -21,7 +20,7 @@ import { BookShelf } from "@/components/site/BookShelf";
 import { ImageMarquee, Marquee } from "@/components/site/Marquee";
 import { CountUp } from "@/components/site/CountUp";
 import { VideoModal } from "@/components/site/VideoModal";
-import { MagneticButton } from "@/components/site/MagneticButton";
+import { StoryHero } from "@/components/site/StoryHero";
 import {
   getPublishedBooks,
   getPublishedEvents,
@@ -49,82 +48,6 @@ function SectionEyebrow({ children }) {
   );
 }
 
-/**
- * KenBurnsBackdrop — slow cinematic crossfade of hero images with a subtle
- * zoom/pan ("Ken Burns") on the currently visible frame. Sits absolutely
- * behind the hero content. A dark overlay tames the imagery so the glass
- * panel + copy stay readable.
- */
-function KenBurnsBackdrop({ images = [], intervalMs = 5500 }) {
-  const [index, setIndex] = useState(0);
-  const safeImages = images.length ? images : [];
-
-  useEffect(() => {
-    if (safeImages.length <= 1) return undefined;
-    const id = setInterval(
-      () => setIndex((i) => (i + 1) % safeImages.length),
-      intervalMs
-    );
-    return () => clearInterval(id);
-  }, [safeImages.length, intervalMs]);
-
-  if (!safeImages.length) return null;
-
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      aria-hidden
-      data-testid="hero-kenburns-backdrop"
-    >
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={safeImages[index]}
-          initial={{ opacity: 0, scale: 1.04 }}
-          animate={{ opacity: 1, scale: 1.18 }}
-          exit={{ opacity: 0, scale: 1.22 }}
-          transition={{
-            opacity: { duration: 1.6, ease: "easeInOut" },
-            scale: { duration: 7, ease: "linear" },
-          }}
-          className="absolute inset-0"
-        >
-          <img
-            src={safeImages[index]}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="eager"
-          />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* layered overlays for readability */}
-      <div className="absolute inset-0 bg-bg/55" />
-      <div className="absolute inset-0 bg-gradient-to-b from-bg/30 via-bg/50 to-bg" />
-      <div
-        className="absolute inset-0 mix-blend-overlay opacity-40"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse 80% 60% at 50% 20%, rgba(188,234,62,0.10), transparent 60%)",
-        }}
-      />
-
-      {/* tiny progress dots */}
-      {safeImages.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
-          {safeImages.map((src, i) => (
-            <span
-              key={src}
-              className={`h-1 rounded-full transition-all duration-500 ${
-                i === index ? "w-8 bg-lime" : "w-3 bg-white/30"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Home() {
   const [videoOpen, setVideoOpen] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -147,141 +70,10 @@ export default function Home() {
   const eventGallery =
     (events[0]?.gallery && events[0].gallery.length ? events[0].gallery : EVENT_IMAGES).slice(0, 3);
 
-  // Cinematic hero card: lime mouse-sheen + a gentle 3D tilt that tracks the
-  // cursor. Written straight to the node (no re-render) and throttled with rAF;
-  // skipped for reduced-motion and coarse-pointer (touch) devices.
-  const heroCardRef = useRef(null);
-  const heroRaf = useRef(0);
-  const heroInteractive = () =>
-    typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
-    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const onHeroMove = (e) => {
-    const el = heroCardRef.current;
-    if (!el || !heroInteractive()) return;
-    cancelAnimationFrame(heroRaf.current);
-    heroRaf.current = requestAnimationFrame(() => {
-      const r = el.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      el.style.setProperty("--mouse-x", `${x}px`);
-      el.style.setProperty("--mouse-y", `${y}px`);
-      el.style.setProperty("--sheen-opacity", "1");
-      el.style.setProperty("--rx", `${(y / r.height - 0.5) * -5}deg`);
-      el.style.setProperty("--ry", `${(x / r.width - 0.5) * 5}deg`);
-    });
-  };
-  const onHeroLeave = () => {
-    const el = heroCardRef.current;
-    if (!el) return;
-    cancelAnimationFrame(heroRaf.current);
-    el.style.setProperty("--sheen-opacity", "0");
-    el.style.setProperty("--rx", "0deg");
-    el.style.setProperty("--ry", "0deg");
-  };
-
   return (
     <div data-testid="home-page">
-      {/* HERO — cinematic: session-photo Ken-Burns backdrop, blueprint grid,
-          and a deep premium card that tracks the cursor. */}
-      <section className="relative overflow-hidden" data-testid="hero-section" style={{ perspective: "1400px" }}>
-        {/* Animated event-image background */}
-        <KenBurnsBackdrop images={EVENT_IMAGES} />
-
-        {/* Faint blueprint grid over the imagery */}
-        <div className="hero-grid pointer-events-none absolute inset-0 z-[1]" aria-hidden />
-
-        {/* Soft lime glow on top of the gallery */}
-        <div className="lime-glow pointer-events-none absolute inset-x-0 top-0 h-[70vh]" aria-hidden />
-
-        <div className="container-page relative z-10 pt-28 pb-24 md:pt-36 md:pb-36">
-          {/* Deep premium card that frames the headline content */}
-          <motion.div
-            ref={heroCardRef}
-            onMouseMove={onHeroMove}
-            onMouseLeave={onHeroLeave}
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="premium-card relative mx-auto max-w-4xl overflow-hidden rounded-[32px] px-6 py-14 text-center md:px-12 md:py-20"
-            data-testid="hero-glass-panel"
-          >
-            {/* mouse-following lime sheen */}
-            <div className="premium-card__sheen" aria-hidden />
-            <div className="pointer-events-none absolute -inset-px rounded-[32px] ring-1 ring-inset ring-white/5" />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-0 h-px w-28 -translate-x-1/2 bg-gradient-to-r from-transparent via-lime to-transparent"
-            />
-
-            <Reveal>
-              <p className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.28em] text-ink/70">
-                <span className="inline-block h-px w-8 bg-lime/60" />
-                Transformation Coaching
-                <span className="inline-block h-px w-8 bg-lime/60" />
-              </p>
-            </Reveal>
-            <Reveal delay={0.08}>
-              <h1 className="mx-auto mt-7 max-w-4xl">
-                <span className="text-silver">Move from uncertainty to </span>
-                <span className="font-display-italic text-lime">confident, purposeful action</span>
-                <span className="text-silver">.</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.18}>
-              <p className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-ink/85">
-                I help purpose-driven individuals and leaders define what matters, strengthen their
-                confidence, and develop practical strategies for meaningful personal and professional
-                growth.
-              </p>
-            </Reveal>
-            <Reveal delay={0.28}>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                <MagneticButton
-                  as={Link}
-                  to="/expressions/life-transformation-enquiry"
-                  className="btn-lime"
-                  data-testid="hero-explore-programmes"
-                >
-                  Explore Programmes
-                  <ArrowUpRight className="h-4 w-4" />
-                </MagneticButton>
-                <a
-                  href={YOUTUBE_CHANNEL_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="btn-ghost backdrop-blur"
-                  data-testid="hero-watch-debo"
-                >
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-bg/80">
-                    <Play className="h-3 w-3 fill-current text-lime" />
-                  </span>
-                  Watch Debo&apos;
-                </a>
-              </div>
-            </Reveal>
-          </motion.div>
-
-          {/* subtle scroll cue */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-            className="mt-14 flex justify-center"
-            aria-hidden
-          >
-            <div className="flex h-10 w-6 items-start justify-center rounded-full border border-white/15 p-1.5">
-              <motion.div
-                className="h-2 w-1 rounded-full bg-lime"
-                animate={{ y: [0, 12, 0], opacity: [1, 0.2, 1] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* HERO — scroll-told cinematic story (StoryHero) */}
+      <StoryHero />
 
       {/* TRANSITION DIVIDER */}
       <div className="border-t border-line bg-bg" data-testid="hero-divider" />
