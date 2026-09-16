@@ -5,7 +5,6 @@ import {
   Calendar,
   CalendarCheck,
   CalendarPlus,
-  GraduationCap,
   Inbox,
   LogOut,
   Mail,
@@ -296,7 +295,7 @@ export default function AdminDashboard() {
   const mini = [
     { label: "Community", to: "/admin/people", Icon: MessageCircle, value: num(stats?.community?.members) },
     { label: "Automations", to: "/admin/automations", Icon: Workflow, value: num(stats?.automations?.sequences) },
-    { label: "Programmes", to: "/admin/people", Icon: GraduationCap, value: num(stats?.enrolments?.active) },
+    { label: "Attended", to: "/admin/registrations", Icon: CalendarCheck, value: num(stats?.registrations?.attended) },
     { label: "Published", to: "/admin/posts", Icon: Sparkles,
       value: stats?.content ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0) : "—" },
   ];
