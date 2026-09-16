@@ -279,7 +279,8 @@ export default function AdminDashboard() {
     ? Object.entries(health.tables).filter(([, ok]) => !ok).map(([t]) => t) : [];
 
   const total = stats?.subscribers?.total || 1;
-  const firstName = (user?.email || "").split("@")[0].split(".")[0];
+  const rawName = (user?.email || "").split("@")[0].split(".")[0];
+  const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
   const eng = stats?.engagement || {};
   const engMax = Math.max(eng.opened || 0, eng.clicked || 0, eng.bounced || 0, 1);
 
