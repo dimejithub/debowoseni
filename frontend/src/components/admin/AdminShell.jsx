@@ -25,18 +25,20 @@ export function AdminShell() {
       <AdminSidebar open={open} onClose={() => setOpen(false)} pathname={pathname} />
 
       {/* Mobile top app bar — the one consistent way to reach navigation on
-          phones. Hidden on desktop, where the sidebar is always visible. */}
-      <div className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-line bg-bg/90 px-4 backdrop-blur md:hidden">
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+          phones. Hidden on desktop, where the sidebar is always visible. Brand
+          on the left, menu button on the right, mirroring the public site's
+          navbar so the two feel like one product. */}
+      <div className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-line bg-bg/90 px-4 backdrop-blur md:hidden">
         <span className="font-display text-sm tracking-tight text-ink">
           debo owoseni<span className="text-lime">.</span>
         </span>
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="admin-content md:pl-64">
