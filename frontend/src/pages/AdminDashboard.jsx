@@ -339,8 +339,16 @@ export default function AdminDashboard() {
     ? Object.entries(health.tables).filter(([, ok]) => !ok).map(([t]) => t) : [];
 
   const total = stats?.subscribers?.total || 1;
+  // This is Debo's dashboard, so greet him by name rather than deriving it from
+  // whatever login address is used (a shared "admin@…" inbox rendered as
+  // "Coach Admin"). A real personal name in the email still shows through.
   const rawName = (user?.email || "").split("@")[0].split(".")[0];
-  const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
+  const GENERIC_LOGINS = ["admin", "info", "hello", "hi", "team", "contact", "office", "mail", "support"];
+  const derived = rawName && !GENERIC_LOGINS.includes(rawName.toLowerCase())
+    ? rawName.charAt(0).toUpperCase() + rawName.slice(1)
+    : "";
+  // Fall back to Debo for generic/shared logins so it never reads "Coach Admin".
+  const firstName = derived && derived.length <= 14 ? derived : "Debo";
   const eng = stats?.engagement || {};
   const engMax = Math.max(eng.delivered || 0, eng.opened || 0, eng.clicked || 0, eng.bounced || 0, 1);
   const trackingConfigured = Boolean(eng.tracking_configured);
