@@ -1945,18 +1945,27 @@ def admin_event_reminder_status(item_id: str, user=Depends(require_user)):
     return _event_reminder_status(_admin_get("events", item_id))
 
 
-@api.post("/admin/events/{item_id}/test-reminder")
-def admin_test_reminder(item_id: str, user=Depends(require_user)):
-    """Send the real countdown-reminder email for this event to the signed-in
-    admin's own inbox, so Debo can preview exactly what registrants receive —
-    built and rendered through the live mailer pipeline.
+class TestReminderIn(BaseModel):
+    # Optional recipient — defaults to the signed-in admin's own inbox.
+    to: Optional[EmailStr] = None
 
-    Safety: the recipient is always the authenticated admin's own address, never
-    a value from the request, so this can't be used to mail anyone else.
+
+@api.post("/admin/events/{item_id}/test-reminder")
+def admin_test_reminder(
+    item_id: str, payload: TestReminderIn = TestReminderIn(), user=Depends(require_user)
+):
+    """Send the real countdown-reminder email for this event, built and rendered
+    through the live mailer pipeline, so Debo can preview exactly what
+    registrants receive.
+
+    Sends to the address in the request when given, otherwise to the signed-in
+    admin's own inbox. Requires an authenticated admin (who can already email any
+    address via broadcasts), so a chosen recipient is safe here.
     """
-    to = getattr(user, "email", None) or (user.get("email") if isinstance(user, dict) else None)
+    admin_email = getattr(user, "email", None) or (user.get("email") if isinstance(user, dict) else None)
+    to = (str(payload.to) if payload and payload.to else admin_email)
     if not to:
-        raise HTTPException(400, "Your admin account has no email to send the test to.")
+        raise HTTPException(400, "No recipient address available for the test.")
     event = _admin_get("events", item_id)
 
     # Mirror a live send: preview the nearest milestone still ahead (falling back
