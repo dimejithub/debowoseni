@@ -518,10 +518,15 @@ export default function AdminEvents() {
                 >
                   {ev.cover_url && (<img src={ev.cover_url} alt="" className="aspect-[16/8] w-full object-cover" />)}
                   <div className="p-5">
-                    <div className="mb-2 flex items-center gap-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                         ev.status === "published" ? "bg-lime text-bg" : "border border-line text-muted"
                       }`}>{ev.status}</span>
+                      {ev.status === "published" && ev.location_type === "online" && !(ev.online_url || "").trim() && (
+                        <span className="rounded-full border border-amber-400/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-500" data-testid={`event-needs-link-${ev.id}`}>
+                          No meeting link
+                        </span>
+                      )}
                       {ev.location && (<span className="text-xs text-muted">· {ev.location}</span>)}
                     </div>
                     <p className="font-display text-xl tracking-tight">{ev.title}</p>
@@ -619,6 +624,7 @@ function ReminderPanel({ data, busy, onRefresh }) {
     total_reminded: totalReminded = 0,
     records_may_be_stale: stale = false,
     has_join_link: hasLink,
+    needs_join_link: needsLink = false,
     days_until: daysUntil,
     published,
     event_date: eventDate,
@@ -641,7 +647,11 @@ function ReminderPanel({ data, busy, onRefresh }) {
                 : daysUntil === 0 ? "Today" : "Past event"}
             </span>
           )}
-          <span className={`rounded-full px-2 py-0.5 ${hasLink ? "text-lime border border-lime/40" : "border border-line"}`}>
+          <span className={`rounded-full px-2 py-0.5 ${
+            hasLink ? "text-lime border border-lime/40"
+              : needsLink ? "text-amber-500 border border-amber-400/50"
+              : "border border-line"
+          }`}>
             {hasLink ? "Join link set" : "No join link"}
           </span>
         </div>
@@ -655,6 +665,14 @@ function ReminderPanel({ data, busy, onRefresh }) {
           <span className="font-semibold">Records may be out of step.</span>{" "}
           {totalReminded} reminder{totalReminded === 1 ? "" : "s"} on record, but only {regs} registered now.
           Usually means registrants were removed, or this event was reused for a new date, after the reminders went out.
+        </p>
+      )}
+
+      {needsLink && (
+        <p className="mt-3 rounded-[12px] border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs text-amber-500" data-testid="reminder-needs-link">
+          <span className="font-semibold">No meeting link yet.</span>{" "}
+          This is an online event, so its reminders can&apos;t link anywhere until you add the joining link.
+          Edit the event and set <span className="font-medium">Video call / webinar link</span> before the next nudge goes out.
         </p>
       )}
 
