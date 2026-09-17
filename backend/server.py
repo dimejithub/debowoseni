@@ -1927,12 +1927,23 @@ def _event_reminder_status(event: dict) -> dict:
             }
         )
 
+    # Self-audit: the largest audience any milestone actually reminded. If that
+    # exceeds the people currently registered, the reminder log is out of step
+    # with the registration list — usually because registrants were removed (or
+    # the event was reused for a new date) after the reminders went out. We
+    # surface it rather than showing a bare count that looks contradictory
+    # (e.g. "0 registrants · 12 sent").
+    total_reminded = max(
+        (m["sent"] + m["failed"] for m in milestones), default=0
+    )
     return {
         "event_id": event.get("id"),
         "title": event.get("title"),
         "event_date": event.get("event_date"),
         "days_until": (ev_date - today).days if ev_date else None,
         "registrant_count": reg_count,
+        "total_reminded": total_reminded,
+        "records_may_be_stale": total_reminded > reg_count,
         "has_join_link": bool((event.get("online_url") or "").strip()),
         "published": event.get("status") == "published",
         "milestones": milestones,
@@ -2561,11 +2572,14 @@ def _next_event_summary() -> Optional[dict]:
         (m for m in status["milestones"] if m["when"] in ("today", "upcoming")), None
     )
     return {
+        "id": rows[0].get("id"),
         "title": status["title"],
         "slug": rows[0].get("slug"),
         "event_date": status["event_date"],
         "days_until": status["days_until"],
         "registrant_count": status["registrant_count"],
+        "total_reminded": status["total_reminded"],
+        "records_may_be_stale": status["records_may_be_stale"],
         "has_join_link": status["has_join_link"],
         "next_nudge": next_nudge,
     }
@@ -2680,6 +2694,7 @@ def admin_stats(user=Depends(require_user)):
             "enrol_done": ex.submit(_count, "programme_enrolments", stage="completed"),
             "seq_active": ex.submit(_count, "sequences", status="active"),
             "seq_enrolled": ex.submit(_count, "sequence_enrolments", status="active"),
+            "delivered": ex.submit(_count, "campaign_sends", status="delivered"),
             "opened": ex.submit(_count, "campaign_sends", status="opened"),
             "clicked": ex.submit(_count, "campaign_sends", status="clicked"),
             "bounced": ex.submit(_count, "campaign_sends", status="bounced"),
@@ -2747,10 +2762,17 @@ def admin_stats(user=Depends(require_user)):
             "enrolled": c["seq_enrolled"],
         },
         "engagement": {
+            "delivered": c["delivered"],
             "opened": c["opened"] + c["clicked"],
             "clicked": c["clicked"],
             "bounced": c["bounced"],
+            # The secret being set only means we *could* verify events. Proof it's
+            # actually working is a real send that advanced past "sent" — delivery,
+            # open, click or bounce — since only the webhook writes those.
             "tracking_configured": bool(RESEND_WEBHOOK_SECRET),
+            "tracking_receiving": (
+                c["delivered"] + c["opened"] + c["clicked"] + c["bounced"]
+            ) > 0,
         },
         "contact_messages": c["contact"],
         "next_event": next_event,

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, BellRing, ChevronDown, Copy, ImageIcon, Plus, Save, Send, Trash2, Users, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -29,12 +29,32 @@ export default function AdminEvents() {
   const [reminderData, setReminderData] = useState({}); // id -> status
   const [reminderBusy, setReminderBusy] = useState(null); // id currently loading
   const listRef = useReveal([items]);
+  const [searchParams] = useSearchParams();
+  const deepLinkedRef = useRef(null);
 
   useEffect(() => {
     if (loading || !user) return;
     refresh();
     // eslint-disable-next-line
   }, [loading, user]);
+
+  // Deep link from the dashboard's "Next event" card: /admin/events?event=<id>
+  // opens that event's reminder/stats panel and scrolls it into view — once, so
+  // the card lands you on that event's stats rather than the top of the list.
+  useEffect(() => {
+    const target = searchParams.get("event");
+    if (!target || busy || !items.length) return;
+    if (deepLinkedRef.current === target) return;
+    if (!items.some((e) => e.id === target)) return;
+    deepLinkedRef.current = target;
+    toggleReminders(target, { force: true });
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-testid="event-row-${target}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    // eslint-disable-next-line
+  }, [searchParams, items, busy]);
 
   async function refresh() {
     setBusy(true);
@@ -588,6 +608,8 @@ function ReminderPanel({ data, busy, onRefresh }) {
 
   const {
     registrant_count: regs = 0,
+    total_reminded: totalReminded = 0,
+    records_may_be_stale: stale = false,
     has_join_link: hasLink,
     days_until: daysUntil,
     published,
@@ -619,6 +641,14 @@ function ReminderPanel({ data, busy, onRefresh }) {
           {busy ? "Refreshing…" : "Refresh"}
         </button>
       </div>
+
+      {stale && (
+        <p className="mt-3 rounded-[12px] border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs text-amber-500" data-testid="reminder-stale">
+          <span className="font-semibold">Records may be out of step.</span>{" "}
+          {totalReminded} reminder{totalReminded === 1 ? "" : "s"} on record, but only {regs} registered now.
+          Usually means registrants were removed, or this event was reused for a new date, after the reminders went out.
+        </p>
+      )}
 
       {notReady ? (
         <p className="mt-3 text-xs text-muted/80">
