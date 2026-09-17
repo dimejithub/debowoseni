@@ -558,3 +558,11 @@
   border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
   box-shadow: 0 16px 34px -20px rgba(33, 29, 24, 0.30);
 }
+
+/* Admin mobile: the AdminShell provides a single sticky top app bar on phones,
+   so each page's own sticky header would stack against it. On small screens let
+   those per-page headers scroll away with the content instead — the app bar
+   stays put for navigation. (Desktop keeps the sticky page headers.) */
+@media (max-width: 767px) {
+  .admin-content header { position: static; }
+}
