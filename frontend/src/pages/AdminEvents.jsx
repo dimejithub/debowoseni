@@ -88,8 +88,16 @@ export default function AdminEvents() {
       currency: draft.currency || "GBP",
     };
     try {
-      if (editingId) { await adminEvents.update(editingId, payload); toast.success("Updated."); }
-      else { await adminEvents.create(payload); toast.success("Added."); }
+      if (editingId) {
+        // Stay in the editor after an update so the saved values (e.g. the
+        // meeting link) remain visible — clearing the form here made it look
+        // like the change had vanished.
+        await adminEvents.update(editingId, payload);
+        toast.success("Saved.", { description: "Your changes are live." });
+        refresh();
+        return;
+      }
+      await adminEvents.create(payload); toast.success("Added.");
       setDraft(EMPTY); setEditingId(null); refresh();
     } catch (err) { toast.error("Couldn't save", { description: err?.message || "" }); }
   };
