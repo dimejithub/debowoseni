@@ -67,6 +67,19 @@ export default function AdminEvents() {
 
   const save = async () => {
     if (!draft.title.trim()) { toast.error("Title required"); return; }
+    // A published online event must carry a joining link — its invite and
+    // 7/3/2/1-day reminders have nowhere to point without one. Drafts can still
+    // be saved while you're setting up (the "No meeting link" flag nudges you).
+    if (
+      draft.status === "published" &&
+      draft.location_type === "online" &&
+      !(draft.online_url || "").trim()
+    ) {
+      toast.error("Add the meeting link first", {
+        description: "Online events need a Video call / webinar link before they can be published. Save as a draft if you don't have it yet.",
+      });
+      return;
+    }
     const payload = {
       ...draft,
       event_date: draft.event_date || null,
@@ -297,10 +310,13 @@ export default function AdminEvents() {
             </Field>
 
             <GroupHeading>Online joining details</GroupHeading>
-            <Field label="Video call / webinar link (Zoom, Google Meet, Teams…)">
+            <Field label={`Video call / webinar link (Zoom, Google Meet, Teams…)${draft.location_type === "online" ? " — required to publish" : ""}`}>
               <input value={draft.online_url} onChange={(e) => setDraft({ ...draft, online_url: e.target.value })}
                 placeholder="https://meet.google.com/…"
-                className="w-full rounded-full border border-line bg-bg px-4 py-2 text-sm outline-none focus:border-lime"
+                className={`w-full rounded-full border bg-bg px-4 py-2 text-sm outline-none focus:border-lime ${
+                  draft.location_type === "online" && draft.status === "published" && !(draft.online_url || "").trim()
+                    ? "border-amber-400/60" : "border-line"
+                }`}
                 data-testid="event-online-url" />
             </Field>
             <Field label="Other joining details (optional) — dial-in number, PIN, etc.">
