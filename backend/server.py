@@ -1936,15 +1936,30 @@ def _event_reminder_status(event: dict) -> dict:
     total_reminded = max(
         (m["sent"] + m["failed"] for m in milestones), default=0
     )
+    # An online event that's published, still ahead, but has no joining link set
+    # can't put one in its reminders — flag it so it's caught before the next
+    # nudge goes out (rather than a registrant clicking through to nothing).
+    has_join_link = bool((event.get("online_url") or "").strip())
+    is_online = (event.get("location_type") or "").strip().lower() == "online"
+    days_until = (ev_date - today).days if ev_date else None
+    needs_join_link = (
+        is_online
+        and not has_join_link
+        and event.get("status") == "published"
+        and days_until is not None
+        and days_until >= 0
+    )
     return {
         "event_id": event.get("id"),
         "title": event.get("title"),
         "event_date": event.get("event_date"),
-        "days_until": (ev_date - today).days if ev_date else None,
+        "days_until": days_until,
         "registrant_count": reg_count,
         "total_reminded": total_reminded,
         "records_may_be_stale": total_reminded > reg_count,
-        "has_join_link": bool((event.get("online_url") or "").strip()),
+        "has_join_link": has_join_link,
+        "is_online": is_online,
+        "needs_join_link": needs_join_link,
         "published": event.get("status") == "published",
         "milestones": milestones,
     }
@@ -2581,6 +2596,7 @@ def _next_event_summary() -> Optional[dict]:
         "total_reminded": status["total_reminded"],
         "records_may_be_stale": status["records_may_be_stale"],
         "has_join_link": status["has_join_link"],
+        "needs_join_link": status["needs_join_link"],
         "next_nudge": next_nudge,
     }
 

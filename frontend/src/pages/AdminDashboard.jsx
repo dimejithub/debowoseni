@@ -236,6 +236,8 @@ function NextEventBanner({ ev }) {
   if (!ev) return null;
   const regs = ev.registrant_count ?? 0;
   const stale = Boolean(ev.records_may_be_stale);
+  const needsLink = Boolean(ev.needs_join_link);
+  const attention = stale || needsLink;
   const n = ev.next_nudge;
 
   // Plain-language reminder status — worded so it can never contradict itself.
@@ -258,19 +260,19 @@ function NextEventBanner({ ev }) {
   }
 
   const to = ev.id ? `/admin/events?event=${ev.id}` : "/admin/events";
-  const accentText = stale ? "text-amber-500" : "text-lime";
+  const accentText = attention ? "text-amber-500" : "text-lime";
   return (
     <Link
       to={to}
       className={`group block rounded-2xl border px-5 py-4 transition ${
-        stale
+        attention
           ? "border-amber-400/50 bg-amber-400/10 hover:bg-amber-400/15"
           : "border-lime/40 bg-lime/10 hover:bg-lime/15"
       }`}
       data-testid="next-event-line"
     >
       <div className="flex items-center gap-3">
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${stale ? "bg-amber-400/25" : "bg-lime/25"}`}>
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${attention ? "bg-amber-400/25" : "bg-lime/25"}`}>
           <BellRing className={`h-4 w-4 ${accentText}`} />
         </span>
         <div className="min-w-0 flex-1">
@@ -288,6 +290,12 @@ function NextEventBanner({ ev }) {
         </span>
         <span className={`font-medium ${accentText}`}>· {status}</span>
       </div>
+      {needsLink && (
+        <div className="mt-2 flex items-start gap-1.5 pl-11 text-xs text-amber-500" data-testid="next-event-needs-link">
+          <span aria-hidden>⚠</span>
+          <span>Online event with no meeting link yet — reminders can&apos;t link to it. Add one.</span>
+        </div>
+      )}
     </Link>
   );
 }
