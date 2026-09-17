@@ -410,7 +410,7 @@ export default function AdminDashboard() {
         <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-line bg-gradient-to-br from-[color-mix(in_srgb,var(--lime)_10%,var(--surface))] to-surface p-6 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="font-display text-2xl tracking-tight text-ink sm:text-3xl">
-              {greeting(new Date().getHours())}{firstName ? `, ${firstName}` : ""}.
+              {greeting(new Date().getHours())}{firstName ? `, Coach ${firstName}` : ""} 🙌
             </h2>
             <p className="mt-1 text-sm text-muted">
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} · here&apos;s how debowoseni.com is doing.
