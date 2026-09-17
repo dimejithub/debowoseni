@@ -88,17 +88,35 @@ function relTime(iso) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-function Card({ title, action, children, className = "" }) {
+function Card({ title, subtitle, action, children, className = "" }) {
   return (
     <div className={`rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6 ${className}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          {title && <h3 className="font-display text-lg tracking-tight text-ink">{title}</h3>}
-          {action}
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {title && <h3 className="font-display text-lg leading-tight tracking-tight text-ink">{title}</h3>}
+            {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
       {children}
     </div>
+  );
+}
+
+// At-a-glance email-tracking state: whether Resend is actually sending us
+// delivery/open/click events — not just whether the secret is set.
+function TrackingPill({ configured, receiving }) {
+  const [cls, label] = receiving
+    ? ["border-lime/40 bg-lime/10 text-lime", "Receiving events"]
+    : configured
+    ? ["border-amber-400/40 bg-amber-400/10 text-amber-500", "No events yet"]
+    : ["border-line bg-bg text-muted", "Not set up"];
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.7rem] font-medium ${cls}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" /> {label}
+    </span>
   );
 }
 
@@ -216,25 +234,60 @@ const ACTIVITY_META = {
 
 function NextEventBanner({ ev }) {
   if (!ev) return null;
+  const regs = ev.registrant_count ?? 0;
+  const stale = Boolean(ev.records_may_be_stale);
   const n = ev.next_nudge;
-  let nudge;
-  if (!n) nudge = (ev.days_until ?? 1) <= 0 ? "Happening today" : "All countdown reminders sent";
-  else if (n.when === "today") nudge = `Sending the ${n.days_before}-day reminder today — ${n.sent} sent${n.pending ? `, ${n.pending} pending` : ""}`;
-  else nudge = `Next reminder: ${n.days_before}-day nudge on ${fmtShortDate(n.date)}`;
+
+  // Plain-language reminder status — worded so it can never contradict itself.
+  // When the reminder log disagrees with the live registrant count, we say so
+  // outright instead of printing "0 registrants · 12 sent" and leaving Debo to
+  // reconcile it.
+  let status;
+  if (stale) {
+    status = `${ev.total_reminded} already reminded, but ${regs} registered now — worth a check`;
+  } else if (regs === 0) {
+    status = "No registrations yet";
+  } else if (!n) {
+    status = (ev.days_until ?? 1) <= 0 ? "Happening today" : "All reminders sent";
+  } else if (n.when === "today") {
+    status = n.pending > 0
+      ? `Sending the ${n.days_before}-day reminder today — ${n.sent} of ${regs} so far`
+      : `${n.days_before}-day reminder sent to all ${regs}`;
+  } else {
+    status = `Next reminder: ${n.days_before}-day nudge on ${fmtShortDate(n.date)}`;
+  }
+
+  const to = ev.id ? `/admin/events?event=${ev.id}` : "/admin/events";
+  const accentText = stale ? "text-amber-500" : "text-lime";
   return (
     <Link
-      to="/admin/events"
-      className="group flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-lime/40 bg-lime/10 px-5 py-4 transition hover:bg-lime/15"
+      to={to}
+      className={`group block rounded-2xl border px-5 py-4 transition ${
+        stale
+          ? "border-amber-400/50 bg-amber-400/10 hover:bg-amber-400/15"
+          : "border-lime/40 bg-lime/10 hover:bg-lime/15"
+      }`}
       data-testid="next-event-line"
     >
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lime/25"><BellRing className="h-4 w-4 text-lime" /></span>
-      <span className="font-display text-base tracking-tight text-ink">{ev.title}</span>
-      <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-muted">
-        {relDays(ev.days_until)}{ev.event_date ? ` · ${fmtShortDate(ev.event_date)}` : ""}
-      </span>
-      <span className="text-xs text-muted">{ev.registrant_count ?? 0} registrant{(ev.registrant_count ?? 0) === 1 ? "" : "s"}</span>
-      <span className="text-xs font-medium text-lime">· {nudge}</span>
-      <ArrowUpRight className="ml-auto h-4 w-4 shrink-0 text-muted/50 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
+      <div className="flex items-center gap-3">
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${stale ? "bg-amber-400/25" : "bg-lime/25"}`}>
+          <BellRing className={`h-4 w-4 ${accentText}`} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-muted">Next event</p>
+          <p className="truncate font-display text-base tracking-tight text-ink">{ev.title}</p>
+        </div>
+        <span className="shrink-0 rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-muted">
+          {relDays(ev.days_until)}{ev.event_date ? ` · ${fmtShortDate(ev.event_date)}` : ""}
+        </span>
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted/50 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lime" />
+      </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-11 text-xs">
+        <span className="inline-flex items-center gap-1.5 text-muted">
+          <Users className="h-3.5 w-3.5" /> {regs} registered
+        </span>
+        <span className={`font-medium ${accentText}`}>· {status}</span>
+      </div>
     </Link>
   );
 }
@@ -281,31 +334,29 @@ export default function AdminDashboard() {
   const rawName = (user?.email || "").split("@")[0].split(".")[0];
   const firstName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
   const eng = stats?.engagement || {};
-  const engMax = Math.max(eng.opened || 0, eng.clicked || 0, eng.bounced || 0, 1);
+  const engMax = Math.max(eng.delivered || 0, eng.opened || 0, eng.clicked || 0, eng.bounced || 0, 1);
+  const trackingConfigured = Boolean(eng.tracking_configured);
+  const trackingReceiving = Boolean(eng.tracking_receiving);
 
   const primary = [
     { label: "Mailing list", to: "/admin/subscribers", Icon: Mail, value: num(stats?.subscribers?.active),
       footAccent: stats ? `+${stats.subscribers?.last_30_days ?? 0}` : null, foot: "in the last 30 days" },
     { label: "Registrations", to: "/admin/registrations", Icon: Users, value: num(stats?.registrations?.total),
       foot: stats ? `${stats.registrations?.attended ?? 0} attended · ${stats.registrations?.waitlisted ?? 0} waitlisted` : "" },
-    { label: "Emails sent", to: "/admin/emails", Icon: Send, value: num(stats?.campaigns?.sent),
-      foot: stats ? `${stats.campaigns?.total ?? 0} campaigns created` : "" },
+    { label: "Campaigns sent", to: "/admin/emails", Icon: Send, value: num(stats?.campaigns?.sent),
+      foot: stats ? `of ${stats.campaigns?.total ?? 0} created` : "" },
     { label: "Enquiries", to: "/admin/enquiries", Icon: Inbox, value: num(stats?.contact_messages), foot: "via the contact form" },
   ];
   // Repoint "Automations" to people actually mid-sequence (a result), not the
   // number of sequences configured. Any stat that's zero is dropped so the row
   // never shows a hollow "0" — Community, Attended etc. only appear when real.
   const mini = [
-    { label: "In sequences", to: "/admin/automations", Icon: Workflow, value: num(stats?.automations?.enrolled) },
-    { label: "Attended", to: "/admin/registrations", Icon: CalendarCheck, value: num(stats?.registrations?.attended) },
-    { label: "Community", to: "/admin/people", Icon: MessageCircle, value: num(stats?.community?.members) },
-    { label: "Published", to: "/admin/posts", Icon: Sparkles,
+    { label: "In an email sequence", to: "/admin/automations", Icon: Workflow, value: num(stats?.automations?.enrolled) },
+    { label: "Attended an event", to: "/admin/registrations", Icon: CalendarCheck, value: num(stats?.registrations?.attended) },
+    { label: "Community members", to: "/admin/people", Icon: MessageCircle, value: num(stats?.community?.members) },
+    { label: "Published items", to: "/admin/posts", Icon: Sparkles,
       value: stats?.content ? (stats.content.posts ?? 0) + (stats.content.events ?? 0) + (stats.content.books ?? 0) : "—" },
   ].filter((m) => typeof m.value === "number" && m.value > 0);
-
-  // Open/click numbers only mean anything once the Resend webhook is wired, so
-  // the engagement card only shows when tracking is on — otherwise it's zeros.
-  const showEngagement = Boolean(stats?.engagement?.tracking_configured);
 
   return (
     <div data-testid="admin-dashboard">
@@ -382,26 +433,40 @@ export default function AdminDashboard() {
           {primary.map((c) => <StatCard key={c.label} {...c} />)}
         </div>
 
-        {/* Growth + engagement */}
+        {/* Growth + email tracking */}
         <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <Card title="Subscriber growth" className={showEngagement ? "lg:col-span-2" : "lg:col-span-3"}
+          <Card title="Subscriber growth" subtitle="New sign-ups per day, last 30 days" className="lg:col-span-2"
             action={<span className="text-xs text-muted"><span className="font-semibold text-emerald-500">+{stats?.subscribers?.last_30_days ?? 0}</span> in 30 days</span>}>
             <GrowthChart points={stats?.subscribers?.growth} />
           </Card>
-          {showEngagement && (
-            <Card title="Email engagement">
+          <Card title="Email tracking" subtitle="Delivery, opens & clicks from Resend"
+            action={<TrackingPill configured={trackingConfigured} receiving={trackingReceiving} />}>
+            {trackingReceiving ? (
               <div className="space-y-4">
+                <EngagementBar label="Delivered" value={eng.delivered || 0} max={engMax} Icon={Mail} />
                 <EngagementBar label="Opened" value={eng.opened || 0} max={engMax} Icon={MailOpen} />
                 <EngagementBar label="Clicked" value={eng.clicked || 0} max={engMax} Icon={MousePointerClick} />
                 <EngagementBar label="Bounced" value={eng.bounced || 0} max={engMax} Icon={Mail} />
+                <p className="text-[0.7rem] leading-relaxed text-muted/70">Totals across all broadcasts, updated live as Resend reports each event.</p>
               </div>
-            </Card>
-          )}
+            ) : (
+              <div className="rounded-xl border border-line bg-bg p-4 text-sm">
+                <p className="text-ink/90">
+                  {trackingConfigured ? "No delivery events received yet." : "Not set up yet."}
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                  {trackingConfigured
+                    ? "The webhook is configured. Delivery, opens and clicks appear within seconds of your next send — earlier campaigns sent before it was set up won't backfill."
+                    : "Point a Resend webhook at /api/webhooks/resend and set RESEND_WEBHOOK_SECRET, then delivery, opens and clicks show up here."}
+                </p>
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* Upcoming events · recent activity · sources */}
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <Card title="Upcoming events" action={<Link to="/admin/events" className="text-xs text-muted hover:text-lime">All events</Link>}>
+          <Card title="Upcoming events" subtitle="The next few, with people registered" action={<Link to="/admin/events" className="text-xs text-muted hover:text-lime">All events</Link>}>
             {stats?.upcoming_events?.length ? (
               <ul className="divide-y divide-line/70">
                 {stats.upcoming_events.map((e) => (
@@ -420,7 +485,7 @@ export default function AdminDashboard() {
             ) : <p className="text-sm text-muted">No upcoming events scheduled.</p>}
           </Card>
 
-          <Card title="Recent activity">
+          <Card title="Recent activity" subtitle="Latest sign-ups & registrations">
             {stats?.recent_activity?.length ? (
               <ul className="space-y-3">
                 {stats.recent_activity.map((a, i) => {
@@ -439,7 +504,7 @@ export default function AdminDashboard() {
             ) : <p className="text-sm text-muted">Nothing yet — new sign-ups and registrations will show here.</p>}
           </Card>
 
-          <Card title="Where subscribers come from">
+          <Card title="Where subscribers come from" subtitle="How people joined your list">
             {stats?.subscribers?.by_source?.length ? (
               <div className="space-y-4">
                 {stats.subscribers.by_source.slice(0, 6).map(({ source, count }, i) => {
@@ -463,7 +528,7 @@ export default function AdminDashboard() {
 
         {/* Secondary numbers — only the ones with something real to show */}
         {mini.length > 0 && (
-          <Card className="mt-5">
+          <Card title="More numbers" subtitle="Only what has activity right now" className="mt-5">
             <div className={`grid gap-2 ${mini.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : mini.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
               {mini.map((m) => <MiniStat key={m.label} {...m} />)}
             </div>
