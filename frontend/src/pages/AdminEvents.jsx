@@ -554,12 +554,13 @@ function fmtDate(iso) {
 // The 7/3/2/1-day countdown readout for a single event.
 function ReminderPanel({ data, busy, onRefresh }) {
   const [testing, setTesting] = useState(false);
+  const [testTo, setTestTo] = useState("");
 
   const sendTest = async () => {
     if (!data?.event_id) return;
     setTesting(true);
     try {
-      const res = await adminSendTestReminder(data.event_id);
+      const res = await adminSendTestReminder(data.event_id, testTo.trim() || undefined);
       if (res.dry_run) {
         toast.info("Email isn't configured", {
           description: "The test was logged, not delivered. Set RESEND_API_KEY on the backend to send for real.",
@@ -638,19 +639,29 @@ function ReminderPanel({ data, busy, onRefresh }) {
         </ul>
       )}
       {!notReady && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-sm text-[11px] leading-relaxed text-muted/70">
-            &ldquo;Sent&rdquo; means handed to the mailer without error. Send yourself a test to
-            see the real email in your inbox.
+        <div className="mt-3 space-y-2">
+          <p className="text-[11px] leading-relaxed text-muted/70">
+            &ldquo;Sent&rdquo; means handed to the mailer without error. Send yourself a test to see
+            the real email — or enter any address to test deliverability there.
           </p>
-          <button
-            onClick={sendTest}
-            disabled={testing}
-            className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs hover:border-lime hover:text-lime disabled:opacity-50"
-            data-testid="send-test-reminder"
-          >
-            <Send className="h-3.5 w-3.5" /> {testing ? "Sending…" : "Send test to my inbox"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="email"
+              value={testTo}
+              onChange={(e) => setTestTo(e.target.value)}
+              placeholder="Leave blank for your inbox, or any email…"
+              className="min-w-0 flex-1 rounded-full border border-line bg-bg px-3 py-1.5 text-xs outline-none focus:border-lime"
+              data-testid="test-reminder-to"
+            />
+            <button
+              onClick={sendTest}
+              disabled={testing}
+              className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs hover:border-lime hover:text-lime disabled:opacity-50"
+              data-testid="send-test-reminder"
+            >
+              <Send className="h-3.5 w-3.5" /> {testing ? "Sending…" : "Send test"}
+            </button>
+          </div>
         </div>
       )}
     </div>
